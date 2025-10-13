@@ -3,9 +3,9 @@
 
 class Layer {
 public:
-    Layer() {}
+    Layer() = default;
 
-    virtual ~Layer() {}
+    virtual ~Layer() = default;
 
     virtual void onUpdate(float /*deltaTime*/) {}
 
