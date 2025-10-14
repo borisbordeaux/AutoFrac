@@ -7,8 +7,8 @@ class LayerBcifs : public Layer {
 public:
     LayerBcifs();
 
-private:
-
+    static void testConstraints();
+    static void testBCIFSAutomaton();
 };
 
 

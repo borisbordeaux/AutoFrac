@@ -3,8 +3,14 @@
 #include "bcifs/formalcoef.h"
 #include "bcifs/formalmatrix.h"
 #include "bcifs/constraintsolver.h"
+#include "bcifs/bcifs.h"
 
 LayerBcifs::LayerBcifs() {
+    LayerBcifs::testConstraints();
+    LayerBcifs::testBCIFSAutomaton();
+}
+
+void LayerBcifs::testConstraints() {
     BCIFS::FormalCoefRef a = BCIFS::FormalCoef::var(0.1f);
     BCIFS::FormalCoefRef b = BCIFS::FormalCoef::var(0.2f);
     BCIFS::FormalCoefRef c = BCIFS::FormalCoef::var(0.3f);
@@ -112,4 +118,63 @@ LayerBcifs::LayerBcifs() {
 
     T0.print(true);
     T1.print(true);
+}
+
+void LayerBcifs::testBCIFSAutomaton() {
+    BCIFS::Bcifs bcifs;
+    // states
+    auto [vert, internalVert] = bcifs.addState("V", 1);
+    auto [edge, internalEdge] = bcifs.addState("A", 1);
+    auto [face, internalFace] = bcifs.addState("F", 0);
+    // permutations
+    BCIFS::TransitionID permut = bcifs.addPermutation("0", edge, edge);
+    // boundary of states
+    BCIFS::TransitionID b0edge = bcifs.addBoundary("0", edge, vert);
+    BCIFS::TransitionID b1edge = bcifs.addBoundary("1", edge, vert);
+    BCIFS::TransitionID b0face = bcifs.addBoundary("0", face, edge);
+    BCIFS::TransitionID b1face = bcifs.addBoundary("1", face, edge);
+    BCIFS::TransitionID b2face = bcifs.addBoundary("2", face, edge);
+    BCIFS::TransitionID b3face = bcifs.addBoundary("3", face, edge);
+    // subdivision of states
+    BCIFS::TransitionID s0vert = bcifs.addSubdivision("0", vert, vert);
+    BCIFS::TransitionID s0edge = bcifs.addSubdivision("0", edge, edge);
+    BCIFS::TransitionID s1edge = bcifs.addSubdivision("1", edge, edge);
+    BCIFS::TransitionID s0face = bcifs.addSubdivision("0", face, face);
+    BCIFS::TransitionID s1face = bcifs.addSubdivision("1", face, face);
+    BCIFS::TransitionID s2face = bcifs.addSubdivision("2", face, face);
+    BCIFS::TransitionID s3face = bcifs.addSubdivision("3", face, face);
+    // permutation constraints
+    bcifs.addConstraint({ permut, b0edge }, { b1edge });
+    bcifs.addConstraint({ permut, b1edge }, { b0edge });
+    bcifs.addConstraint({ permut, internalEdge[0] }, { internalEdge[0] });
+    bcifs.addConstraint({ permut, s0edge }, { s1edge, permut });
+    bcifs.addConstraint({ permut, s1edge }, { s0edge, permut });
+    // incidence constraints
+    // on edge
+    bcifs.addConstraint({ b0edge, s0vert }, { s0edge, b0edge });
+    bcifs.addConstraint({ b1edge, s0vert }, { s1edge, b1edge });
+    // on face
+    bcifs.addConstraint({ b0face, s0edge }, { s0face, b0face });
+    bcifs.addConstraint({ b0face, s1edge }, { s1face, b0face });
+    bcifs.addConstraint({ b1face, s0edge }, { s1face, b1face });
+    bcifs.addConstraint({ b1face, s1edge }, { s2face, b1face });
+    bcifs.addConstraint({ b2face, s0edge }, { s2face, b2face });
+    bcifs.addConstraint({ b2face, s1edge }, { s3face, b2face });
+    bcifs.addConstraint({ b3face, s0edge }, { s3face, b3face });
+    bcifs.addConstraint({ b3face, s1edge }, { s0face, b3face });
+    // adjacency constraints
+    // on edge
+    bcifs.addConstraint({ s0edge, b1edge }, { s1edge, b0edge });
+    // on face
+    bcifs.addConstraint({ s0face, b1face }, { s1face, b3face });
+    bcifs.addConstraint({ s1face, b2face }, { s2face, b0face });
+    bcifs.addConstraint({ s2face, b3face }, { s3face, b1face });
+    bcifs.addConstraint({ s3face, b0face }, { s0face, b2face });
+    // on incidence operators
+    bcifs.addConstraint({ b0face, b1edge }, { b1face, b0edge });
+    bcifs.addConstraint({ b1face, b1edge }, { b2face, b0edge });
+    bcifs.addConstraint({ b2face, b1edge }, { b3face, b0edge });
+    bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
+
+    bcifs.print();
 }
