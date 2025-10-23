@@ -9,8 +9,10 @@
 #include "layerclearcolor.h"
 #include "layertexture.h"
 #include "layerbcifs.h"
+#include "log.h"
 
 int main() {
+    Log::init();
     Window window;
 
     IMGUI_CHECKVERSION();

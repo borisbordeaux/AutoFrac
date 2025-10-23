@@ -5,6 +5,7 @@
 #include "vertexarray.h"
 #include "shader.h"
 #include "indexbuffer.h"
+#include "log.h"
 
 void GLClearError() {
     while (glGetError() != GL_NO_ERROR);
@@ -42,10 +43,10 @@ void Renderer::setClearColor(float r, float g, float b, float a) const {
 
 void Renderer::initOpenGL() {
     if (glewInit() != GLEW_OK)
-        std::cout << "error glew init!" << std::endl;
+        LOG_ERROR("Glew not initialized");
     else {
         GLCall(const unsigned char* version = glGetString(GL_VERSION));
-        std::cout << version << std::endl;
+        LOG_INFO("OpenGL version is {}", version);
     }
 
     GLCall(glEnable(GL_BLEND));
