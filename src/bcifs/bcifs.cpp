@@ -1,21 +1,28 @@
 #include <iostream>
 #include "bcifs/bcifs.h"
 #include "automaton/state.h"
+#include "bcifs/constraintsolver.h"
+#include <algorithm>
+
+#include "bcifs/booleanmatrix.h"
 
 namespace BCIFS {
-
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
     State s(m_automaton.states().size(), std::move(name));
     m_automaton.addState(s);
     std::vector<TransitionID> internalTransitions(internalDimensions);
     for (std::size_t i = 0; i < internalDimensions; i++) {
-        this->addInternal(std::to_string(i), s.id());
+        internalTransitions[i] = this->addInternal(std::to_string(i), s.id());
     }
     return { s.id(), std::move(internalTransitions) };
 }
 
 TransitionID Bcifs::addBoundary(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::BOUNDARY);
+}
+
+void Bcifs::setSpace(StateID id, std::vector<TransitionID> transitions) {
+    m_mapSpaces[id] = std::move(transitions);
 }
 
 TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to) {
@@ -26,21 +33,20 @@ TransitionID Bcifs::addPermutation(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::PERMUTATION);
 }
 
-TransitionID Bcifs::addInternal(std::string name, StateID stateID) {
-    return this->addTransition(std::move(name), stateID, stateID, TransitionType::INTERNAL);
-}
-
-TransitionID Bcifs::addTransition(std::string name, StateID from, StateID to, TransitionType type) {
-    Transition transition(m_automaton.transitions().size(), std::move(name), from, to, type);
-    m_automaton.addTransition(transition);
-    return transition.id();
-}
-
 void Bcifs::addConstraint(const Path& lhs, const Path& rhs) {
-    if (m_automaton.isBoundaryOnly(lhs) && m_automaton.isBoundaryOnly(rhs)) {
-        m_adjacencyConstraintsOnIncidenceOperators.emplace_back(lhs, rhs);
-    } else {
-        m_constraints.emplace_back(lhs, rhs);
+    if (lhs.empty() || rhs.empty()) throw std::runtime_error("Constraint must not be empty");
+
+    Constraint constraint(lhs, rhs);
+    switch (this->constraintType(constraint)) {
+        case ConstraintType::SUBDIVISION:
+            m_constraints.push_back(std::move(constraint));
+            break;
+        case ConstraintType::ADJACENCY_ON_INCIDENCE_OPERATORS:
+            m_adjacencyConstraintsOnIncidenceOperators.push_back(std::move(constraint));
+            break;
+        case ConstraintType::PERMUTATION:
+            m_permutationConstraints.push_back(std::move(constraint));
+            break;
     }
 }
 
@@ -54,14 +60,74 @@ void Bcifs::print() const {
     for (const auto& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
         this->printConstraint(constraint);
     }
+    std::cout << "\nDimensions of states:\n";
+    for (const std::pair<StateID, std::size_t> keyval: m_mapDimensions) {
+        std::cout << m_automaton.findStateByID(keyval.first).name() << " has " << keyval.second << " dimensions\n";
+    }
+    std::cout << "\nAll operators:\n";
+    for (const auto& keyval: m_mapOperators) {
+        TransitionID transitionId = keyval.first;
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        std::cout << "Operator ";
+        transition.print();
+        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
+        std::cout << " to " << m_automaton.findStateByID(transition.to()).name() << "\n";
+        if (transition.type() == TransitionType::SUBDIVISION) {
+            keyval.second.print(true);
+            std::cout << "-------\n";
+            keyval.second.print();
+        } else {
+            keyval.second.print();
+        }
+    }
     std::cout.flush();
 }
 
-void Bcifs::printConstraint(const std::pair<Path, Path>& constraint) const {
+void Bcifs::validate() {
+    //TODO: try catch all this block to stop when there is a problem and signal it to the user without crashing
+    this->checkAutomaton(); // all states used in transitions exist
+    this->checkSpaces(); // all states have a valid space
+    this->checkConstraints(); // same arrival (existing) state for each path
+    this->initializeMatrices(); // initialize all operators
+    this->resolveConstraints(); // resolve all constraints to finish the matrices initialization
+    this->completeSubdvisionMatrices(); // make sure matrices are barycentric transformations
+}
+
+Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
+    // if the constraint contains at least one subdivision operator, the constraint acts it
+    if (isSubdivisionConstraint(constraint)) {
+        return ConstraintType::SUBDIVISION;
+    }
+    // at this stage, the constraint contains only permutation, intern or boundary operators
+    // the constraint is a permutation constraint (act on permutation operator) if there is
+    // a permutation operator for the first transition of the constraint
+    if (m_automaton.findTransitionByID(constraint.first[0]).type() == TransitionType::PERMUTATION ||
+        m_automaton.findTransitionByID(constraint.second[0]).type() == TransitionType::PERMUTATION) {
+        return ConstraintType::PERMUTATION;
+    }
+    // else, it is an adjacency on incidence operators
+    return ConstraintType::ADJACENCY_ON_INCIDENCE_OPERATORS;
+}
+
+bool Bcifs::isSubdivisionConstraint(const Constraint& constraint) const {
+    return m_automaton.containsSubdvision(constraint.first) || m_automaton.containsSubdvision(constraint.second);
+}
+
+TransitionID Bcifs::addInternal(std::string name, StateID stateID) {
+    return this->addTransition(std::move(name), stateID, stateID, TransitionType::INTERNAL);
+}
+
+TransitionID Bcifs::addTransition(std::string name, StateID from, StateID to, TransitionType type) {
+    Transition transition(m_automaton.transitions().size(), std::move(name), from, to, type);
+    m_automaton.addTransition(transition);
+    return transition.id();
+}
+
+void Bcifs::printConstraint(const Constraint& constraint) const {
     std::cout << "[ ";
     bool firstTransition = true;
     for (const auto& transition: constraint.first) {
-        Transition trans = m_automaton.findTransitionByID(transition);
+        const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
             std::cout << m_automaton.findStateByID(trans.from()).name();
             firstTransition = false;
@@ -73,7 +139,7 @@ void Bcifs::printConstraint(const std::pair<Path, Path>& constraint) const {
     std::cout << " ] = [ ";
     firstTransition = true;
     for (const auto& transition: constraint.second) {
-        Transition trans = m_automaton.findTransitionByID(transition);
+        const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
             std::cout << m_automaton.findStateByID(trans.from()).name();
             firstTransition = false;
@@ -83,6 +149,287 @@ void Bcifs::printConstraint(const std::pair<Path, Path>& constraint) const {
         std::cout << " " << m_automaton.findStateByID(trans.to()).name();
     }
     std::cout << " ]\n";
+}
+
+void Bcifs::checkAutomaton() const {
+    m_automaton.check();
+    std::cout << "Automaton checked" << std::endl;
+}
+
+void Bcifs::checkSpaces() const {
+    for (const State& state: m_automaton.states()) {
+        if (auto it = m_mapSpaces.find(state.id()); it != m_mapSpaces.end()) {
+            StateID id = it->first;
+            const std::vector<TransitionID>& space = it->second;
+            std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionOf(id);
+            for (TransitionID transitionID: space) {
+                const Transition& transition = m_automaton.findTransitionByID(transitionID);
+                if (transition.type() == TransitionType::INTERNAL) {
+                    if (transition.from() != state.id()) {
+                        throw std::runtime_error("Space not valid, internal transition " + transition.name() + " does not exist for state " + state.name());
+                    }
+                } else {
+                    if (transition.from() != id) {
+                        throw std::runtime_error("Space not valid, boundary " + transition.name() + " does not exist for state " + state.name());
+                    }
+                }
+            }
+        }
+    }
+    std::cout << "Spaces checked" << std::endl;
+}
+
+void Bcifs::checkConstraints() const {
+    for (const Constraint& constraint: m_constraints) {
+        for (TransitionID id: constraint.first) {
+            m_automaton.findTransitionByID(id);
+        }
+        for (TransitionID id: constraint.second) {
+            m_automaton.findTransitionByID(id);
+        }
+    }
+    std::cout << "Constraints checked" << std::endl;
+}
+
+void Bcifs::initializeMatrices() {
+    for (const State& state: m_automaton.states()) {
+        this->initializeMatrices(state.id());
+    }
+}
+
+void Bcifs::initializeMatrices(StateID id) {
+    if (m_mapDimensions.find(id) == m_mapDimensions.end()) {
+        std::size_t dim = 0;
+        std::size_t internalDim = m_automaton.internalDimensions(id);
+        for (StateID boundaryId: m_automaton.boundaryStateOf(id)) {
+            this->initializeMatrices(boundaryId);
+            dim += m_mapDimensions[boundaryId];
+        }
+        std::unordered_map<TransitionID, BooleanMatrix> tempOperators;
+        std::size_t lastIndex = 0;
+        // initialize temporary boundary operators
+        for (TransitionID transitionId: m_automaton.boundaryTransitionOf(id)) {
+            const Transition& transition = m_automaton.findTransitionByID(transitionId);
+            tempOperators.insert({ transitionId, { dim + internalDim, m_mapDimensions[transition.to()] }});
+            // insert identity matrix from lastIndex
+            for (std::size_t i = 0; i < m_mapDimensions[transition.to()]; i++) {
+                tempOperators[transitionId].set(lastIndex + i, i, true);
+            }
+            std::cout << "Temp operator init of ";
+            transition.print();
+            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+            tempOperators[transitionId].print();
+            std::cout.flush();
+            lastIndex += m_mapDimensions[transition.to()];
+        }
+        // initialize internal operators
+        for (TransitionID internalId: m_automaton.internalTransitionOf(id)) {
+            tempOperators.insert({ internalId, { dim + internalDim, 1 }});
+            // insert identity matrix from lastIndex
+            tempOperators[internalId].set(lastIndex, 0, true);
+            std::cout << "Temp operator init of ";
+            m_automaton.findTransitionByID(internalId).print();
+            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+            tempOperators[internalId].print();
+            lastIndex++;
+        }
+        BooleanMatrix M(dim + internalDim, dim + internalDim);
+        M.setIdentity();
+        std::cout << "Init M matrix of state " << m_automaton.findStateByID(id).name() << " is:\n";
+        M.print();
+        std::cout.flush();
+        for (const Constraint& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
+            if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
+                BooleanMatrix lhs = tempOperators[constraint.first[0]];
+                for (std::size_t i = 1; i < constraint.first.size(); i++) {
+                    lhs = lhs * m_mapOperators[constraint.first[i]].toBooleanMatrix();
+                }
+                BooleanMatrix rhs = tempOperators[constraint.second[0]];
+                for (std::size_t i = 1; i < constraint.second.size(); i++) {
+                    rhs = rhs * m_mapOperators[constraint.second[i]].toBooleanMatrix();
+                }
+                // at this stage, lhs and rhs must be the same,
+                // so we initialize column by column the link in the graph matrix M
+                for (std::size_t col = 0; col < lhs.cols(); col++) {
+                    std::size_t indexLhs = lhs.lineOfTrueInColumn(col);
+                    std::size_t indexRhs = rhs.lineOfTrueInColumn(col);
+                    // set it directly symetric
+                    M.set(indexLhs, indexRhs, true);
+                    M.set(indexRhs, indexLhs, true);
+                }
+            }
+        }
+        // set M transitive
+        M = M.transitived();
+
+        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the M matrix is:\n";
+        M.print();
+
+        // remove multiple rows of M to get projection matrix
+        BooleanMatrix proj = M.removedMultipleRows();
+        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the projection matrix is:\n";
+        proj.print();
+
+        // initialize boundary and internal operators
+        for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
+            BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
+            FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
+            m_mapOperators.insert({ transitionId, boundaryOperator });
+            std::cout << "Operator of ";
+            const Transition& transition = m_automaton.findTransitionByID(transitionId);
+            transition.print();
+            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+            boundaryOperatorBool.print();
+            std::cout.flush();
+        }
+
+        // take space into account
+        if (m_mapSpaces.find(id) != m_mapSpaces.end()) {
+            std::size_t cols = 0;
+            for (TransitionID transitionId: m_mapSpaces[id]) {
+                cols += m_mapOperators[transitionId].cols();
+            }
+            BooleanMatrix permutationSpace(proj.rows(), cols);
+            std::size_t index = 0;
+            for (TransitionID transitionId: m_mapSpaces[id]) {
+                // fill the permutationSpace matrix with the values of the boundary transition in the mapSpace
+                for (std::size_t col = 0; col < m_mapOperators[transitionId].cols(); col++) {
+                    for (std::size_t row = 0; row < m_mapOperators[transitionId].rows(); row++) {
+                        permutationSpace.set(row, col + index, m_mapOperators[transitionId].get(row, col)->type() == CoefType::ONE);
+                    }
+                }
+                index += m_mapOperators[transitionId].cols();
+            }
+            std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the permutation space matrix is:\n";
+            permutationSpace.print();
+            std::cout << "after column simplification, it is:\n";
+            permutationSpace = permutationSpace.removedMultipleCols();
+            permutationSpace.print();
+            permutationSpace.SquareAndFillByTrue();
+            std::cout << "and after fill by true to complete space, it is:\n";
+            permutationSpace.print();
+            std::cout << "and after transpose, it is:\n";
+            permutationSpace = permutationSpace.transposed();
+            permutationSpace.print();
+            std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
+            for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
+                m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
+                std::cout << "Operator of ";
+                const Transition& transition = m_automaton.findTransitionByID(transitionId);
+                transition.print();
+                std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+                m_mapOperators[transitionId].print();
+                std::cout.flush();
+            }
+        }
+
+        m_mapDimensions[id] = proj.rows();
+
+        // resolve permutation constraints to initialize permutation matrices
+        this->resolvePermutationConstraints(id);
+    }
+}
+
+void Bcifs::resolvePermutationConstraints(StateID id) {
+    std::cout << "Resolving permutation constraints...\n";
+    for (const Constraint& constraint: m_permutationConstraints) {
+        const Transition& firstTransLeft = m_automaton.findTransitionByID(constraint.first[0]);
+        const Transition& firstTransRight = m_automaton.findTransitionByID(constraint.second[0]);
+        if (firstTransLeft.from() == id && firstTransRight.from() == id) {
+            FormalMatrix lhs = this->getOrInitOperator(constraint.first[0]);
+            std::cout << "lhs is:\n";
+            lhs.print(true);
+            for (std::size_t i = 1; i < constraint.first.size(); i++) {
+                std::cout << "next matrix is:\n";
+                this->getOrInitOperator(constraint.first[i]).print();
+                lhs = lhs * this->getOrInitOperator(constraint.first[i]);
+                std::cout << "new lhs is:\n";
+                lhs.print(true);
+            }
+            FormalMatrix rhs = this->getOrInitOperator(constraint.second[0]);
+            std::cout << "rhs is:\n";
+            rhs.print(true);
+            for (std::size_t i = 1; i < constraint.second.size(); i++) {
+                std::cout << "next matrix is:\n";
+                this->getOrInitOperator(constraint.second[i]).print();
+                rhs = rhs * this->getOrInitOperator(constraint.second[i]);
+                std::cout << "new rhs is:\n";
+                rhs.print(true);
+            }
+            std::cout.flush();
+            ConstraintSolver::solve(lhs, rhs);
+        }
+    }
+    std::cout << "Resolved all permutation constraints." << std::endl;
+}
+
+void Bcifs::resolveConstraints() {
+    std::cout << "Resolving constraints...\n";
+    for (const Constraint& constraint: m_constraints) {
+        std::cout << "Constraint before solve:\n";
+        this->printConstraintMatrices(constraint);
+
+        FormalMatrix lhs = this->getOrInitOperator(constraint.first[0]);
+        for (std::size_t i = 1; i < constraint.first.size(); i++) {
+            lhs = lhs * this->getOrInitOperator(constraint.first[i]);
+        }
+        std::cout << "lhs is:\n";
+        lhs.print(true);
+
+        FormalMatrix rhs = this->getOrInitOperator(constraint.second[0]);
+        for (std::size_t i = 1; i < constraint.second.size(); i++) {
+            rhs = rhs * this->getOrInitOperator(constraint.second[i]);
+        }
+        std::cout << "rhs is:\n";
+        rhs.print(true);
+
+        ConstraintSolver::solve(lhs, rhs);
+
+        std::cout << "Constraint after solve:\n";
+        this->printConstraintMatrices(constraint);
+    }
+    std::cout << "Resolved all constraints." << std::endl;
+}
+
+const FormalMatrix& Bcifs::getOrInitOperator(TransitionID id) {
+    auto itOperator = m_mapOperators.find(id);
+    if (itOperator == m_mapOperators.end()) {
+        // if the matrix does not exist, then it is an undefined matrix, so we can initialize it with a random value
+        // 2.0f is chosen for debug info
+        const Transition& transition = m_automaton.findTransitionByID(id);
+        m_mapOperators.insert({ id, FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f) });
+    }
+    return m_mapOperators[id];
+}
+
+void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
+    std::cout << "LHS:\n";
+    for (TransitionID transitionId: constraint.first) {
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        transition.print();
+        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
+        std::cout << " to " << m_automaton.findStateByID(transition.to()).name();
+        std::cout << " is:\n";
+        this->getOrInitOperator(transitionId).print(true);
+    }
+    std::cout << "\nRHS:\n";
+    for (TransitionID transitionId: constraint.second) {
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        transition.print();
+        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
+        std::cout << " to " << m_automaton.findStateByID(transition.to()).name();
+        std::cout << " is:\n";
+        this->getOrInitOperator(transitionId).print(true);
+    }
+    std::cout << std::endl;
+}
+
+void Bcifs::completeSubdvisionMatrices() {
+    for (const Transition& transition: m_automaton.transitions()) {
+        if (transition.type() == TransitionType::SUBDIVISION) {
+            m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
+        }
+    }
 }
 
 } // BCIFS

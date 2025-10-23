@@ -6,14 +6,16 @@ namespace BCIFS {
 
 FormalCoef::FormalCoef(float value) : FormalCoef(CoefType::VAR, value) {}
 
-FormalCoef::FormalCoef(CoefType coefType, float value) : m_type(coefType), m_value(value) {}
+FormalCoef::FormalCoef(CoefType coefType, float value) : m_type(coefType), m_value(value), m_initialized(false) {}
 
-std::shared_ptr<FormalCoef> FormalCoef::zero() {
-    return std::make_shared<FormalCoef>(CoefType::ZERO, 0.0f);
+FormalCoefRef FormalCoef::zero() {
+    static FormalCoefRef zero = std::make_shared<FormalCoef>(CoefType::ZERO, 0.0f);
+    return zero;
 }
 
-std::shared_ptr<FormalCoef> FormalCoef::one() {
-    return std::make_shared<FormalCoef>(CoefType::ONE, 1.0f);
+FormalCoefRef FormalCoef::one() {
+    static FormalCoefRef one = std::make_shared<FormalCoef>(CoefType::ONE, 1.0f);
+    return one;
 }
 
 FormalCoefRef FormalCoef::var(float v) {

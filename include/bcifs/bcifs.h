@@ -20,21 +20,51 @@ public:
      */
     std::pair<StateID, std::vector<TransitionID>> addState(std::string name, std::size_t internalDimensions);
     TransitionID addBoundary(std::string name, StateID from, StateID to);
+    void setSpace(StateID id, std::vector<TransitionID> transitions);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
     void print() const;
+    void validate();
 
 private:
+    using Constraint = std::pair<Path, Path>;
+    enum class ConstraintType {
+        SUBDIVISION,  // constrains subdivision operators
+        PERMUTATION,  // constrains permutation operators
+        ADJACENCY_ON_INCIDENCE_OPERATORS  // merge spaces
+    };
+
+    ConstraintType constraintType(const Constraint& constraint) const;
+    bool isSubdivisionConstraint(const Constraint& constraint) const;
+
     TransitionID addInternal(std::string name, StateID stateID);
     TransitionID addTransition(std::string name, StateID from, StateID to, TransitionType type);
 
-    void printConstraint(const std::pair<Path, Path>& constraint) const;
+    void printConstraint(const Constraint& constraint) const;
+
+    void checkAutomaton() const;
+    void checkSpaces() const;
+    void checkConstraints() const;
+    void initializeMatrices();
+    void initializeMatrices(StateID id);
+
+    void resolvePermutationConstraints(StateID id);
+    void resolveConstraints();
+    const FormalMatrix& getOrInitOperator(TransitionID id);
+
+    void printConstraintMatrices(const Constraint& constraint);
+
+    void completeSubdvisionMatrices();
 
 private:
     Automaton m_automaton;
-    std::vector<std::pair<Path, Path>> m_constraints;
-    std::vector<std::pair<Path, Path>> m_adjacencyConstraintsOnIncidenceOperators;
+    std::unordered_map<StateID, std::vector<TransitionID>> m_mapSpaces;
+    std::vector<Constraint> m_constraints;
+    std::vector<Constraint> m_adjacencyConstraintsOnIncidenceOperators;
+    std::vector<Constraint> m_permutationConstraints;
+    std::unordered_map<StateID, std::size_t> m_mapDimensions;
+    std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
 };
 
 } // BCIFS

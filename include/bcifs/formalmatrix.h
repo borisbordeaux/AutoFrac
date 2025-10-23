@@ -7,9 +7,14 @@
 
 namespace BCIFS {
 
+class BooleanMatrix;
+
 class FormalMatrix {
 public:
+    FormalMatrix();
     FormalMatrix(std::size_t rows, std::size_t cols);
+    explicit FormalMatrix(std::size_t rows, std::size_t cols, float value);
+    explicit FormalMatrix(std::size_t rows, std::size_t cols, bool initRandom);
 
     inline std::size_t rows() const { return m_rows; }
 
@@ -24,6 +29,10 @@ public:
     FormalMatrix operator*(const FormalMatrix& other) const;
 
     void print(bool showAddress = false) const;
+
+    BooleanMatrix toBooleanMatrix() const;
+
+    void setRandomValuesOnFreeCoefs();
 
 private:
     std::size_t m_rows;

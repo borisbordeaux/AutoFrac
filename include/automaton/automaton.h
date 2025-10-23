@@ -19,7 +19,7 @@ public:
 
     inline const std::vector<Transition>& transitions() const { return m_transitions; }
 
-    bool isBoundaryOnly(const Path& path) const;
+    bool containsSubdvision(const Path& path) const;
 
     const Transition& findTransitionByID(TransitionID id) const;
     const State& findStateByID(StateID id) const;
@@ -27,6 +27,16 @@ public:
     void print() const;
 
     std::size_t internalDimensions(StateID id) const;
+
+    /**
+     * Throws an exception if the check fails
+     */
+    void check() const;
+
+    std::vector<TransitionID> boundaryTransitionOf(StateID id) const;
+    std::vector<StateID> boundaryStateOf(StateID id) const;
+    std::vector<TransitionID> internalTransitionOf(StateID id) const;
+    std::vector<TransitionID> boundaryAndInternalTransitionOf(StateID id) const;
 
 private:
     std::vector<State> m_states;

@@ -32,6 +32,10 @@ public:
 
     void setValue(float value) { const_cast<FormalCoef*>(this)->findRoot()->m_value = value; }
 
+    void setInitialized() { const_cast<FormalCoef*>(this)->findRoot()->m_initialized = true; }
+
+    inline bool initialized() const { return const_cast<FormalCoef*>(this)->findRoot()->m_initialized; }
+
     FormalCoefRef findRoot();
     static void unify(const FormalCoefRef& c1, const FormalCoefRef& c2);
 
@@ -40,6 +44,7 @@ public:
 private:
     CoefType m_type;
     float m_value;
+    bool m_initialized;
 
     std::weak_ptr<FormalCoef> m_parent;
 };

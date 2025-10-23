@@ -1,8 +1,8 @@
+#include "automaton/automaton.h"
+#include "automaton/transition.h"
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
-#include "automaton/automaton.h"
-#include "automaton/transition.h"
 
 namespace BCIFS {
 
@@ -14,10 +14,10 @@ void Automaton::addTransition(const Transition& transition) {
     m_transitions.push_back(transition);
 }
 
-bool Automaton::isBoundaryOnly(const Path& path) const {
-    return std::all_of(path.begin(), path.end(), [this](TransitionID id) {
+bool Automaton::containsSubdvision(const Path& path) const {
+    return std::any_of(path.begin(), path.end(), [this](TransitionID id) {
         const Transition& transition = this->findTransitionByID(id);
-        return transition.type() == TransitionType::BOUNDARY;
+        return transition.type() == TransitionType::SUBDIVISION;
     });
 }
 
@@ -60,6 +60,53 @@ std::size_t Automaton::internalDimensions(StateID id) const {
     for (const Transition& transition: m_transitions) {
         if (transition.type() == TransitionType::INTERNAL && transition.from() == id) {
             res++;
+        }
+    }
+    return res;
+}
+
+void Automaton::check() const {
+    for (const Transition& transition: m_transitions) {
+        this->findStateByID(transition.from());
+        this->findStateByID(transition.to());
+    }
+}
+
+std::vector<TransitionID> Automaton::boundaryTransitionOf(StateID id) const {
+    std::vector<TransitionID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
+            res.push_back(transition.id());
+        }
+    }
+    return res;
+}
+
+std::vector<StateID> Automaton::boundaryStateOf(StateID id) const {
+    std::vector<StateID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
+            res.push_back(transition.to());
+        }
+    }
+    return res;
+}
+
+std::vector<TransitionID> Automaton::internalTransitionOf(StateID id) const {
+    std::vector<TransitionID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.from() == id && transition.type() == TransitionType::INTERNAL) {
+            res.push_back(transition.id());
+        }
+    }
+    return res;
+}
+
+std::vector<TransitionID> Automaton::boundaryAndInternalTransitionOf(StateID id) const {
+    std::vector<TransitionID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.from() == id && (transition.type() == TransitionType::BOUNDARY || transition.type() == TransitionType::INTERNAL)) {
+            res.push_back(transition.id());
         }
     }
     return res;

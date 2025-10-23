@@ -125,7 +125,7 @@ void LayerBcifs::testBCIFSAutomaton() {
     // states
     auto [vert, internalVert] = bcifs.addState("V", 1);
     auto [edge, internalEdge] = bcifs.addState("A", 1);
-    auto [face, internalFace] = bcifs.addState("F", 0);
+    auto [face, internalFace] = bcifs.addState("F", 1);
     // permutations
     BCIFS::TransitionID permut = bcifs.addPermutation("0", edge, edge);
     // boundary of states
@@ -135,18 +135,23 @@ void LayerBcifs::testBCIFSAutomaton() {
     BCIFS::TransitionID b1face = bcifs.addBoundary("1", face, edge);
     BCIFS::TransitionID b2face = bcifs.addBoundary("2", face, edge);
     BCIFS::TransitionID b3face = bcifs.addBoundary("3", face, edge);
+    // space of states
+    bcifs.setSpace(edge, { b0edge, internalEdge[0], b1edge });
+    bcifs.setSpace(face, { b0face, internalFace[0], b1face, b2face, b3face });
     // subdivision of states
     BCIFS::TransitionID s0vert = bcifs.addSubdivision("0", vert, vert);
     BCIFS::TransitionID s0edge = bcifs.addSubdivision("0", edge, edge);
     BCIFS::TransitionID s1edge = bcifs.addSubdivision("1", edge, edge);
-    BCIFS::TransitionID s0face = bcifs.addSubdivision("0", face, face);
-    BCIFS::TransitionID s1face = bcifs.addSubdivision("1", face, face);
-    BCIFS::TransitionID s2face = bcifs.addSubdivision("2", face, face);
-    BCIFS::TransitionID s3face = bcifs.addSubdivision("3", face, face);
+    [[maybe_unused]] BCIFS::TransitionID s0face = bcifs.addSubdivision("0", face, face);
+    [[maybe_unused]] BCIFS::TransitionID s1face = bcifs.addSubdivision("1", face, face);
+    [[maybe_unused]] BCIFS::TransitionID s2face = bcifs.addSubdivision("2", face, face);
+    [[maybe_unused]] BCIFS::TransitionID s3face = bcifs.addSubdivision("3", face, face);
     // permutation constraints
+    // define permutation operators
     bcifs.addConstraint({ permut, b0edge }, { b1edge });
     bcifs.addConstraint({ permut, b1edge }, { b0edge });
     bcifs.addConstraint({ permut, internalEdge[0] }, { internalEdge[0] });
+    // constraint subdivision operators using permutation operators
     bcifs.addConstraint({ permut, s0edge }, { s1edge, permut });
     bcifs.addConstraint({ permut, s1edge }, { s0edge, permut });
     // incidence constraints
@@ -166,15 +171,16 @@ void LayerBcifs::testBCIFSAutomaton() {
     // on edge
     bcifs.addConstraint({ s0edge, b1edge }, { s1edge, b0edge });
     // on face
-    bcifs.addConstraint({ s0face, b1face }, { s1face, b3face });
-    bcifs.addConstraint({ s1face, b2face }, { s2face, b0face });
-    bcifs.addConstraint({ s2face, b3face }, { s3face, b1face });
-    bcifs.addConstraint({ s3face, b0face }, { s0face, b2face });
+    bcifs.addConstraint({ s0face, b1face, permut }, { s1face, b3face });
+    bcifs.addConstraint({ s1face, b2face, permut }, { s2face, b0face });
+    bcifs.addConstraint({ s2face, b3face, permut }, { s3face, b1face });
+    bcifs.addConstraint({ s3face, b0face, permut }, { s0face, b2face });
     // on incidence operators
     bcifs.addConstraint({ b0face, b1edge }, { b1face, b0edge });
     bcifs.addConstraint({ b1face, b1edge }, { b2face, b0edge });
     bcifs.addConstraint({ b2face, b1edge }, { b3face, b0edge });
     bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
 
+    bcifs.validate();
     bcifs.print();
 }
