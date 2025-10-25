@@ -125,7 +125,8 @@ void LayerBcifs::testBCIFSAutomaton() {
     // states
     auto [vert, internalVert] = bcifs.addState("V", 1);
     auto [edge, internalEdge] = bcifs.addState("A", 1);
-    auto [face, internalFace] = bcifs.addState("F", 1);
+    auto [face, internalFace] = bcifs.addState("F", 0);
+    BCIFS::StateID init = bcifs.addInitState();
     // permutations
     BCIFS::TransitionID permut = bcifs.addPermutation("0", edge, edge);
     // boundary of states
@@ -137,15 +138,17 @@ void LayerBcifs::testBCIFSAutomaton() {
     BCIFS::TransitionID b3face = bcifs.addBoundary("3", face, edge);
     // space of states
     bcifs.setSpace(edge, { b0edge, internalEdge[0], b1edge });
-    bcifs.setSpace(face, { b0face, internalFace[0], b1face, b2face, b3face });
+    bcifs.setSpace(face, { b0face, b1face, b2face, b3face });
     // subdivision of states
     BCIFS::TransitionID s0vert = bcifs.addSubdivision("0", vert, vert);
     BCIFS::TransitionID s0edge = bcifs.addSubdivision("0", edge, edge);
     BCIFS::TransitionID s1edge = bcifs.addSubdivision("1", edge, edge);
-    [[maybe_unused]] BCIFS::TransitionID s0face = bcifs.addSubdivision("0", face, face);
-    [[maybe_unused]] BCIFS::TransitionID s1face = bcifs.addSubdivision("1", face, face);
-    [[maybe_unused]] BCIFS::TransitionID s2face = bcifs.addSubdivision("2", face, face);
-    [[maybe_unused]] BCIFS::TransitionID s3face = bcifs.addSubdivision("3", face, face);
+    BCIFS::TransitionID s0face = bcifs.addSubdivision("0", face, face);
+    BCIFS::TransitionID s1face = bcifs.addSubdivision("1", face, face);
+    BCIFS::TransitionID s2face = bcifs.addSubdivision("2", face, face);
+    BCIFS::TransitionID s3face = bcifs.addSubdivision("3", face, face);
+    BCIFS::TransitionID s0init = bcifs.addSubdivision("0", init, face);
+    BCIFS::TransitionID s1init = bcifs.addSubdivision("1", init, face);
     // permutation constraints
     // define permutation operators
     bcifs.addConstraint({ permut, b0edge }, { b1edge });
@@ -180,6 +183,8 @@ void LayerBcifs::testBCIFSAutomaton() {
     bcifs.addConstraint({ b1face, b1edge }, { b2face, b0edge });
     bcifs.addConstraint({ b2face, b1edge }, { b3face, b0edge });
     bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
+    // on init state
+    bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
 
     bcifs.validate();
     bcifs.print();

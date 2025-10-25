@@ -7,6 +7,7 @@
 #include "bcifs/booleanmatrix.h"
 
 namespace BCIFS {
+
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
     State s(m_automaton.states().size(), std::move(name));
     m_automaton.addState(s);
@@ -15,6 +16,12 @@ std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, 
         internalTransitions[i] = this->addInternal(std::to_string(i), s.id());
     }
     return { s.id(), std::move(internalTransitions) };
+}
+
+StateID Bcifs::addInitState() {
+    auto [id, _] = this->addState("#", 3);
+    m_initStateID.emplace(id);
+    return id;
 }
 
 TransitionID Bcifs::addBoundary(std::string name, StateID from, StateID to) {
@@ -198,136 +205,152 @@ void Bcifs::initializeMatrices() {
 }
 
 void Bcifs::initializeMatrices(StateID id) {
-    if (m_mapDimensions.find(id) == m_mapDimensions.end()) {
-        std::size_t dim = 0;
-        std::size_t internalDim = m_automaton.internalDimensions(id);
-        for (StateID boundaryId: m_automaton.boundaryStateOf(id)) {
-            this->initializeMatrices(boundaryId);
-            dim += m_mapDimensions[boundaryId];
+    // if already initialized, no need to continue
+    if (m_mapDimensions.find(id) != m_mapDimensions.end()) { return; }
+
+    // compute the dimension of the state (ignoring adjacency on incidence operators)
+    std::size_t dim = m_automaton.internalDimensions(id);
+    for (StateID boundaryId: m_automaton.boundaryStateOf(id)) {
+        this->initializeMatrices(boundaryId);
+        dim += m_mapDimensions[boundaryId];
+    }
+
+    // initialize temporary boundary operators
+    std::unordered_map<TransitionID, BooleanMatrix> tempOperators;
+    std::size_t lastIndex = 0;
+    for (TransitionID transitionId: m_automaton.boundaryTransitionOf(id)) {
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        tempOperators.insert({ transitionId, { dim, m_mapDimensions[transition.to()] }});
+        // insert identity matrix from lastIndex
+        for (std::size_t i = 0; i < m_mapDimensions[transition.to()]; i++) {
+            tempOperators[transitionId].set(lastIndex + i, i, true);
         }
-        std::unordered_map<TransitionID, BooleanMatrix> tempOperators;
-        std::size_t lastIndex = 0;
-        // initialize temporary boundary operators
-        for (TransitionID transitionId: m_automaton.boundaryTransitionOf(id)) {
-            const Transition& transition = m_automaton.findTransitionByID(transitionId);
-            tempOperators.insert({ transitionId, { dim + internalDim, m_mapDimensions[transition.to()] }});
-            // insert identity matrix from lastIndex
-            for (std::size_t i = 0; i < m_mapDimensions[transition.to()]; i++) {
-                tempOperators[transitionId].set(lastIndex + i, i, true);
-            }
-            std::cout << "Temp operator init of ";
-            transition.print();
-            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
-            tempOperators[transitionId].print();
-            std::cout.flush();
-            lastIndex += m_mapDimensions[transition.to()];
-        }
-        // initialize internal operators
-        for (TransitionID internalId: m_automaton.internalTransitionOf(id)) {
-            tempOperators.insert({ internalId, { dim + internalDim, 1 }});
-            // insert identity matrix from lastIndex
-            tempOperators[internalId].set(lastIndex, 0, true);
-            std::cout << "Temp operator init of ";
-            m_automaton.findTransitionByID(internalId).print();
-            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
-            tempOperators[internalId].print();
-            lastIndex++;
-        }
-        BooleanMatrix M(dim + internalDim, dim + internalDim);
-        M.setIdentity();
-        std::cout << "Init M matrix of state " << m_automaton.findStateByID(id).name() << " is:\n";
-        M.print();
+        std::cout << "Temp operator init of ";
+        transition.print();
+        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        tempOperators[transitionId].print();
         std::cout.flush();
-        for (const Constraint& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
-            if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
-                BooleanMatrix lhs = tempOperators[constraint.first[0]];
-                for (std::size_t i = 1; i < constraint.first.size(); i++) {
-                    lhs = lhs * m_mapOperators[constraint.first[i]].toBooleanMatrix();
-                }
-                BooleanMatrix rhs = tempOperators[constraint.second[0]];
-                for (std::size_t i = 1; i < constraint.second.size(); i++) {
-                    rhs = rhs * m_mapOperators[constraint.second[i]].toBooleanMatrix();
-                }
-                // at this stage, lhs and rhs must be the same,
-                // so we initialize column by column the link in the graph matrix M
-                for (std::size_t col = 0; col < lhs.cols(); col++) {
-                    std::size_t indexLhs = lhs.lineOfTrueInColumn(col);
-                    std::size_t indexRhs = rhs.lineOfTrueInColumn(col);
-                    // set it directly symetric
-                    M.set(indexLhs, indexRhs, true);
-                    M.set(indexRhs, indexLhs, true);
-                }
+        lastIndex += m_mapDimensions[transition.to()];
+    }
+
+    // initialize temporary internal operators
+    for (TransitionID internalID: m_automaton.internalTransitionOf(id)) {
+        tempOperators.insert({ internalID, { dim, 1 }});
+        // insert 1 at lastIndex row
+        tempOperators[internalID].set(lastIndex, 0, true);
+        std::cout << "Temp operator init of ";
+        m_automaton.findTransitionByID(internalID).print();
+        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        tempOperators[internalID].print();
+        lastIndex++;
+    }
+
+    // initialize equivalence relation matrix with identity
+    BooleanMatrix M(dim, dim);
+    M.setIdentity();
+    std::cout << "Init M matrix of state " << m_automaton.findStateByID(id).name() << " is:\n";
+    M.print();
+    std::cout.flush();
+    for (const Constraint& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
+        if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
+            BooleanMatrix lhs = tempOperators[constraint.first[0]];
+            for (std::size_t i = 1; i < constraint.first.size(); i++) {
+                lhs = lhs * m_mapOperators[constraint.first[i]].toBooleanMatrix();
+            }
+            BooleanMatrix rhs = tempOperators[constraint.second[0]];
+            for (std::size_t i = 1; i < constraint.second.size(); i++) {
+                rhs = rhs * m_mapOperators[constraint.second[i]].toBooleanMatrix();
+            }
+            // at this stage, lhs and rhs must be the same,
+            // so we initialize column by column the link in the graph matrix M
+            for (std::size_t col = 0; col < lhs.cols(); col++) {
+                std::size_t indexLhs = lhs.lineOfTrueInColumn(col);
+                std::size_t indexRhs = rhs.lineOfTrueInColumn(col);
+                // set directly the M matrix symetric
+                M.set(indexLhs, indexRhs, true);
+                M.set(indexRhs, indexLhs, true);
             }
         }
-        // set M transitive
-        M = M.transitived();
+    }
 
-        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the M matrix is:\n";
-        M.print();
+    // set M transitive
+    M = M.transitived();
+    std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the M matrix is:\n";
+    M.print();
 
-        // remove multiple rows of M to get projection matrix
-        BooleanMatrix proj = M.removedMultipleRows();
-        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the projection matrix is:\n";
-        proj.print();
+    // remove multiple rows of M to get projection matrix
+    BooleanMatrix proj = M.removedMultipleRows();
+    std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the projection matrix is:\n";
+    proj.print();
 
-        // initialize boundary and internal operators
+    // set the dimension of the current state
+    m_mapDimensions[id] = proj.rows();
+
+    // set final boundary and internal operators
+    for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
+        BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
+        FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
+        m_mapOperators.insert({ transitionId, boundaryOperator });
+        std::cout << "Operator of ";
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        transition.print();
+        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        boundaryOperatorBool.print();
+        std::cout.flush();
+    }
+
+    // take space into account
+    if (m_mapSpaces.find(id) != m_mapSpaces.end()) {
+        // find number of column for the permutation space matrix
+        std::size_t nbCols = 0;
+        for (TransitionID transitionID: m_mapSpaces[id]) {
+            nbCols += m_mapOperators[transitionID].cols();
+        }
+
+        // init the permutation space matrix by concatenating the values of boundary transitions specified in the space
+        BooleanMatrix permutationSpace(proj.rows(), nbCols);
+        std::size_t lastColumnIndex = 0;
+        for (TransitionID transitionID: m_mapSpaces[id]) {
+            for (std::size_t col = 0; col < m_mapOperators[transitionID].cols(); col++) {
+                for (std::size_t row = 0; row < m_mapOperators[transitionID].rows(); row++) {
+                    permutationSpace.set(row, col + lastColumnIndex, m_mapOperators[transitionID].get(row, col)->type() == CoefType::ONE);
+                }
+            }
+            lastColumnIndex += m_mapOperators[transitionID].cols();
+        }
+        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the permutation space matrix is:\n";
+        permutationSpace.print();
+
+        // remove multiple columns of the permutation space matrix
+        permutationSpace = permutationSpace.removedMultipleCols();
+        std::cout << "after column simplification, it is:\n";
+        permutationSpace.print();
+
+        // square the matrix and fill by true to have a 1 per line and per column
+        permutationSpace.squareAndFillByTrue();
+        std::cout << "and after fill by true to complete space, it is:\n";
+        permutationSpace.print();
+
+        // transpose the matrix
+        permutationSpace = permutationSpace.transposed();
+        std::cout << "and after transpose, it is:\n";
+        permutationSpace.print();
+
+        // apply this matrix to all boundary and internal operators to update them
+        std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
         for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
-            BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
-            FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
-            m_mapOperators.insert({ transitionId, boundaryOperator });
+            m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
             std::cout << "Operator of ";
             const Transition& transition = m_automaton.findTransitionByID(transitionId);
             transition.print();
             std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
-            boundaryOperatorBool.print();
+            m_mapOperators[transitionId].print();
             std::cout.flush();
         }
-
-        // take space into account
-        if (m_mapSpaces.find(id) != m_mapSpaces.end()) {
-            std::size_t cols = 0;
-            for (TransitionID transitionId: m_mapSpaces[id]) {
-                cols += m_mapOperators[transitionId].cols();
-            }
-            BooleanMatrix permutationSpace(proj.rows(), cols);
-            std::size_t index = 0;
-            for (TransitionID transitionId: m_mapSpaces[id]) {
-                // fill the permutationSpace matrix with the values of the boundary transition in the mapSpace
-                for (std::size_t col = 0; col < m_mapOperators[transitionId].cols(); col++) {
-                    for (std::size_t row = 0; row < m_mapOperators[transitionId].rows(); row++) {
-                        permutationSpace.set(row, col + index, m_mapOperators[transitionId].get(row, col)->type() == CoefType::ONE);
-                    }
-                }
-                index += m_mapOperators[transitionId].cols();
-            }
-            std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the permutation space matrix is:\n";
-            permutationSpace.print();
-            std::cout << "after column simplification, it is:\n";
-            permutationSpace = permutationSpace.removedMultipleCols();
-            permutationSpace.print();
-            permutationSpace.SquareAndFillByTrue();
-            std::cout << "and after fill by true to complete space, it is:\n";
-            permutationSpace.print();
-            std::cout << "and after transpose, it is:\n";
-            permutationSpace = permutationSpace.transposed();
-            permutationSpace.print();
-            std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
-            for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
-                m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
-                std::cout << "Operator of ";
-                const Transition& transition = m_automaton.findTransitionByID(transitionId);
-                transition.print();
-                std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
-                m_mapOperators[transitionId].print();
-                std::cout.flush();
-            }
-        }
-
-        m_mapDimensions[id] = proj.rows();
-
-        // resolve permutation constraints to initialize permutation matrices
-        this->resolvePermutationConstraints(id);
     }
+
+    // resolve permutation constraints to initialize permutation matrices
+    this->resolvePermutationConstraints(id);
 }
 
 void Bcifs::resolvePermutationConstraints(StateID id) {

@@ -83,6 +83,10 @@ BooleanMatrix FormalMatrix::toBooleanMatrix() const {
 }
 
 void FormalMatrix::setRandomValuesOnFreeCoefs() {
+    /* TODO: review the algorithm to prevent the case where there are several
+     *       non initialized values but pointing to only one formal coefficient
+     *       it can lead to a column having its coefficients sum not being 1
+    */
     std::random_device rd;
     std::mt19937 generator(rd());
     std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);

@@ -19,6 +19,7 @@ public:
      * @return a pair containing the state ID and all its internal transition ID, one for each given intern dimension
      */
     std::pair<StateID, std::vector<TransitionID>> addState(std::string name, std::size_t internalDimensions);
+    StateID addInitState();
     TransitionID addBoundary(std::string name, StateID from, StateID to);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
@@ -59,6 +60,7 @@ private:
 
 private:
     Automaton m_automaton;
+    std::optional<StateID> m_initStateID;
     std::unordered_map<StateID, std::vector<TransitionID>> m_mapSpaces;
     std::vector<Constraint> m_constraints;
     std::vector<Constraint> m_adjacencyConstraintsOnIncidenceOperators;

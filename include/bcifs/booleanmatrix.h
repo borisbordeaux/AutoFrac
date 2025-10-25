@@ -38,7 +38,7 @@ public:
 
     FormalMatrix toFormalMatrix() const;
 
-    void SquareAndFillByTrue();
+    void squareAndFillByTrue();
     BooleanMatrix transposed() const;
 
 private:

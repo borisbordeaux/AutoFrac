@@ -139,7 +139,8 @@ FormalMatrix BooleanMatrix::toFormalMatrix() const {
     return res;
 }
 
-void BooleanMatrix::SquareAndFillByTrue() {
+void BooleanMatrix::squareAndFillByTrue() {
+    // square matrix
     if (m_rows > m_cols) {
         m_cols = m_rows;
         // resize rows vectors if needed
