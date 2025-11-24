@@ -1,0 +1,59 @@
+#ifndef AUTOFRAC_BOOLEANMATRIX_H
+#define AUTOFRAC_BOOLEANMATRIX_H
+
+#include <vector>
+
+namespace BCIFS {
+
+class FormalMatrix;
+
+class BooleanMatrix {
+public:
+    BooleanMatrix();
+    BooleanMatrix(std::size_t rows, std::size_t cols);
+
+    inline std::size_t rows() const { return m_rows; }
+
+    inline std::size_t cols() const { return m_cols; }
+
+    inline bool get(std::size_t row, std::size_t col) const { return m_coefficients[row][col]; }
+
+    inline void set(std::size_t row, std::size_t col, bool coef) { m_coefficients[row][col] = coef; }
+
+    void setIdentity();
+    /**
+     * get the line number of the first true value in the given column
+     *
+     * @param col the column in which to find the value (must be < cols())
+     * @return the line number of the first true value in the given column
+     */
+    std::size_t lineOfTrueInColumn(std::size_t col);
+
+    BooleanMatrix transitived() const;
+    BooleanMatrix removedMultipleRows() const;
+    BooleanMatrix removedMultipleCols() const;
+
+    BooleanMatrix operator*(const BooleanMatrix& other) const;
+    void print() const;
+
+    FormalMatrix toFormalMatrix() const;
+
+    void squareAndFillByTrue();
+    BooleanMatrix transposed() const;
+
+private:
+    bool areSameRows(std::size_t row1, std::size_t row2) const;
+    bool areSameCols(std::size_t col1, std::size_t col2) const;
+
+    bool rowContainsTrue(std::size_t row) const;
+    bool colContainsTrue(std::size_t col) const;
+
+private:
+    std::size_t m_rows;
+    std::size_t m_cols;
+    std::vector<std::vector<bool>> m_coefficients;
+};
+
+} // BCIFS
+
+#endif //AUTOFRAC_BOOLEANMATRIX_H
