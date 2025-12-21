@@ -33,10 +33,12 @@ public:
      */
     void check() const;
 
-    std::vector<TransitionID> boundaryTransitionOf(StateID id) const;
-    std::vector<StateID> boundaryStateOf(StateID id) const;
-    std::vector<TransitionID> internalTransitionOf(StateID id) const;
-    std::vector<TransitionID> boundaryAndInternalTransitionOf(StateID id) const;
+    std::vector<TransitionID> boundaryTransitionsOf(StateID id) const;
+    std::vector<StateID> boundaryStatesOf(StateID id) const;
+    std::vector<TransitionID> internalTransitionsOf(StateID id) const;
+    std::vector<TransitionID> boundaryAndInternalTransitionsOf(StateID id) const;
+
+    void reset();
 
 private:
     std::vector<State> m_states;

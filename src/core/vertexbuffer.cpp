@@ -3,6 +3,11 @@
 
 namespace Core {
 
+VertexBuffer::VertexBuffer() :
+        m_rendererID(0) {
+    GLCall(glGenBuffers(1, &m_rendererID));
+}
+
 VertexBuffer::VertexBuffer(void const* data, unsigned int size) :
         m_rendererID(0) {
     GLCall(glGenBuffers(1, &m_rendererID));
@@ -10,7 +15,7 @@ VertexBuffer::VertexBuffer(void const* data, unsigned int size) :
     GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
 }
 
-VertexBuffer::VertexBuffer(std::vector<float> const& data, unsigned int size) : VertexBuffer(data.data(), size) {}
+VertexBuffer::VertexBuffer(std::vector<float> const& data) : VertexBuffer(data.data(), data.size() * sizeof(float)) {}
 
 VertexBuffer::~VertexBuffer() {
     GLCall(glDeleteBuffers(1, &m_rendererID));
@@ -22,6 +27,12 @@ void VertexBuffer::bind() const {
 
 void VertexBuffer::unbind() const {
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+void VertexBuffer::bufferData(const std::vector<float>& data) {
+    this->bind();
+    GLCall(glBufferData(GL_ARRAY_BUFFER, data.size()*sizeof(float), data.data(), GL_STATIC_DRAW));
+    this->unbind();
 }
 
 } // Core

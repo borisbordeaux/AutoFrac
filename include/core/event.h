@@ -19,7 +19,7 @@ enum class EventType {
 
 class Event {
 public:
-    virtual ~Event() {}
+    virtual ~Event() = default;
 
     virtual EventType getEventType() const = 0;
     virtual const char* getName() const = 0;
@@ -38,7 +38,7 @@ class EventDispatcher {
     template<typename T>
     using EventFn = std::function<bool(T&)>;
 public:
-    EventDispatcher(Event& event) : m_event(event) {}
+    explicit EventDispatcher(Event& event) : m_event(event) {}
 
     template<typename T>
     bool dispatch(EventFn<T> func) {

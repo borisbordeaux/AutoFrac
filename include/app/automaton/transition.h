@@ -15,6 +15,8 @@ using TransitionID = std::size_t;
 
 using Path = std::vector<TransitionID>;
 
+using Figure = std::vector<Path>;
+
 class Transition {
 public:
     Transition(TransitionID id, std::string name, StateID from, StateID to, TransitionType type);

@@ -1,10 +1,10 @@
-#include "app/layermenu.h"
+#include "app/layers/layermenu.h"
 #include "imgui/imgui.h"
-#include "app/layerclearcolor.h"
-#include "app/layertexture.h"
-#include "app/layerbcifs.h"
+#include "app/layers/layerclearcolor.h"
+#include "app/layers/layertexture.h"
+#include "app/layers/layerbcifs.h"
 #include "core/application.h"
-#include "app/voidlayer.h"
+#include "app/layers/voidlayer.h"
 
 void LayerMenu::onImGuiRender() {
     if (m_showDemo) {

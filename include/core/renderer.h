@@ -24,6 +24,7 @@ public:
     static void setClearColor(float r, float g, float b, float a);
     static void clear();
     static void draw(VertexArray const& vao, IndexBuffer const& ibo, ShaderProgram const& program);
+    static void draw(VertexArray const& vao, unsigned int count, ShaderProgram const& program);
 };
 
 } // Core

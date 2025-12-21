@@ -28,6 +28,8 @@ void Window::create() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 16);
 
+    glfwWindowHint(GLFW_RESIZABLE, m_specification.isResizable ? GLFW_TRUE : GLFW_FALSE);
+
     m_handle = glfwCreateWindow(static_cast<int>(m_specification.width),
                                 static_cast<int>(m_specification.height),
                                 m_specification.title.c_str(), nullptr, nullptr);
@@ -50,6 +52,7 @@ void Window::create() {
 
     glfwSetWindowSizeCallback(m_handle, [](GLFWwindow* handle, int width, int height) {
         Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        glViewport(0, 0, width, height);
         WindowResizedEvent event(static_cast<int>(width), static_cast<int>(height));
         window.raiseEvent(event);
     });

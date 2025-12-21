@@ -72,7 +72,7 @@ void Automaton::check() const {
     }
 }
 
-std::vector<TransitionID> Automaton::boundaryTransitionOf(StateID id) const {
+std::vector<TransitionID> Automaton::boundaryTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
     for (const Transition& transition: m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
@@ -82,7 +82,7 @@ std::vector<TransitionID> Automaton::boundaryTransitionOf(StateID id) const {
     return res;
 }
 
-std::vector<StateID> Automaton::boundaryStateOf(StateID id) const {
+std::vector<StateID> Automaton::boundaryStatesOf(StateID id) const {
     std::vector<StateID> res;
     for (const Transition& transition: m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
@@ -92,7 +92,7 @@ std::vector<StateID> Automaton::boundaryStateOf(StateID id) const {
     return res;
 }
 
-std::vector<TransitionID> Automaton::internalTransitionOf(StateID id) const {
+std::vector<TransitionID> Automaton::internalTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
     for (const Transition& transition: m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::INTERNAL) {
@@ -102,7 +102,7 @@ std::vector<TransitionID> Automaton::internalTransitionOf(StateID id) const {
     return res;
 }
 
-std::vector<TransitionID> Automaton::boundaryAndInternalTransitionOf(StateID id) const {
+std::vector<TransitionID> Automaton::boundaryAndInternalTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
     for (const Transition& transition: m_transitions) {
         if (transition.from() == id && (transition.type() == TransitionType::BOUNDARY || transition.type() == TransitionType::INTERNAL)) {
@@ -110,6 +110,11 @@ std::vector<TransitionID> Automaton::boundaryAndInternalTransitionOf(StateID id)
         }
     }
     return res;
+}
+
+void Automaton::reset() {
+    m_states.clear();
+    m_transitions.clear();
 }
 
 } // BCIFS

@@ -28,6 +28,9 @@ public:
     MouseScrolledEvent(double xOffset, double yOffset) :
             m_xOffset(xOffset), m_yOffset(yOffset) {}
 
+    inline double xOffset() const { return m_xOffset; }
+    inline double yOffset() const { return m_yOffset; }
+
     std::string toString() const override {
         return "MouseScrolledEvent: " + std::to_string(m_xOffset) + ", " + std::to_string(m_yOffset);
     }

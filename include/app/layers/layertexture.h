@@ -11,6 +11,7 @@
 #include "core/shader.h"
 #include "core/texture.h"
 #include "core/renderer.h"
+#include "core/camera.h"
 
 namespace Core {
 class MouseButtonPressedEvent;
@@ -18,6 +19,10 @@ class MouseButtonPressedEvent;
 class MouseMovedEvent;
 
 class MouseButtonReleasedEvent;
+
+class MouseScrolledEvent;
+
+class WindowResizedEvent;
 
 class Event;
 }
@@ -34,6 +39,8 @@ private:
     bool onMousePressedEvent(Core::MouseButtonPressedEvent& event);
     bool onMouseMovedEvent(Core::MouseMovedEvent& event);
     bool onMouseReleasedEvent(Core::MouseButtonReleasedEvent& event);
+    bool onWindowResizedEvent(Core::WindowResizedEvent& event);
+    bool onMouseScrolledEvent(Core::MouseScrolledEvent& event);
 
 private:
     Core::VertexArray m_vao;
@@ -46,10 +53,14 @@ private:
     float m_blue = 1.0f;
     float m_increment = 0.01f;
     glm::vec3 m_translation = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 m_cameraPos = { 0.0f, 0.0f, 5.0f };
 
-    bool m_mousePressed = false;
-    glm::vec2 m_mousePos;
+    bool m_leftMousePressed = false;
+    bool m_rightMousePressed = false;
+    bool m_uniformsDirty = true;
+    glm::vec<2,double,glm::defaultp> m_mousePos;
+
+    Core::Camera m_camera;
+    glm::mat4 m_proj;
 };
 
 #endif //AUTOFRAC_LAYERTEXTURE_H

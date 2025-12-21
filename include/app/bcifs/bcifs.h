@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <glm/vec3.hpp>
 #include "app/automaton/automaton.h"
 #include "formalmatrix.h"
 
@@ -21,12 +22,16 @@ public:
     std::pair<StateID, std::vector<TransitionID>> addState(std::string name, std::size_t internalDimensions);
     StateID addInitState();
     TransitionID addBoundary(std::string name, StateID from, StateID to);
+    void addGrid(StateID id, std::vector<Figure> grid);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
     void print() const;
     void validate();
+
+    void reset();
+    std::vector<std::vector<glm::vec3>> faces(int iterationLevel) const;
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -53,10 +58,15 @@ private:
     void resolvePermutationConstraints(StateID id);
     void resolveConstraints();
     const FormalMatrix& getOrInitOperator(TransitionID id);
+    const FormalMatrix& getOperator(TransitionID id) const;
 
     void printConstraintMatrices(const Constraint& constraint);
 
     void completeSubdvisionMatrices();
+
+    void buildMassSpringSystems();
+
+    FormalMatrix getOperatorOfPath(const Path& path) const;
 
 private:
     Automaton m_automaton;
@@ -67,6 +77,8 @@ private:
     std::vector<Constraint> m_permutationConstraints;
     std::unordered_map<StateID, std::size_t> m_mapDimensions;
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
+    std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
+    std::unordered_map<StateID, FormalMatrix> m_mapMSSMatrices;
 };
 
 } // BCIFS

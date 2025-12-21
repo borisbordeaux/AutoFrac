@@ -1,6 +1,6 @@
-#include "app/layermenu.h"
+#include "app/layers/layermenu.h"
 #include "core/application.h"
-#include "app/voidlayer.h"
+#include "app/layers/voidlayer.h"
 
 int main() {
 

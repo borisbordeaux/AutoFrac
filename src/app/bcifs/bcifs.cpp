@@ -28,6 +28,10 @@ TransitionID Bcifs::addBoundary(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::BOUNDARY);
 }
 
+void Bcifs::addGrid(StateID id, std::vector<Figure> grid) {
+    m_mapGrids[id] = std::move(grid);
+}
+
 void Bcifs::setSpace(StateID id, std::vector<TransitionID> transitions) {
     m_mapSpaces[id] = std::move(transitions);
 }
@@ -68,11 +72,11 @@ void Bcifs::print() const {
         this->printConstraint(constraint);
     }
     std::cout << "\nDimensions of states:\n";
-    for (const std::pair<StateID, std::size_t> keyval: m_mapDimensions) {
+    for (const std::pair<const StateID, std::size_t>& keyval: m_mapDimensions) {
         std::cout << m_automaton.findStateByID(keyval.first).name() << " has " << keyval.second << " dimensions\n";
     }
     std::cout << "\nAll operators:\n";
-    for (const auto& keyval: m_mapOperators) {
+    for (const std::pair<const BCIFS::TransitionID, FormalMatrix>& keyval: m_mapOperators) {
         TransitionID transitionId = keyval.first;
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         std::cout << "Operator ";
@@ -87,6 +91,24 @@ void Bcifs::print() const {
             keyval.second.print();
         }
     }
+    std::cout << "\nAll grids:\n";
+    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval: m_mapGrids) {
+        std::cout << "For state " << keyval.first << ", grid is:\n";
+        for (const Figure& figure: keyval.second) {
+            std::cout << "Figure [";
+            for (const Path& path: figure) {
+                std::cout << " [";
+                for (const TransitionID& transitionId: path) {
+                    std::cout << " ";
+                    const Transition& transition = m_automaton.findTransitionByID(transitionId);
+                    transition.print();
+                }
+                std::cout << " ] ";
+            }
+            std::cout << "]\n";
+        }
+        std::cout << "\n";
+    }
     std::cout.flush();
 }
 
@@ -98,6 +120,20 @@ void Bcifs::validate() {
     this->initializeMatrices(); // initialize all operators
     this->resolveConstraints(); // resolve all constraints to finish the matrices initialization
     this->completeSubdvisionMatrices(); // make sure matrices are barycentric transformations
+    this->buildMassSpringSystems(); // initialize all mass spring systems for each state with a user defined grid
+}
+
+void Bcifs::reset() {
+    m_automaton.reset();
+    m_initStateID = std::nullopt;
+    m_mapSpaces.clear();
+    m_constraints.clear();
+    m_adjacencyConstraintsOnIncidenceOperators.clear();
+    m_permutationConstraints.clear();
+    m_mapDimensions.clear();
+    m_mapOperators.clear();
+    m_mapGrids.clear();
+    m_mapMSSMatrices.clear();
 }
 
 Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
@@ -168,7 +204,7 @@ void Bcifs::checkSpaces() const {
         if (auto it = m_mapSpaces.find(state.id()); it != m_mapSpaces.end()) {
             StateID id = it->first;
             const std::vector<TransitionID>& space = it->second;
-            std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionOf(id);
+            std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionsOf(id);
             for (TransitionID transitionID: space) {
                 const Transition& transition = m_automaton.findTransitionByID(transitionID);
                 if (transition.type() == TransitionType::INTERNAL) {
@@ -210,7 +246,7 @@ void Bcifs::initializeMatrices(StateID id) {
 
     // compute the dimension of the state (ignoring adjacency on incidence operators)
     std::size_t dim = m_automaton.internalDimensions(id);
-    for (StateID boundaryId: m_automaton.boundaryStateOf(id)) {
+    for (StateID boundaryId: m_automaton.boundaryStatesOf(id)) {
         this->initializeMatrices(boundaryId);
         dim += m_mapDimensions[boundaryId];
     }
@@ -218,7 +254,7 @@ void Bcifs::initializeMatrices(StateID id) {
     // initialize temporary boundary operators
     std::unordered_map<TransitionID, BooleanMatrix> tempOperators;
     std::size_t lastIndex = 0;
-    for (TransitionID transitionId: m_automaton.boundaryTransitionOf(id)) {
+    for (TransitionID transitionId: m_automaton.boundaryTransitionsOf(id)) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         tempOperators.insert({ transitionId, { dim, m_mapDimensions[transition.to()] }});
         // insert identity matrix from lastIndex
@@ -234,7 +270,7 @@ void Bcifs::initializeMatrices(StateID id) {
     }
 
     // initialize temporary internal operators
-    for (TransitionID internalID: m_automaton.internalTransitionOf(id)) {
+    for (TransitionID internalID: m_automaton.internalTransitionsOf(id)) {
         tempOperators.insert({ internalID, { dim, 1 }});
         // insert 1 at lastIndex row
         tempOperators[internalID].set(lastIndex, 0, true);
@@ -287,7 +323,7 @@ void Bcifs::initializeMatrices(StateID id) {
     m_mapDimensions[id] = proj.rows();
 
     // set final boundary and internal operators
-    for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
+    for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionsOf(id)) {
         BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
         FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
         m_mapOperators.insert({ transitionId, boundaryOperator });
@@ -338,7 +374,7 @@ void Bcifs::initializeMatrices(StateID id) {
 
         // apply this matrix to all boundary and internal operators to update them
         std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
-        for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionOf(id)) {
+        for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionsOf(id)) {
             m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
             std::cout << "Operator of ";
             const Transition& transition = m_automaton.findTransitionByID(transitionId);
@@ -425,6 +461,10 @@ const FormalMatrix& Bcifs::getOrInitOperator(TransitionID id) {
     return m_mapOperators[id];
 }
 
+const FormalMatrix& Bcifs::getOperator(TransitionID id) const {
+    return m_mapOperators.find(id)->second;
+}
+
 void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
     std::cout << "LHS:\n";
     for (TransitionID transitionId: constraint.first) {
@@ -453,6 +493,41 @@ void Bcifs::completeSubdvisionMatrices() {
             m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
         }
     }
+}
+
+void Bcifs::buildMassSpringSystems() {
+    std::cout << "build mass spring system" << std::endl;
+//    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval: m_mapGrids) {
+//
+//    }
+}
+
+FormalMatrix Bcifs::getOperatorOfPath(const Path& path) const {
+    FormalMatrix res = this->getOperator(path[0]);
+    for (std::size_t i = 1; i < path.size(); i++) {
+        res = res * this->getOperator(path[i]);
+    }
+    return res;
+}
+
+std::vector<std::vector<glm::vec3>> Bcifs::faces(int /*iterationLevel*/) const {
+    std::vector<std::vector<glm::vec3>> res;
+
+    res.push_back({{ 0, 0, 0 },
+                   { 1, 0, 1 },
+                   { 1, 1, 0 },
+                   { 0, 1, 0 }});
+
+    res.push_back({{ -2,        1,         0 },
+                   { 0,         0,         0 },
+                   { -1,        -1,        0 },
+                   { 0,         -0.581117, 0 },
+                   { 1,         -1,        0 },
+                   { 0.179137,  -0.550424, 0 },
+                   { 1,         1,         0 },
+                   { -0.097028, 0.449576,  0 }});
+
+    return res;
 }
 
 } // BCIFS

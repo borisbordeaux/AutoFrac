@@ -26,8 +26,9 @@ public:
 
     //set uniforms
     void setUniform1i(std::string const& name, int value);
+    void setUniform3f(std::string const& name, const glm::vec3& v);
     void setUniform4f(std::string const& name, float v0, float v1, float v2, float v3);
-    void setUniformMat4f(std::string const& name, glm::mat4 const& values);
+    void setUniformMat4f(std::string const& name, const glm::mat4& values);
 
 private:
     static std::string sourceOf(std::string const& filepath);
