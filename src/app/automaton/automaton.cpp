@@ -117,4 +117,37 @@ void Automaton::reset() {
     m_transitions.clear();
 }
 
+std::vector<TransitionID> Automaton::subdivisionTransitionsOf(StateID id) const {
+    std::vector<TransitionID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.from() == id && transition.type() == TransitionType::SUBDIVISION) {
+            res.push_back(transition.id());
+        }
+    }
+    return res;
+}
+
+std::vector<Path> Automaton::allSubdivisionPaths(StateID from, int depth) const {
+    std::vector<Path> res;
+    Path currentPath;
+
+    this->dfs(from, 0, depth, currentPath, res);
+
+    return res;
+}
+
+void Automaton::dfs(StateID from, int depth, int maxDepth, Path& currentPath, std::vector<Path>& result) const {
+    if (depth == maxDepth) {
+        result.push_back(currentPath); // copie
+        return;
+    }
+
+    for (TransitionID transitionId : this->subdivisionTransitionsOf(from)) {
+        currentPath.push_back(transitionId);
+        const Transition& t = findTransitionByID(transitionId);
+        this->dfs(t.to(), depth + 1, maxDepth, currentPath, result);
+        currentPath.pop_back();
+    }
+}
+
 } // BCIFS

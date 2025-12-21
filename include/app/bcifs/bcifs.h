@@ -32,6 +32,7 @@ public:
 
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel) const;
+    std::vector<FormalMatrix> controlPoints() const;
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -57,6 +58,7 @@ private:
 
     void resolvePermutationConstraints(StateID id);
     void resolveConstraints();
+    void initSubdivisionOperators();
     const FormalMatrix& getOrInitOperator(TransitionID id);
     const FormalMatrix& getOperator(TransitionID id) const;
 
@@ -66,7 +68,7 @@ private:
 
     void buildMassSpringSystems();
 
-    FormalMatrix getOperatorOfPath(const Path& path) const;
+    arma::mat getOperatorOfPath(const Path& path) const;
 
 private:
     Automaton m_automaton;

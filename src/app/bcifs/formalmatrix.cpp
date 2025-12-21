@@ -83,40 +83,50 @@ BooleanMatrix FormalMatrix::toBooleanMatrix() const {
 }
 
 void FormalMatrix::setRandomValuesOnFreeCoefs() {
-    /* TODO: review the algorithm to prevent the case where there are several
-     *       non initialized values but pointing to only one formal coefficient
-     *       it can lead to a column having its coefficients sum not being 1
-    */
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     for (std::size_t col = 0; col < m_cols; col++) {
-        std::vector<std::size_t> freeValueIndices;
-        float totalFreeValues = -1.0f;
-        do {
-            freeValueIndices.clear();
-            float sum = 0.0f;
-            for (std::size_t i = 0; i < m_rows; i++) {
-                if (this->get(i, col)->type() == CoefType::VAR && !this->get(i, col)->initialized()) {
-                    freeValueIndices.push_back(i);
-                } else {
-                    sum += this->get(i, col)->value();
-                }
+        for (std::size_t row = 0; row < m_rows; row++) {
+            if (!this->get(row, col)->initialized() && this->get(row, col)->type() == CoefType::VAR) {
+                float val = distribution(generator);
+                this->get(row, col)->setValue(val);
+                this->get(row, col)->setInitialized();
             }
-            if (freeValueIndices.size() == 1) {
-                this->get(freeValueIndices[0], col)->setValue(1.0f - sum);
-                this->get(freeValueIndices[0], col)->setInitialized();
-            } else if (!freeValueIndices.empty()) {
-                if (totalFreeValues < 0) {
-                    totalFreeValues = static_cast<float>(freeValueIndices.size());
-                }
-                //fill one value by one value, since several references to the same value might appear
-                float val = (2.0f + distribution(generator)) / (2.0f * totalFreeValues);
-                this->get(freeValueIndices[0], col)->setValue(val);
-                this->get(freeValueIndices[0], col)->setInitialized();
-            }
-        } while (!freeValueIndices.empty());
+        }
     }
+    this->setSumToOne();
+}
+
+void FormalMatrix::setSumToOne() {
+    for (std::size_t col = 0; col < m_cols; col++) {
+        float sum = 0.0f;
+        std::vector<std::size_t> differentValueIndices;
+        std::vector<float*> valueReferences;
+
+        for (std::size_t row = 0; row < m_rows; row++) {
+            sum += this->get(row, col)->value();
+            if (this->get(row, col)->type() == CoefType::VAR) {
+                if (std::find(valueReferences.begin(), valueReferences.end(), this->get(row, col)->valueRef()) == valueReferences.end()) {
+                    valueReferences.push_back(this->get(row, col)->valueRef());
+                }
+            }
+        }
+
+        for (float* f: valueReferences) {
+            *f = *f / sum;
+        }
+    }
+}
+
+arma::mat FormalMatrix::toMat() const {
+    arma::mat res(m_rows, m_cols);
+    for (std::size_t row = 0; row < m_rows; row++) {
+        for (std::size_t col = 0; col < m_cols; col++) {
+            res.at(row, col) = m_coefficients[row][col]->value();
+        }
+    }
+    return res;
 }
 
 } // BCIFS

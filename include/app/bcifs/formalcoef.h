@@ -28,6 +28,8 @@ public:
 
     inline float value() const { return const_cast<FormalCoef*>(this)->findRoot()->m_value; }
 
+    inline float* valueRef() { return &this->findRoot()->m_value; }
+
     inline CoefType type() const { return const_cast<FormalCoef*>(this)->findRoot()->m_type; }
 
     void setValue(float value) { const_cast<FormalCoef*>(this)->findRoot()->m_value = value; }

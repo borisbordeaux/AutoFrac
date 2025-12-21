@@ -172,6 +172,7 @@ void LayerBcifs::testBCIFSAutomaton() {
             {{ b2face, b0edge }, { b2face, internalEdge[0] }, { b2face, b1edge }},
             {{ b3face, b0edge }, { b3face, internalEdge[0] }, { b3face, b1edge }},
     });
+
     // space of states
     m_bcifs.setSpace(edge, { b0edge, internalEdge[0], b1edge });
     m_bcifs.setSpace(face, { b0face, b1face, b2face, b3face });
@@ -183,8 +184,8 @@ void LayerBcifs::testBCIFSAutomaton() {
     BCIFS::TransitionID s1face = m_bcifs.addSubdivision("1", face, face);
     BCIFS::TransitionID s2face = m_bcifs.addSubdivision("2", face, face);
     BCIFS::TransitionID s3face = m_bcifs.addSubdivision("3", face, face);
-    BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
-    BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+    [[maybe_unused]] BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
+    //BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
     // permutation constraints
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0edge }, { b1edge });
@@ -220,7 +221,65 @@ void LayerBcifs::testBCIFSAutomaton() {
     m_bcifs.addConstraint({ b2face, b1edge }, { b3face, b0edge });
     m_bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
     // on init state
-    m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
+    //m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
+
+    // define all matrices
+    m_bcifs.validate();
+}
+
+void LayerBcifs::testBCIFSAutomaton2() {
+    m_bcifs.reset();
+    // states
+    auto [vert, internalVert] = m_bcifs.addState("V", 1);
+    auto [edge, internalEdge] = m_bcifs.addState("A", 0);
+    auto [face, internalFace] = m_bcifs.addState("F", 0);
+    BCIFS::StateID init = m_bcifs.addInitState();
+    // boundary of states
+    BCIFS::TransitionID b0edge = m_bcifs.addBoundary("0", edge, vert);
+    BCIFS::TransitionID b1edge = m_bcifs.addBoundary("1", edge, vert);
+    BCIFS::TransitionID b0face = m_bcifs.addBoundary("0", face, edge);
+    BCIFS::TransitionID b1face = m_bcifs.addBoundary("1", face, edge);
+    BCIFS::TransitionID b2face = m_bcifs.addBoundary("2", face, edge);
+    // grid of states
+    m_bcifs.addGrid(edge, {{{ b0edge }, { b1edge }}});
+    m_bcifs.addGrid(face, {
+            {{ b0face, b0edge }, { b0face, b1edge }},
+            {{ b1face, b0edge }, { b1face, b1edge }},
+            {{ b2face, b0edge }, { b2face, b1edge }},
+    });
+    // space of states
+    m_bcifs.setSpace(edge, { b0edge, b1edge });
+    m_bcifs.setSpace(face, { b0face, b1face, b2face});
+    // subdivision of states
+    BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
+    BCIFS::TransitionID s0edge = m_bcifs.addSubdivision("0", edge, edge);
+    BCIFS::TransitionID s1edge = m_bcifs.addSubdivision("1", edge, edge);
+    BCIFS::TransitionID s0face = m_bcifs.addSubdivision("0", face, face);
+    BCIFS::TransitionID s1face = m_bcifs.addSubdivision("1", face, face);
+    BCIFS::TransitionID s2face = m_bcifs.addSubdivision("2", face, face);
+    BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
+    BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+
+    // incidence constraints
+    // on edge
+    m_bcifs.addConstraint({ b0edge, s0vert }, { s0edge, b0edge });
+    m_bcifs.addConstraint({ b1edge, s0vert }, { s1edge, b1edge });
+    // on face
+    m_bcifs.addConstraint({ b0face, s0edge }, { s0face, b0face });
+    m_bcifs.addConstraint({ b0face, s1edge }, { s1face, b0face });
+    m_bcifs.addConstraint({ b1face, s0edge }, { s1face, b1face });
+    m_bcifs.addConstraint({ b1face, s1edge }, { s2face, b1face });
+    m_bcifs.addConstraint({ b2face, s0edge }, { s2face, b2face });
+    m_bcifs.addConstraint({ b2face, s1edge }, { s0face, b2face });
+    // adjacency constraints
+    // on edge
+    m_bcifs.addConstraint({ s0edge, b1edge }, { s1edge, b0edge });
+    // on incidence operators
+    m_bcifs.addConstraint({ b0face, b1edge }, { b1face, b0edge });
+    m_bcifs.addConstraint({ b1face, b1edge }, { b2face, b0edge });
+    m_bcifs.addConstraint({ b2face, b1edge }, { b0face, b0edge });
+    // on init state
+    m_bcifs.addConstraint({ s0init, b0face }, { s1init, b0face });
 
     // define all matrices
     m_bcifs.validate();
@@ -274,6 +333,10 @@ void LayerBcifs::onImGuiRender() {
         this->testBCIFSAutomaton();
         m_bcifsChanged = true;
     }
+    if (ImGui::Button("Create BC-IFS Sierpinski")) {
+        this->testBCIFSAutomaton2();
+        m_bcifsChanged = true;
+    }
     if (ImGui::Button("Print BC-IFS")) {
         m_bcifs.print();
     }
@@ -282,6 +345,30 @@ void LayerBcifs::onImGuiRender() {
         if (m_iterationLevel < 0)
             m_iterationLevel = 0;
         m_bcifsChanged = true;
+    }
+
+    ImGui::Text("Control points");
+    float speed = 0.01f;
+    std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints();
+    for (std::size_t j = 0; j < controlPoints.size(); j++) {
+        for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
+            ImGui::Text("Control point %zu", i);
+            if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(),
+                                 controlPoints[j].get(0, i)->valueRef(),
+                                 speed)) {
+                m_bcifsChanged = true;
+            }
+            if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(),
+                                 controlPoints[j].get(1, i)->valueRef(),
+                                 speed)) {
+                m_bcifsChanged = true;
+            }
+            if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(),
+                                 controlPoints[j].get(2, i)->valueRef(),
+                                 speed)) {
+                m_bcifsChanged = true;
+            }
+        }
     }
 
     ImGui::End();

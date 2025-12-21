@@ -117,8 +117,9 @@ void Bcifs::validate() {
     this->checkAutomaton(); // all states used in transitions exist
     this->checkSpaces(); // all states have a valid space
     this->checkConstraints(); // same arrival (existing) state for each path
-    this->initializeMatrices(); // initialize all operators
+    this->initializeMatrices(); // initialize all boundary and internal operators
     this->resolveConstraints(); // resolve all constraints to finish the matrices initialization
+    this->initSubdivisionOperators(); // initialize all subdivision operators not implied in a constraint
     this->completeSubdvisionMatrices(); // make sure matrices are barycentric transformations
     this->buildMassSpringSystems(); // initialize all mass spring systems for each state with a user defined grid
 }
@@ -450,6 +451,17 @@ void Bcifs::resolveConstraints() {
     std::cout << "Resolved all constraints." << std::endl;
 }
 
+void Bcifs::initSubdivisionOperators() {
+    for (const Transition& transition: m_automaton.transitions()) {
+        auto itOperator = m_mapOperators.find(transition.id());
+        if (itOperator == m_mapOperators.end()) {
+            // if the matrix does not exist, then it is an undefined matrix, so we can initialize it with a random value
+            // 2.0f is chosen for debug info
+            m_mapOperators.insert({ transition.id(), FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f) });
+        }
+    }
+}
+
 const FormalMatrix& Bcifs::getOrInitOperator(TransitionID id) {
     auto itOperator = m_mapOperators.find(id);
     if (itOperator == m_mapOperators.end()) {
@@ -502,31 +514,42 @@ void Bcifs::buildMassSpringSystems() {
 //    }
 }
 
-FormalMatrix Bcifs::getOperatorOfPath(const Path& path) const {
-    FormalMatrix res = this->getOperator(path[0]);
+arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
+    arma::mat res = this->getOperator(path[0]).toMat();
     for (std::size_t i = 1; i < path.size(); i++) {
-        res = res * this->getOperator(path[i]);
+        res = res * this->getOperator(path[i]).toMat();
     }
     return res;
 }
 
-std::vector<std::vector<glm::vec3>> Bcifs::faces(int /*iterationLevel*/) const {
+std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) const {
+    if (!m_initStateID.has_value()) { return {}; }
+    std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
+    // each path will give a matrix that contains the position of all the points of a face
+
     std::vector<std::vector<glm::vec3>> res;
+    res.reserve(allPaths.size());
+    for (const Path& path: allPaths) {
+        arma::mat mat = this->getOperatorOfPath(path);
+        std::vector<glm::vec3> vertices;
+        vertices.reserve(mat.n_cols);
+        for (std::size_t i = 0; i < mat.n_cols; i++) {
+            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+        }
+        res.push_back(vertices);
+    }
 
-    res.push_back({{ 0, 0, 0 },
-                   { 1, 0, 1 },
-                   { 1, 1, 0 },
-                   { 0, 1, 0 }});
+    return res;
+}
 
-    res.push_back({{ -2,        1,         0 },
-                   { 0,         0,         0 },
-                   { -1,        -1,        0 },
-                   { 0,         -0.581117, 0 },
-                   { 1,         -1,        0 },
-                   { 0.179137,  -0.550424, 0 },
-                   { 1,         1,         0 },
-                   { -0.097028, 0.449576,  0 }});
-
+std::vector<FormalMatrix> Bcifs::controlPoints() const {
+    if (!m_initStateID.has_value()) { return {}; }
+    std::vector<FormalMatrix> res;
+    std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(m_initStateID.value());
+    res.reserve(transitions.size());
+    for (TransitionID transitionId: transitions) {
+        res.push_back(this->getOperator(transitionId));
+    }
     return res;
 }
 

@@ -37,8 +37,13 @@ public:
     std::vector<StateID> boundaryStatesOf(StateID id) const;
     std::vector<TransitionID> internalTransitionsOf(StateID id) const;
     std::vector<TransitionID> boundaryAndInternalTransitionsOf(StateID id) const;
+    std::vector<TransitionID> subdivisionTransitionsOf(StateID id) const;
+    std::vector<Path> allSubdivisionPaths(StateID from, int depth) const;
 
     void reset();
+
+private:
+    void dfs(StateID from, int depth, int maxDepth, Path& currentPath, std::vector<Path>& result) const;
 
 private:
     std::vector<State> m_states;

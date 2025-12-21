@@ -29,6 +29,7 @@ public:
 
     void testConstraints();
     void testBCIFSAutomaton();
+    void testBCIFSAutomaton2();
 
     void onUpdate(float deltaTime) override;
     void onRender() override;

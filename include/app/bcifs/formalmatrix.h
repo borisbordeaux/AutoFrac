@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <memory>
+#include <glm/detail/type_mat4x4.hpp>
+#include <armadillo>
 #include "formalcoef.h"
 
 namespace BCIFS {
@@ -33,6 +35,9 @@ public:
     BooleanMatrix toBooleanMatrix() const;
 
     void setRandomValuesOnFreeCoefs();
+    void setSumToOne();
+
+    arma::mat toMat() const;
 
 private:
     std::size_t m_rows;
