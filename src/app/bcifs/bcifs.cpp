@@ -169,6 +169,28 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
     return res;
 }
 
+std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
+    if (!m_initStateID.has_value()) { return {}; }
+
+    std::vector<FormalMatrix> controlPoints = this->controlPoints();
+
+    std::vector<std::pair<glm::vec3, glm::vec3>> res;
+    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+        std::vector<mss::Spring> springs = keyval.second.springs();
+        for (mss::Spring& spring: springs) {
+            FormalMatrix pos1BarycentricSpace = spring.m1().position();
+            FormalMatrix pos13D = controlPoints[0].multiplyValues(pos1BarycentricSpace);
+
+            FormalMatrix pos2BarycentricSpace = spring.m2().position();
+            FormalMatrix pos23D = controlPoints[0].multiplyValues(pos2BarycentricSpace);
+            res.emplace_back(glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
+                             glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+        }
+    }
+
+    return res;
+}
+
 void Bcifs::updateMSS() {
     for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
         keyval.second.update();
@@ -566,6 +588,7 @@ void Bcifs::buildMassSpringSystems() {
             }
         }
         // if at least one of the arrival state has a grid
+        // TODO: all states should have a default grid
         if (needMSS && state.id() != m_initStateID.value()) {
             // then build a mss for the current state (so, in the dimension of the current state and not the arrival state)
             m_mapMSS[state.id()].clear(m_mapDimensions[state.id()]);
@@ -575,18 +598,12 @@ void Bcifs::buildMassSpringSystems() {
             // for each column in the global matrix
             for (std::size_t i = 0; i < globalMatrix.cols(); i++) {
                 // create a mass
-                std::vector<FormalCoefRef> values;
-                values.reserve(globalMatrix.rows());
-                for (std::size_t j = 0; j < globalMatrix.rows(); j++) {
-                    values.push_back(globalMatrix.get(j, i));
-                }
-                mss::Vector massVector(std::move(values));
-                m_mapMSS[state.id()].addMass(massVector, m_damping);
+                m_mapMSS[state.id()].addMass(globalMatrix.getCol(i), m_damping);
             }
             std::size_t lastMassIndex = 0;
-            bool firstMass = true;
             // for each subdivision operator
             for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
+                bool firstMass = true;
                 const Transition& transition = m_automaton.findTransitionByID(transitionId);
                 if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
                     // for each Figure of the grid of the arrival state

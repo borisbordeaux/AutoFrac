@@ -1,4 +1,3 @@
-#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -7,7 +6,7 @@
 namespace mss {
 MassSpringSystem::MassSpringSystem(std::size_t dim) : m_dim(dim) {}
 
-void MassSpringSystem::addMass(Vector const& pos, float damping) {
+void MassSpringSystem::addMass(const BCIFS::FormalMatrix& pos, float damping) {
     m_masses.emplace_back(pos, damping);
 }
 
@@ -47,7 +46,7 @@ std::string MassSpringSystem::toString() const {
     for (mss::Mass const& m: m_masses) {
         res += "\nm";
         for (std::size_t i = 0; i < m_dim; i++) {
-            res += " " + MassSpringSystem::toString(m.position().at(i));
+            res += " " + MassSpringSystem::toString(m.position().get(i,0)->value());
         }
     }
     for (std::size_t i = 0; i < m_springs.size(); i++) {

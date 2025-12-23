@@ -34,8 +34,13 @@ public:
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel) const;
     std::vector<FormalMatrix> controlPoints() const;
+    std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
     void updateMSS();
     void printMSS() const;
+
+    inline float* k() { return &m_k; }
+
+    inline float* damping() { return &m_damping; }
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -86,8 +91,8 @@ private:
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
     std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
-    float m_damping = 0.2f;
-    float m_k = 0.001f;
+    float m_damping = 0.3f;
+    float m_k = 0.05f;
 };
 
 } // BCIFS

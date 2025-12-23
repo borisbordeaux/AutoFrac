@@ -27,9 +27,10 @@ class LayerBcifs : public Core::Layer {
 public:
     LayerBcifs();
 
-    void testConstraints();
-    void testBCIFSAutomaton();
-    void testBCIFSAutomaton2();
+    static void testConstraints();
+    void testSubdQuad();
+    void testSierpinski();
+    void testG2();
 
     void onUpdate(float deltaTime) override;
     void onRender() override;
@@ -48,20 +49,33 @@ private:
     void addFace(const std::vector<glm::vec3>& vertices);
     void addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3);
     void addVertexFace(const glm::vec3& v, const glm::vec3& n);
+    void addLine(const std::pair<glm::vec3,glm::vec3>& line);
+    void addVertexLine(const glm::vec3& v);
 
 private:
     BCIFS::Bcifs m_bcifs;
     int m_iterationLevel = 0;
+    bool m_updateMSS = false;
+    int m_nbIterationsMSS = 500;
+    int m_currentIterationMSS = m_nbIterationsMSS;
+    bool m_bcifsChanged = false;
+    bool m_displayGrid = false;
 
     Core::VertexArray m_vao;
     Core::VertexBuffer m_vbo;
     Core::VertexBufferLayout m_layout;
     Core::ShaderProgram m_program;
-
     std::vector<float> m_data;
     int m_count = 0;
     int m_floatsPerVertex = 6;
-    bool m_bcifsChanged = false;
+
+    Core::VertexArray m_vaoGrid;
+    Core::VertexBuffer m_vboGrid;
+    Core::VertexBufferLayout m_layoutGrid;
+    Core::ShaderProgram m_programGrid;
+    std::vector<float> m_dataGrid;
+    int m_countGrid = 0;
+    int m_floatsPerVertexGrid = 3;
 
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;

@@ -36,6 +36,22 @@ LayerBcifs::LayerBcifs() :
     m_vao.unbind();
     m_vbo.unbind();
     m_program.unbind();
+
+    m_vaoGrid.bind();
+    m_vboGrid.bind();
+
+    m_layoutGrid.pushFloats(3); // position
+
+    m_vaoGrid.addBuffer(m_vboGrid, m_layoutGrid);
+
+    m_programGrid.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/grid/vertexShader.glsl");
+    m_programGrid.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/grid/fragmentShader.glsl");
+    m_programGrid.link();
+
+    // unbind the vao *before* the vbo
+    m_vaoGrid.unbind();
+    m_vboGrid.unbind();
+    m_programGrid.unbind();
 }
 
 void LayerBcifs::testConstraints() {
@@ -148,7 +164,7 @@ void LayerBcifs::testConstraints() {
     T1.print(true);
 }
 
-void LayerBcifs::testBCIFSAutomaton() {
+void LayerBcifs::testSubdQuad() {
     m_bcifs.reset();
     // states
     auto [vert, internalVert] = m_bcifs.addState("V", 1);
@@ -224,9 +240,43 @@ void LayerBcifs::testBCIFSAutomaton() {
 
     // define all matrices
     m_bcifs.validate();
+
+    // init control points
+    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
+    matrices[0].get(0, 0)->setValue(-1.0f);
+    matrices[0].get(1, 0)->setValue(-1.0f);
+    matrices[0].get(2, 0)->setValue(1.0f);
+
+    matrices[0].get(0, 1)->setValue(0.0f);
+    matrices[0].get(1, 1)->setValue(-1.0f);
+    matrices[0].get(2, 1)->setValue(0.0f);
+
+    matrices[0].get(0, 2)->setValue(1.0f);
+    matrices[0].get(1, 2)->setValue(-1.0f);
+    matrices[0].get(2, 2)->setValue(-1.0f);
+
+    matrices[0].get(0, 3)->setValue(1.0f);
+    matrices[0].get(1, 3)->setValue(0.0f);
+    matrices[0].get(2, 3)->setValue(0.0f);
+
+    matrices[0].get(0, 4)->setValue(1.0f);
+    matrices[0].get(1, 4)->setValue(1.0f);
+    matrices[0].get(2, 4)->setValue(1.0f);
+
+    matrices[0].get(0, 5)->setValue(0.0f);
+    matrices[0].get(1, 5)->setValue(1.0f);
+    matrices[0].get(2, 5)->setValue(0.0f);
+
+    matrices[0].get(0, 6)->setValue(-1.0f);
+    matrices[0].get(1, 6)->setValue(1.0f);
+    matrices[0].get(2, 6)->setValue(-1.0f);
+
+    matrices[0].get(0, 7)->setValue(-1.0f);
+    matrices[0].get(1, 7)->setValue(0.0f);
+    matrices[0].get(2, 7)->setValue(0.0f);
 }
 
-void LayerBcifs::testBCIFSAutomaton2() {
+void LayerBcifs::testSierpinski() {
     m_bcifs.reset();
     // states
     auto [vert, internalVert] = m_bcifs.addState("V", 1);
@@ -281,9 +331,169 @@ void LayerBcifs::testBCIFSAutomaton2() {
 
     // define all matrices
     m_bcifs.validate();
+
+    // init control points
+    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
+    matrices[0].get(0, 0)->setValue(-1.0f);
+    matrices[0].get(1, 0)->setValue(0.0f);
+    matrices[0].get(2, 0)->setValue(1.0f);
+
+    matrices[0].get(0, 1)->setValue(1.0f);
+    matrices[0].get(1, 1)->setValue(0.0f);
+    matrices[0].get(2, 1)->setValue(0.0f);
+
+    matrices[0].get(0, 2)->setValue(0.0f);
+    matrices[0].get(1, 2)->setValue(1.7f);
+    matrices[0].get(2, 2)->setValue(0.0f);
+
+    matrices[1].get(0, 2)->setValue(0.0f);
+    matrices[1].get(1, 2)->setValue(-1.0f);
+    matrices[1].get(2, 2)->setValue(2.0f);
+}
+
+void LayerBcifs::testG2() {
+    m_bcifs.reset();
+    // states
+    auto [vert, internalVert] = m_bcifs.addState("V", 1);
+    auto [bezier, internalBezier] = m_bcifs.addState("B", 1);
+    auto [cantor, internalCantor] = m_bcifs.addState("C", 0);
+    auto [face, internalFace] = m_bcifs.addState("F", 0);
+    BCIFS::StateID init = m_bcifs.addInitState();
+    // permutations
+    BCIFS::TransitionID permut = m_bcifs.addPermutation("0", cantor, cantor);
+    // boundary of states
+    BCIFS::TransitionID b0bezier = m_bcifs.addBoundary("0", bezier, vert);
+    BCIFS::TransitionID b1bezier = m_bcifs.addBoundary("1", bezier, vert);
+    BCIFS::TransitionID b0cantor = m_bcifs.addBoundary("0", cantor, vert);
+    BCIFS::TransitionID b1cantor = m_bcifs.addBoundary("1", cantor, vert);
+    BCIFS::TransitionID b0face = m_bcifs.addBoundary("0", face, cantor);
+    BCIFS::TransitionID b1face = m_bcifs.addBoundary("1", face, bezier);
+    BCIFS::TransitionID b2face = m_bcifs.addBoundary("2", face, cantor);
+    BCIFS::TransitionID b3face = m_bcifs.addBoundary("3", face, bezier);
+    BCIFS::TransitionID b4face = m_bcifs.addBoundary("4", face, cantor);
+    BCIFS::TransitionID b5face = m_bcifs.addBoundary("5", face, bezier);
+    // grid of states
+    m_bcifs.addGrid(face, {
+            {{ b0face, b0cantor }, { b0face, b1cantor }},
+            {{ b1face, b0bezier }, { b1face, internalBezier[0] }, { b1face, b1bezier }},
+            {{ b2face, b0cantor }, { b2face, b1cantor }},
+            {{ b3face, b0bezier }, { b3face, internalBezier[0] }, { b3face, b1bezier }},
+            {{ b4face, b0cantor }, { b4face, b1cantor }},
+            {{ b5face, b0bezier }, { b5face, internalBezier[0] }, { b5face, b1bezier }}
+    });
+//    m_bcifs.addGrid(cantor, {
+//            {{ b0cantor }, { b1cantor }}
+//    });
+//    m_bcifs.addGrid(bezier, {
+//            {{ b0bezier }, { internalBezier[0] }, { b1bezier }}
+//    });
+
+    // space of states
+    m_bcifs.setSpace(bezier, { b0bezier, internalBezier[0], b1bezier });
+    m_bcifs.setSpace(cantor, { b0cantor,
+                               b1cantor });
+    m_bcifs.setSpace(face, { b0face, b1face, b2face, b3face, b4face, b5face });
+    // subdivision of states
+    BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
+    BCIFS::TransitionID s0bezier = m_bcifs.addSubdivision("0", bezier, bezier);
+    BCIFS::TransitionID s1bezier = m_bcifs.addSubdivision("1", bezier, bezier);
+    BCIFS::TransitionID s0cantor = m_bcifs.addSubdivision("0", cantor, cantor);
+    BCIFS::TransitionID s1cantor = m_bcifs.addSubdivision("1", cantor, cantor);
+    BCIFS::TransitionID s0face = m_bcifs.addSubdivision("0", face, face);
+    BCIFS::TransitionID s1face = m_bcifs.addSubdivision("1", face, face);
+    BCIFS::TransitionID s2face = m_bcifs.addSubdivision("2", face, face);
+    BCIFS::TransitionID s3face = m_bcifs.addSubdivision("3", face, face);
+    BCIFS::TransitionID s4face = m_bcifs.addSubdivision("4", face, face);
+    BCIFS::TransitionID s5face = m_bcifs.addSubdivision("5", face, face);
+    [[maybe_unused]] BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
+    //BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+    // permutation constraints
+    // to define permutation operators
+    m_bcifs.addConstraint({ permut, b0cantor }, { b1cantor });
+    m_bcifs.addConstraint({ permut, b1cantor }, { b0cantor });
+    // to constraint subdivision operators using permutation operators
+    m_bcifs.addConstraint({ permut, s0cantor }, { s1cantor, permut });
+    m_bcifs.addConstraint({ permut, s1cantor }, { s0cantor, permut });
+    // incidence constraints
+    // on edge
+    m_bcifs.addConstraint({ b0cantor, s0vert }, { s0cantor, b0cantor });
+    m_bcifs.addConstraint({ b1cantor, s0vert }, { s1cantor, b1cantor });
+    m_bcifs.addConstraint({ b0bezier, s0vert }, { s0bezier, b0bezier });
+    m_bcifs.addConstraint({ b1bezier, s0vert }, { s1bezier, b1bezier });
+    // on face
+    m_bcifs.addConstraint({ b0face, s0cantor }, { s5face, b0face });
+    m_bcifs.addConstraint({ b0face, s1cantor }, { s0face, b0face });
+    m_bcifs.addConstraint({ b1face, s0bezier }, { s0face, b1face });
+    m_bcifs.addConstraint({ b1face, s1bezier }, { s1face, b1face });
+    m_bcifs.addConstraint({ b2face, s0cantor }, { s1face, b2face });
+    m_bcifs.addConstraint({ b2face, s1cantor }, { s2face, b2face });
+    m_bcifs.addConstraint({ b3face, s0bezier }, { s2face, b3face });
+    m_bcifs.addConstraint({ b3face, s1bezier }, { s3face, b3face });
+    m_bcifs.addConstraint({ b4face, s0cantor }, { s3face, b4face });
+    m_bcifs.addConstraint({ b4face, s1cantor }, { s4face, b4face });
+    m_bcifs.addConstraint({ b5face, s0bezier }, { s4face, b5face });
+    m_bcifs.addConstraint({ b5face, s1bezier }, { s5face, b5face });
+    // adjacency constraints
+    // on edge
+    m_bcifs.addConstraint({ s0bezier, b1bezier }, { s1bezier, b0bezier });
+    // on face
+    m_bcifs.addConstraint({ s0face, b2face, permut }, { s1face, b0face });
+    m_bcifs.addConstraint({ s1face, b4face, permut }, { s2face, b0face });
+    m_bcifs.addConstraint({ s2face, b4face, permut }, { s3face, b2face });
+    m_bcifs.addConstraint({ s3face, b0face, permut }, { s4face, b2face });
+    m_bcifs.addConstraint({ s4face, b0face, permut }, { s5face, b4face });
+    m_bcifs.addConstraint({ s5face, b2face, permut }, { s0face, b4face });
+    // on incidence operators
+    m_bcifs.addConstraint({ b0face, b1cantor }, { b1face, b0bezier });
+    m_bcifs.addConstraint({ b1face, b1bezier }, { b2face, b0cantor });
+    m_bcifs.addConstraint({ b2face, b1cantor }, { b3face, b0bezier });
+    m_bcifs.addConstraint({ b3face, b1bezier }, { b4face, b0cantor });
+    m_bcifs.addConstraint({ b4face, b1cantor }, { b5face, b0bezier });
+    m_bcifs.addConstraint({ b5face, b1bezier }, { b0face, b0cantor });
+    // on init state
+    //m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
+
+    // define all matrices
+    m_bcifs.validate();
+
+    // init control points
+    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
+
+    for (std::size_t i = 0; i < 9; i++) {
+        matrices[0].get(2, i)->setValue(0.0f);
+    }
+    matrices[0].get(0, 0)->setValue(std::cos(0.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 0)->setValue(std::sin(0.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(0, 1)->setValue(std::cos(1.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 1)->setValue(std::sin(1.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(0, 3)->setValue(std::cos(2.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 3)->setValue(std::sin(2.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(0, 4)->setValue(std::cos(3.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 4)->setValue(std::sin(3.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(0, 6)->setValue(std::cos(4.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 6)->setValue(std::sin(4.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(0, 7)->setValue(std::cos(5.0f * M_PIf * 2.0f / 6.0f));
+    matrices[0].get(1, 7)->setValue(std::sin(5.0f * M_PIf * 2.0f / 6.0f));
+
+    matrices[0].get(0, 2)->setValue(std::cos(3.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 2)->setValue(std::sin(3.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(0, 5)->setValue(std::cos(7.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 5)->setValue(std::sin(7.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(0, 8)->setValue(std::cos(11.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 8)->setValue(std::sin(11.0f * M_PIf * 2.0f / 12.0f));
 }
 
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
+    if (m_updateMSS) {
+        if (m_currentIterationMSS <= 0) {
+            m_updateMSS = false;
+            m_currentIterationMSS = m_nbIterationsMSS;
+        } else {
+            m_bcifs.updateMSS();
+            m_bcifsChanged = true;
+            m_currentIterationMSS--;
+        }
+    }
     if (m_bcifsChanged) {
         // update data from BCIFS
         m_count = 0;
@@ -304,21 +514,61 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         m_vbo.bufferData(m_data);
         m_vbo.unbind();
 
+
+        if (m_displayGrid) {
+            m_countGrid = 0;
+            m_dataGrid.clear();
+            std::vector<std::pair<glm::vec3, glm::vec3>> springs = m_bcifs.springs();
+
+            std::size_t nbLines = springs.size();
+            std::size_t nbAddsLine = 2 * nbLines;
+            m_dataGrid.resize(nbAddsLine * m_floatsPerVertexGrid);
+
+            for (const std::pair<glm::vec3, glm::vec3>& line: springs) {
+                this->addLine(line);
+            }
+
+            m_vboGrid.bind();
+            m_vboGrid.bufferData(m_dataGrid);
+            m_vboGrid.unbind();
+        }
+
         m_bcifsChanged = false;
     }
 }
 
 void LayerBcifs::onRender() {
-    m_program.bind();
     if (m_uniformsDirty) {
+        m_program.bind();
         glm::mat4 view = m_camera.getViewMatrix();
         glm::mat4 mvp = m_proj * view;
         m_program.setUniformMat4f("u_mvp", mvp);
         m_program.setUniform3f("lightPos", m_camera.getEye());
         m_program.setUniform3f("cameraPos", m_camera.getEye());
+        m_program.unbind();
+
+        m_programGrid.bind();
+        m_camera.zoom(0.001f);
+        glm::mat4 viewGrid = m_camera.getViewMatrix();
+        m_camera.dezoom(0.001f);
+        glm::mat4 mvpGrid = m_proj * viewGrid;
+        m_programGrid.setUniformMat4f("u_mvp", mvpGrid);
+        m_programGrid.unbind();
+
         m_uniformsDirty = false;
     }
     Core::Renderer::draw(m_vao, m_count / m_floatsPerVertex, m_program);
+
+    Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
+
+    if (m_displayGrid) {
+        m_programGrid.bind();
+        m_vaoGrid.bind();
+        Core::GLCall(glDrawArrays(GL_LINES, 0, m_countGrid / m_floatsPerVertexGrid));
+        m_programGrid.unbind();
+        m_vaoGrid.unbind();
+    }
+
 }
 
 void LayerBcifs::onImGuiRender() {
@@ -327,29 +577,39 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Button("Test constraints")) {
         this->testConstraints();
     }
-    if (ImGui::Button("Create BC-IFS")) {
-        this->testBCIFSAutomaton();
+    if (ImGui::Button("Create BC-IFS subd quad")) {
+        this->testSubdQuad();
         m_bcifsChanged = true;
     }
     if (ImGui::Button("Create BC-IFS Sierpinski")) {
-        this->testBCIFSAutomaton2();
+        this->testSierpinski();
+        m_bcifsChanged = true;
+    }
+    if (ImGui::Button("Create BC-IFS G2")) {
+        this->testG2();
         m_bcifsChanged = true;
     }
     if (ImGui::Button("Print BC-IFS")) {
         m_bcifs.print();
     }
-
+    if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
+        m_bcifsChanged = true;
+    }
     if (ImGui::InputInt("Iteration level", &m_iterationLevel)) {
         if (m_iterationLevel < 0)
             m_iterationLevel = 0;
         m_bcifsChanged = true;
     }
 
+    ImGui::DragFloat("K", m_bcifs.k(), 0.001f);
+    ImGui::DragFloat("Damping", m_bcifs.damping(), 0.01f);
+
+    if (ImGui::InputInt("MSS Max Iterations", &m_nbIterationsMSS)) {
+        m_currentIterationMSS = m_nbIterationsMSS;
+    }
+    ImGui::InputInt("MSS Iterations", &m_currentIterationMSS);
     if (ImGui::Button("Update mss")) {
-        for (int i = 0; i < 100; i++) {
-            m_bcifs.updateMSS();
-        }
-        m_bcifsChanged = true;
+        m_updateMSS = true;
     }
 
     if (ImGui::Button("Print mss")) {
@@ -508,4 +768,20 @@ void LayerBcifs::addVertexFace(const glm::vec3& v, const glm::vec3& n) {
     *p++ = n.z;
     // we update the amount of data
     m_count += m_floatsPerVertex;
+}
+
+void LayerBcifs::addLine(const std::pair<glm::vec3, glm::vec3>& line) {
+    this->addVertexLine(line.first);
+    this->addVertexLine(line.second);
+}
+
+void LayerBcifs::addVertexLine(const glm::vec3& v) {
+// add to the end of the data already added
+    float* p = m_dataGrid.data() + m_countGrid;
+    // the coordinates of the vertex
+    *p++ = v.x;
+    *p++ = v.y;
+    *p++ = v.z;
+    // we update the amount of data
+    m_countGrid += m_floatsPerVertexGrid;
 }

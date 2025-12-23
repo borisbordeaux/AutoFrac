@@ -45,20 +45,34 @@ FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols, bool initRandom) 
 FormalMatrix FormalMatrix::operator*(const FormalMatrix& other) const {
     if (m_cols != other.m_rows)
         throw std::runtime_error("Dimensions not compatible for multiplication");
-
     FormalMatrix result(m_rows, other.m_cols);
-
     for (std::size_t i = 0; i < m_rows; i++) {
         for (std::size_t j = 0; j < other.m_cols; j++) {
             FormalCoefRef sum = FormalCoef::zero();
             for (std::size_t k = 0; k < m_cols; k++) {
-                FormalCoefRef prod = FormalCoef::mult(this->get(i, k), other.get(k, j));
+                FormalCoefRef prod = FormalCoef::multiply(this->get(i, k), other.get(k, j));
                 sum = FormalCoef::add(sum, prod);
             }
             result.set(i, j, sum);
         }
     }
+    return result;
+}
 
+FormalMatrix FormalMatrix::multiplyValues(const FormalMatrix& other) const {
+    if (m_cols != other.m_rows)
+        throw std::runtime_error("Dimensions not compatible for multiplication");
+    FormalMatrix result(m_rows, other.m_cols);
+    for (std::size_t i = 0; i < m_rows; i++) {
+        for (std::size_t j = 0; j < other.m_cols; j++) {
+            FormalCoefRef sum = FormalCoef::zero();
+            for (std::size_t k = 0; k < m_cols; k++) {
+                FormalCoefRef prod = FormalCoef::multiplyValues(this->get(i, k), other.get(k, j));
+                sum = FormalCoef::addValues(sum, prod);
+            }
+            result.set(i, j, sum);
+        }
+    }
     return result;
 }
 
@@ -153,6 +167,14 @@ size_t FormalMatrix::indexOf(const FormalMatrix& columnMatrix) {
         }
     }
     throw std::runtime_error("Column not present in the matrix.");
+}
+
+FormalMatrix FormalMatrix::getCol(std::size_t indexCol) const {
+    FormalMatrix res(m_rows, 1);
+    for (std::size_t row = 0; row < m_rows; row++) {
+        res.set(row, 0, this->get(row, indexCol));
+    }
+    return res;
 }
 
 } // BCIFS

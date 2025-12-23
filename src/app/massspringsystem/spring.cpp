@@ -1,6 +1,5 @@
 #include <armadillo>
 #include "app/massspringsystem/spring.h"
-#include "app/massspringsystem/vector.h"
 #include "app/massspringsystem/mass.h"
 
 namespace mss {
@@ -8,9 +7,9 @@ namespace mss {
 Spring::Spring(Mass& m1, Mass& m2, float k, float length) : m_m1(m1), m_m2(m2), m_k(k), m_length(length) {}
 
 void Spring::applyForces() {
-    arma::Col<float> direction(m_m1.position().dim());
-    for (std::size_t i = 0; i < m_m1.position().dim(); i++) {
-        direction[i] = m_m2.position().at(i) - m_m1.position().at(i);
+    arma::Col<float> direction(m_m1.position().rows());
+    for (std::size_t i = 0; i < m_m1.position().rows(); i++) {
+        direction[i] = m_m2.position().get(i, 0)->value() - m_m1.position().get(i, 0)->value();
     }
     float x = arma::norm(direction) - m_length;
     direction = arma::normalise(direction);

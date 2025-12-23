@@ -29,6 +29,7 @@ public:
     inline void set(std::size_t row, std::size_t col, FormalCoefRef coef) { m_coefficients[row][col] = std::move(coef); }
 
     FormalMatrix operator*(const FormalMatrix& other) const;
+    FormalMatrix multiplyValues(const FormalMatrix& other) const;
 
     void print(bool showAddress = false) const;
 
@@ -42,6 +43,8 @@ public:
     void concatenateColumns(const FormalMatrix& matrix);
 
     std::size_t indexOf(const FormalMatrix& columnMatrix);
+
+    FormalMatrix getCol(std::size_t indexCol) const;
 
 private:
     std::size_t m_rows;

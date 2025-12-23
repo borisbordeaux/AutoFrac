@@ -22,7 +22,7 @@ FormalCoefRef FormalCoef::var(float v) {
     return std::make_shared<FormalCoef>(CoefType::VAR, v);
 }
 
-FormalCoefRef FormalCoef::mult(const FormalCoefRef& v1, const FormalCoefRef& v2) {
+FormalCoefRef FormalCoef::multiply(const FormalCoefRef& v1, const FormalCoefRef& v2) {
     FormalCoefRef rv1 = v1->findRoot();
     FormalCoefRef rv2 = v2->findRoot();
     // 0 * anything = anything * 0 = 0
@@ -36,6 +36,12 @@ FormalCoefRef FormalCoef::mult(const FormalCoefRef& v1, const FormalCoefRef& v2)
     throw std::logic_error("Cannot apply product VAR * VAR.");
 }
 
+FormalCoefRef FormalCoef::multiplyValues(const FormalCoefRef& v1, const FormalCoefRef& v2) {
+    FormalCoefRef res = FormalCoef::var(v1->value() * v2->value());
+    res->setInitialized();
+    return res;
+}
+
 FormalCoefRef FormalCoef::add(FormalCoefRef const& v1, FormalCoefRef const& v2) {
     FormalCoefRef rv1 = v1->findRoot();
     FormalCoefRef rv2 = v2->findRoot();
@@ -46,6 +52,12 @@ FormalCoefRef FormalCoef::add(FormalCoefRef const& v1, FormalCoefRef const& v2) 
     // other cases are not supposed to appear
     // var + var, var + 1, 1 + var, 1 + 1
     throw std::logic_error("Cannot apply sum VAR + VAR, VAR + 1, 1 + VAR nor 1 + 1.");
+}
+
+FormalCoefRef FormalCoef::addValues(FormalCoefRef const& v1, FormalCoefRef const& v2) {
+    FormalCoefRef res = FormalCoef::var(v1->value() + v2->value());
+    res->setInitialized();
+    return res;
 }
 
 FormalCoefRef FormalCoef::findRoot() {

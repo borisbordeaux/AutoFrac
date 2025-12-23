@@ -16,7 +16,7 @@ class MassSpringSystem {
 public:
     explicit MassSpringSystem(std::size_t dim = 0);
 
-    void addMass(Vector const& pos, float damping);
+    void addMass(const BCIFS::FormalMatrix& pos, float damping);
     void addSpring(std::size_t indexMass1, std::size_t indexMass2, float k, float length);
     void update();
     void clearSprings();

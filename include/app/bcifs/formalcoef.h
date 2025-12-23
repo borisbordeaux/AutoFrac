@@ -22,9 +22,11 @@ public:
     static FormalCoefRef one();
     static FormalCoefRef var(float v);
 
-    static FormalCoefRef mult(const FormalCoefRef& v1, const FormalCoefRef& v2);
+    static FormalCoefRef multiply(const FormalCoefRef& v1, const FormalCoefRef& v2);
+    static FormalCoefRef multiplyValues(const FormalCoefRef& v1, const FormalCoefRef& v2);
 
     static FormalCoefRef add(const FormalCoefRef& v1, const FormalCoefRef& v2);
+    static FormalCoefRef addValues(const FormalCoefRef& v1, const FormalCoefRef& v2);
 
     inline float value() const { return const_cast<FormalCoef*>(this)->findRoot()->m_value; }
 
