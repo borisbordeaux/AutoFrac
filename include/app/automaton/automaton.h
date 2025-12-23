@@ -38,6 +38,7 @@ public:
     std::vector<TransitionID> internalTransitionsOf(StateID id) const;
     std::vector<TransitionID> boundaryAndInternalTransitionsOf(StateID id) const;
     std::vector<TransitionID> subdivisionTransitionsOf(StateID id) const;
+    std::vector<TransitionID> subdivisionTransitionsTo(StateID id, StateID ignoredId) const;
     std::vector<Path> allSubdivisionPaths(StateID from, int depth) const;
 
     void reset();

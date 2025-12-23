@@ -165,7 +165,6 @@ void LayerBcifs::testBCIFSAutomaton() {
     BCIFS::TransitionID b2face = m_bcifs.addBoundary("2", face, edge);
     BCIFS::TransitionID b3face = m_bcifs.addBoundary("3", face, edge);
     // grid of states
-    m_bcifs.addGrid(edge, {{{ b0edge }, { internalEdge[0] }, { b1edge }}});
     m_bcifs.addGrid(face, {
             {{ b0face, b0edge }, { b0face, internalEdge[0] }, { b0face, b1edge }},
             {{ b1face, b0edge }, { b1face, internalEdge[0] }, { b1face, b1edge }},
@@ -241,7 +240,6 @@ void LayerBcifs::testBCIFSAutomaton2() {
     BCIFS::TransitionID b1face = m_bcifs.addBoundary("1", face, edge);
     BCIFS::TransitionID b2face = m_bcifs.addBoundary("2", face, edge);
     // grid of states
-    m_bcifs.addGrid(edge, {{{ b0edge }, { b1edge }}});
     m_bcifs.addGrid(face, {
             {{ b0face, b0edge }, { b0face, b1edge }},
             {{ b1face, b0edge }, { b1face, b1edge }},
@@ -249,7 +247,7 @@ void LayerBcifs::testBCIFSAutomaton2() {
     });
     // space of states
     m_bcifs.setSpace(edge, { b0edge, b1edge });
-    m_bcifs.setSpace(face, { b0face, b1face, b2face});
+    m_bcifs.setSpace(face, { b0face, b1face, b2face });
     // subdivision of states
     BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
     BCIFS::TransitionID s0edge = m_bcifs.addSubdivision("0", edge, edge);
@@ -345,6 +343,17 @@ void LayerBcifs::onImGuiRender() {
         if (m_iterationLevel < 0)
             m_iterationLevel = 0;
         m_bcifsChanged = true;
+    }
+
+    if (ImGui::Button("Update mss")) {
+        for (int i = 0; i < 100; i++) {
+            m_bcifs.updateMSS();
+        }
+        m_bcifsChanged = true;
+    }
+
+    if (ImGui::Button("Print mss")) {
+        m_bcifs.printMSS();
     }
 
     ImGui::Text("Control points");

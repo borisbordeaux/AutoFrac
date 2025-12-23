@@ -6,6 +6,7 @@
 #include <glm/vec3.hpp>
 #include "app/automaton/automaton.h"
 #include "formalmatrix.h"
+#include "app/massspringsystem/massspringsystem.h"
 
 namespace BCIFS {
 
@@ -33,6 +34,8 @@ public:
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel) const;
     std::vector<FormalMatrix> controlPoints() const;
+    void updateMSS();
+    void printMSS() const;
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -69,6 +72,8 @@ private:
     void buildMassSpringSystems();
 
     arma::mat getOperatorOfPath(const Path& path) const;
+    FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
+    FormalMatrix globalMatrixOf(StateID id) const;
 
 private:
     Automaton m_automaton;
@@ -80,7 +85,9 @@ private:
     std::unordered_map<StateID, std::size_t> m_mapDimensions;
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
     std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
-    std::unordered_map<StateID, FormalMatrix> m_mapMSSMatrices;
+    std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
+    float m_damping = 0.2f;
+    float m_k = 0.001f;
 };
 
 } // BCIFS

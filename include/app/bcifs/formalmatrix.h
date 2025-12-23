@@ -39,6 +39,10 @@ public:
 
     arma::mat toMat() const;
 
+    void concatenateColumns(const FormalMatrix& matrix);
+
+    std::size_t indexOf(const FormalMatrix& columnMatrix);
+
 private:
     std::size_t m_rows;
     std::size_t m_cols;

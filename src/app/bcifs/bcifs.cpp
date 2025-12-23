@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "app/bcifs/booleanmatrix.h"
+#include "core/log.h"
 
 namespace BCIFS {
 
@@ -134,7 +135,54 @@ void Bcifs::reset() {
     m_mapDimensions.clear();
     m_mapOperators.clear();
     m_mapGrids.clear();
-    m_mapMSSMatrices.clear();
+    m_mapMSS.clear();
+}
+
+std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) const {
+    if (!m_initStateID.has_value()) { return {}; }
+    std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
+    // each path will give a matrix that contains the position of all the points of a face
+
+    std::vector<std::vector<glm::vec3>> res;
+    res.reserve(allPaths.size());
+    for (const Path& path: allPaths) {
+        arma::mat mat = this->getOperatorOfPath(path);
+        std::vector<glm::vec3> vertices;
+        vertices.reserve(mat.n_cols);
+        for (std::size_t i = 0; i < mat.n_cols; i++) {
+            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+        }
+        res.push_back(vertices);
+    }
+
+    return res;
+}
+
+std::vector<FormalMatrix> Bcifs::controlPoints() const {
+    if (!m_initStateID.has_value()) { return {}; }
+    std::vector<FormalMatrix> res;
+    std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(m_initStateID.value());
+    res.reserve(transitions.size());
+    for (TransitionID transitionId: transitions) {
+        res.push_back(this->getOperator(transitionId));
+    }
+    return res;
+}
+
+void Bcifs::updateMSS() {
+    for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+        keyval.second.update();
+        std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(keyval.first);
+        for (TransitionID id: transitions) {
+            m_mapOperators[id].setSumToOne();
+        }
+    }
+}
+
+void Bcifs::printMSS() const {
+    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+        Core::LOG_INFO(keyval.second.toString());
+    }
 }
 
 Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
@@ -508,10 +556,60 @@ void Bcifs::completeSubdvisionMatrices() {
 }
 
 void Bcifs::buildMassSpringSystems() {
-    std::cout << "build mass spring system" << std::endl;
-//    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval: m_mapGrids) {
-//
-//    }
+    // for each state, look at its subdivisions
+    for (const State& state: m_automaton.states()) {
+        bool needMSS = false;
+        for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
+            const Transition& transition = m_automaton.findTransitionByID(transitionId);
+            if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
+                needMSS = true;
+            }
+        }
+        // if at least one of the arrival state has a grid
+        if (needMSS && state.id() != m_initStateID.value()) {
+            // then build a mss for the current state (so, in the dimension of the current state and not the arrival state)
+            m_mapMSS[state.id()].clear(m_mapDimensions[state.id()]);
+            // at first, build a global formal matrix by concatenating all subdivision operators
+            // simplify the global matrix by removing all identical columns
+            FormalMatrix globalMatrix = this->globalMatrixOf(state.id());
+            // for each column in the global matrix
+            for (std::size_t i = 0; i < globalMatrix.cols(); i++) {
+                // create a mass
+                std::vector<FormalCoefRef> values;
+                values.reserve(globalMatrix.rows());
+                for (std::size_t j = 0; j < globalMatrix.rows(); j++) {
+                    values.push_back(globalMatrix.get(j, i));
+                }
+                mss::Vector massVector(std::move(values));
+                m_mapMSS[state.id()].addMass(massVector, m_damping);
+            }
+            std::size_t lastMassIndex = 0;
+            bool firstMass = true;
+            // for each subdivision operator
+            for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
+                const Transition& transition = m_automaton.findTransitionByID(transitionId);
+                if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
+                    // for each Figure of the grid of the arrival state
+                    for (const Figure& figure: m_mapGrids[transition.to()]) {
+                        // for each consecutive Path of the Figure
+                        for (const Path& path: figure) {
+                            // identify the column index of the Paths in the global matrix
+                            // add a spring between the 2 masses at the found indices
+                            FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
+                            // always assume it is a one column matrix
+                            FormalMatrix finalColumn = m_mapOperators[transitionId] * matrix;
+                            std::size_t index = globalMatrix.indexOf(finalColumn);
+                            if (!firstMass) {
+                                m_mapMSS[state.id()].addSpring(lastMassIndex, index, m_k, 0.0f);
+                            }
+                            firstMass = false;
+                            lastMassIndex = index;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
@@ -522,33 +620,19 @@ arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
     return res;
 }
 
-std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) const {
-    if (!m_initStateID.has_value()) { return {}; }
-    std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
-    // each path will give a matrix that contains the position of all the points of a face
-
-    std::vector<std::vector<glm::vec3>> res;
-    res.reserve(allPaths.size());
-    for (const Path& path: allPaths) {
-        arma::mat mat = this->getOperatorOfPath(path);
-        std::vector<glm::vec3> vertices;
-        vertices.reserve(mat.n_cols);
-        for (std::size_t i = 0; i < mat.n_cols; i++) {
-            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
-        }
-        res.push_back(vertices);
+FormalMatrix Bcifs::getOperatorOfPathNoSubdivision(const Path& path) const {
+    FormalMatrix res = this->getOperator(path[0]);
+    for (std::size_t i = 1; i < path.size(); i++) {
+        res = res * this->getOperator(path[i]);
     }
-
     return res;
 }
 
-std::vector<FormalMatrix> Bcifs::controlPoints() const {
-    if (!m_initStateID.has_value()) { return {}; }
-    std::vector<FormalMatrix> res;
-    std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(m_initStateID.value());
-    res.reserve(transitions.size());
-    for (TransitionID transitionId: transitions) {
-        res.push_back(this->getOperator(transitionId));
+FormalMatrix Bcifs::globalMatrixOf(StateID id) const {
+    std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(id);
+    FormalMatrix res = this->getOperator(transitions[0]);
+    for (std::size_t i = 1; i < transitions.size(); i++) {
+        res.concatenateColumns(this->getOperator(transitions[i]));
     }
     return res;
 }

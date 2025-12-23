@@ -127,6 +127,16 @@ std::vector<TransitionID> Automaton::subdivisionTransitionsOf(StateID id) const 
     return res;
 }
 
+std::vector<TransitionID> Automaton::subdivisionTransitionsTo(StateID id, StateID ignoredId) const {
+    std::vector<TransitionID> res;
+    for (const Transition& transition: m_transitions) {
+        if (transition.to() == id && transition.type() == TransitionType::SUBDIVISION && transition.from() != ignoredId) {
+            res.push_back(transition.id());
+        }
+    }
+    return res;
+}
+
 std::vector<Path> Automaton::allSubdivisionPaths(StateID from, int depth) const {
     std::vector<Path> res;
     Path currentPath;
@@ -142,7 +152,7 @@ void Automaton::dfs(StateID from, int depth, int maxDepth, Path& currentPath, st
         return;
     }
 
-    for (TransitionID transitionId : this->subdivisionTransitionsOf(from)) {
+    for (TransitionID transitionId: this->subdivisionTransitionsOf(from)) {
         currentPath.push_back(transitionId);
         const Transition& t = findTransitionByID(transitionId);
         this->dfs(t.to(), depth + 1, maxDepth, currentPath, result);

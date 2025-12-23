@@ -1,0 +1,23 @@
+#include <armadillo>
+#include "app/massspringsystem/spring.h"
+#include "app/massspringsystem/vector.h"
+#include "app/massspringsystem/mass.h"
+
+namespace mss {
+
+Spring::Spring(Mass& m1, Mass& m2, float k, float length) : m_m1(m1), m_m2(m2), m_k(k), m_length(length) {}
+
+void Spring::applyForces() {
+    arma::Col<float> direction(m_m1.position().dim());
+    for (std::size_t i = 0; i < m_m1.position().dim(); i++) {
+        direction[i] = m_m2.position().at(i) - m_m1.position().at(i);
+    }
+    float x = arma::norm(direction) - m_length;
+    direction = arma::normalise(direction);
+    direction *= (m_k * x);
+    m_m1.applyForce(arma::conv_to<std::vector<float>>::from(direction));
+    direction *= -1.f;
+    m_m2.applyForce(arma::conv_to<std::vector<float>>::from(direction));
+}
+
+} // mss

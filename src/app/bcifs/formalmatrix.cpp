@@ -129,4 +129,30 @@ arma::mat FormalMatrix::toMat() const {
     return res;
 }
 
+void FormalMatrix::concatenateColumns(const FormalMatrix& matrix) {
+    if (matrix.m_rows != m_rows) { return; }
+    for (std::size_t row = 0; row < m_rows; row++) {
+        m_coefficients[row].resize(m_cols + matrix.m_cols, FormalCoef::zero());
+        for (std::size_t col = m_cols; col < m_coefficients[row].size(); col++) {
+            m_coefficients[row][col] = matrix.get(row, col - m_cols);
+        }
+    }
+    m_cols += matrix.m_cols;
+}
+
+size_t FormalMatrix::indexOf(const FormalMatrix& columnMatrix) {
+    for (std::size_t col = 0; col < m_cols; col++) {
+        bool sameCol = true;
+        for (std::size_t row = 0; row < m_rows; row++) {
+            if (m_coefficients[row][col]->findRoot() != columnMatrix.get(row, 0)->findRoot()) {
+                sameCol = false;
+            }
+        }
+        if (sameCol) {
+            return col;
+        }
+    }
+    throw std::runtime_error("Column not present in the matrix.");
+}
+
 } // BCIFS
