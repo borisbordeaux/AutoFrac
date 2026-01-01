@@ -48,6 +48,9 @@ public:
     std::string toString(bool showAddress = false) const;
 
 private:
+    static inline std::string toString(float value);
+
+private:
     CoefType m_type;
     float m_value;
     bool m_initialized;

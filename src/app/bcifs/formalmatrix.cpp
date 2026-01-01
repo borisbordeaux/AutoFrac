@@ -3,6 +3,7 @@
 #include <random>
 #include "app/bcifs/formalmatrix.h"
 #include "app/bcifs/booleanmatrix.h"
+#include "core/log.h"
 
 namespace BCIFS {
 
@@ -91,14 +92,20 @@ FormalMatrix FormalMatrix::multiplyValues(const FormalMatrix& other) const {
     return result;
 }
 
-void FormalMatrix::print(bool showAddress) const {
+std::string FormalMatrix::toString(bool showAddress) const {
+    std::string res;
     for (std::size_t i = 0; i < m_rows; i++) {
         for (std::size_t j = 0; j < m_cols; j++) {
-            std::cout << this->get(i, j)->toString(showAddress) << " ";
+            res += this->get(i, j)->toString(showAddress) + " ";
         }
-        std::cout << "\n";
+        res += "\n";
     }
-    std::cout << "\n";
+    res += "\n";
+    return res;
+}
+
+void FormalMatrix::print(bool showAddress) const {
+    Core::LOG_INFO(this->toString(showAddress));
 }
 
 BooleanMatrix FormalMatrix::toBooleanMatrix() const {

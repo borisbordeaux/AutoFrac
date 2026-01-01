@@ -2,6 +2,9 @@
 #include <sstream>
 #include "app/bcifs/formalcoef.h"
 
+#include <algorithm>
+#include <iomanip>
+
 namespace BCIFS {
 
 FormalCoef::FormalCoef(float value) : FormalCoef(CoefType::VAR, value) {}
@@ -95,7 +98,7 @@ void FormalCoef::unify(const FormalCoefRef& c1, const FormalCoefRef& c2) {
 std::string FormalCoef::toString(bool showAddress) const {
     FormalCoefRef root = const_cast<FormalCoef*>(this)->findRoot();
     std::stringstream ss;
-    ss << "[" << root->m_value;
+    ss << "[" << FormalCoef::toString(root->m_value);
     if (showAddress) {
         ss << " - " << root.get();
     }
@@ -103,10 +106,12 @@ std::string FormalCoef::toString(bool showAddress) const {
     return ss.str();
 }
 
-//std::string FormalCoef::toString() const {
-//    std::stringstream ss;
-//    ss << "[" << m_root->toString() << " - " << m_root.get() << "]";
-//    return ss.str();
-//}
+std::string FormalCoef::toString(float value) {
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(4) << value;
+    std::string res = stream.str();
+    std::replace(res.begin(), res.end(), ',', '.');
+    return res;
+}
 
 } // BCIFS

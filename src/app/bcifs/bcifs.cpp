@@ -1,4 +1,3 @@
-#include <iostream>
 #include "app/bcifs/bcifs.h"
 #include "app/automaton/state.h"
 #include "app/bcifs/constraintsolver.h"
@@ -66,55 +65,58 @@ void Bcifs::setInitMat(TransitionID id, const FormalMatrix& matrix) {
     m_mapInitMat[id] = matrix;
 }
 
-void Bcifs::print() const {
-    m_automaton.print();
-    std::cout << "Classic constraints:\n";
+std::string Bcifs::toString() const {
+    std::string res = "BCIFS Description:\n";
+    res += m_automaton.toString();
+    res += "Classic constraints:\n";
     for (const auto& constraint: m_constraints) {
-        this->printConstraint(constraint);
+        res += this->printConstraint(constraint);
     }
-    std::cout << "\nAdjacency constraints on incidence operators:\n";
+    res += "\nAdjacency constraints on incidence operators:\n";
     for (const auto& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
-        this->printConstraint(constraint);
+        res += this->printConstraint(constraint);
     }
-    std::cout << "\nDimensions of states:\n";
+    res += "\nDimensions of states:\n";
     for (const std::pair<const StateID, std::size_t>& keyval: m_mapDimensions) {
-        std::cout << m_automaton.findStateByID(keyval.first).name() << " has " << keyval.second << " dimensions\n";
+        res += m_automaton.findStateByID(keyval.first).name() + " has " + std::to_string(keyval.second) + " dimensions\n";
     }
-    std::cout << "\nAll operators:\n";
+    res += "\nAll operators:\n";
     for (const std::pair<const BCIFS::TransitionID, FormalMatrix>& keyval: m_mapOperators) {
         TransitionID transitionId = keyval.first;
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
-        std::cout << "Operator ";
-        transition.print();
-        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
-        std::cout << " to " << m_automaton.findStateByID(transition.to()).name() << "\n";
+        res += "Operator ";
+        res += transition.toString();
+        res += " from " + m_automaton.findStateByID(transition.from()).name();
+        res += " to " + m_automaton.findStateByID(transition.to()).name() + "\n";
         if (transition.type() == TransitionType::SUBDIVISION) {
-            keyval.second.print(true);
-            std::cout << "-------\n";
-            keyval.second.print();
-        } else {
-            keyval.second.print();
+            res += keyval.second.toString(true);
+            res += "-------\n";
         }
+        res += keyval.second.toString();
     }
-    std::cout << "\nAll grids:\n";
+    res += "\nAll grids:\n";
     for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval: m_mapGrids) {
-        std::cout << "For state " << keyval.first << ", grid is:\n";
+        res += "For state " + std::to_string(keyval.first) + ", grid is:\n";
         for (const Figure& figure: keyval.second) {
-            std::cout << "Figure [";
+            res += "Figure [";
             for (const Path& path: figure) {
-                std::cout << " [";
+                res += " [";
                 for (const TransitionID& transitionId: path) {
-                    std::cout << " ";
+                    res += " ";
                     const Transition& transition = m_automaton.findTransitionByID(transitionId);
-                    transition.print();
+                    res += transition.toString();
                 }
-                std::cout << " ] ";
+                res += " ] ";
             }
-            std::cout << "]\n";
+            res += "]\n";
         }
-        std::cout << "\n";
+        res += "\n";
     }
-    std::cout.flush();
+    return res;
+}
+
+void Bcifs::print() const {
+    Core::LOG_INFO(this->toString());
 }
 
 void Bcifs::validate() {
@@ -140,21 +142,44 @@ void Bcifs::reset() {
     m_mapOperators.clear();
     m_mapGrids.clear();
     m_mapMSS.clear();
+    m_mapInitMat.clear();
+    m_invalidatedMatrices = true;
+    m_facesPaths.clear();
 }
 
-std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) const {
+std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
     if (!m_initStateID.has_value()) { return {}; }
-    std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
-    // each path will give a matrix that contains the position of all the points of a face
+    if (m_invalidatedMatrices) {
+        m_invalidatedMatrices = false;
+        m_facesPaths.clear();
+        if (iterationLevel != 0) {
+            // each path will give a matrix that contains the position of all the points of a face
+            std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
+
+            for (const Path& path: allPaths) {
+                FormalMatrix mat = this->getOperatorOfPath(path);
+                m_facesPaths.emplace_back(path, mat);
+            }
+        } else {
+            for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
+                m_facesPaths.emplace_back(Path({transitionId}), this->getOperator(transitionId));
+            }
+        }
+    }
 
     std::vector<std::vector<glm::vec3>> res;
-    res.reserve(allPaths.size());
-    for (const Path& path: allPaths) {
-        arma::mat mat = this->getOperatorOfPath(path);
+    for (const std::pair<Path, FormalMatrix>& keyval: m_facesPaths) {
         std::vector<glm::vec3> vertices;
-        vertices.reserve(mat.n_cols);
-        for (std::size_t i = 0; i < mat.n_cols; i++) {
-            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+        FormalMatrix mat;
+        if (iterationLevel != 0) {
+            mat = this->getOperator(keyval.first[0]).multiplyValues(keyval.second);
+        }
+        else {
+            mat = keyval.second;
+        }
+        vertices.reserve(mat.cols());
+        for (std::size_t i = 0; i < mat.cols(); i++) {
+            vertices.emplace_back(mat.get(0, i)->value(), mat.get(1, i)->value(), mat.get(2, i)->value());
         }
         res.push_back(vertices);
     }
@@ -203,12 +228,17 @@ void Bcifs::updateMSS() {
             m_mapOperators[id].setSumToOne();
         }
     }
+    this->invalidate();
 }
 
 void Bcifs::printMSS() const {
     for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
         Core::LOG_INFO(keyval.second.toString());
     }
+}
+
+void Bcifs::invalidate() {
+    m_invalidatedMatrices = true;
 }
 
 Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
@@ -241,32 +271,33 @@ TransitionID Bcifs::addTransition(std::string name, StateID from, StateID to, Tr
     return transition.id();
 }
 
-void Bcifs::printConstraint(const Constraint& constraint) const {
-    std::cout << "[ ";
+std::string Bcifs::printConstraint(const Constraint& constraint) const {
+    std::string res = "[ ";
     bool firstTransition = true;
     for (const auto& transition: constraint.first) {
         const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
-            std::cout << m_automaton.findStateByID(trans.from()).name();
+            res += m_automaton.findStateByID(trans.from()).name();
             firstTransition = false;
         }
-        std::cout << " ";
-        trans.print();
-        std::cout << " " << m_automaton.findStateByID(trans.to()).name();
+        res += " ";
+        res += trans.toString();
+        res += " " + m_automaton.findStateByID(trans.to()).name();
     }
-    std::cout << " ] = [ ";
+    res += " ] = [ ";
     firstTransition = true;
     for (const auto& transition: constraint.second) {
         const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
-            std::cout << m_automaton.findStateByID(trans.from()).name();
+            res += m_automaton.findStateByID(trans.from()).name();
             firstTransition = false;
         }
-        std::cout << " ";
-        trans.print();
-        std::cout << " " << m_automaton.findStateByID(trans.to()).name();
+        res += " ";
+        res += trans.toString();
+        res += " " + m_automaton.findStateByID(trans.to()).name();
     }
-    std::cout << " ]\n";
+    res += " ]\n";
+    return res;
 }
 
 void Bcifs::checkAutomaton() const {
@@ -588,6 +619,8 @@ void Bcifs::completeSubdivisionMatrices() {
                             }
                         }
                     }
+                } else {
+                    m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
                 }
             }
         }
@@ -646,10 +679,10 @@ void Bcifs::buildMassSpringSystems() {
     }
 }
 
-arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
-    arma::mat res = this->getOperator(path[0]).toMat();
-    for (std::size_t i = 1; i < path.size(); i++) {
-        res = res * this->getOperator(path[i]).toMat();
+FormalMatrix Bcifs::getOperatorOfPath(const Path& path) const {
+    FormalMatrix res = this->getOperator(path[1]);
+    for (std::size_t i = 2; i < path.size(); i++) {
+        res = res.multiplyValues(this->getOperator(path[i]));
     }
     return res;
 }

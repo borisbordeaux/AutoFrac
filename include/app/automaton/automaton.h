@@ -24,6 +24,7 @@ public:
     const Transition& findTransitionByID(TransitionID id) const;
     const State& findStateByID(StateID id) const;
 
+    std::string toString() const;
     void print() const;
 
     std::size_t internalDimensions(StateID id) const;

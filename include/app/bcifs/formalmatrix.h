@@ -31,6 +31,7 @@ public:
     FormalMatrix operator*(const FormalMatrix& other) const;
     FormalMatrix multiplyValues(const FormalMatrix& other) const;
 
+    std::string toString(bool showAddress = false) const;
     void print(bool showAddress = false) const;
 
     BooleanMatrix toBooleanMatrix() const;

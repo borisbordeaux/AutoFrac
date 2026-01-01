@@ -29,11 +29,12 @@ public:
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
     void setInitMat(TransitionID id, const FormalMatrix& matrix);
+    std::string toString() const;
     void print() const;
     void validate();
 
     void reset();
-    std::vector<std::vector<glm::vec3>> faces(int iterationLevel) const;
+    std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
     void updateMSS();
@@ -42,6 +43,8 @@ public:
     inline float* k() { return &m_k; }
 
     inline float* damping() { return &m_damping; }
+
+    void invalidate();
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -57,7 +60,7 @@ private:
     TransitionID addInternal(std::string name, StateID stateID);
     TransitionID addTransition(std::string name, StateID from, StateID to, TransitionType type);
 
-    void printConstraint(const Constraint& constraint) const;
+    std::string printConstraint(const Constraint& constraint) const;
 
     void checkAutomaton() const;
     void checkSpaces() const;
@@ -77,7 +80,7 @@ private:
 
     void buildMassSpringSystems();
 
-    arma::mat getOperatorOfPath(const Path& path) const;
+    FormalMatrix getOperatorOfPath(const Path& path) const;
     FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
     FormalMatrix globalMatrixOf(StateID id) const;
 
@@ -95,6 +98,8 @@ private:
     float m_damping = 0.3f;
     float m_k = 0.05f;
     std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
+    bool m_invalidatedMatrices = true;
+    std::vector<std::pair<Path, FormalMatrix>> m_facesPaths;
 };
 
 } // BCIFS

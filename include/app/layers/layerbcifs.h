@@ -60,6 +60,8 @@ private:
     int m_currentIterationMSS = m_nbIterationsMSS;
     bool m_bcifsChanged = false;
     bool m_displayGrid = false;
+    std::size_t m_nbFaces = 0;
+    std::size_t m_nbTriangles = 0;
 
     Core::VertexArray m_vao;
     Core::VertexBuffer m_vbo;

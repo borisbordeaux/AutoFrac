@@ -31,6 +31,7 @@ public:
 
     inline TransitionType type() const { return m_type; }
 
+    std::string toString() const;
     void print() const;
 
 private:

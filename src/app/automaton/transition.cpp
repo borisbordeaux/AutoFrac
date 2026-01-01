@@ -3,27 +3,35 @@
 #include <utility>
 #include <iostream>
 
+#include "core/log.h"
+
 namespace BCIFS {
 
 Transition::Transition(TransitionID id, std::string name, StateID from, StateID to, TransitionType type) :
         m_id(id), m_name(std::move(name)), m_from(from), m_to(to), m_type(type) {}
 
-void Transition::print() const {
+std::string Transition::toString() const {
+    std::string res;
     switch (m_type) {
         case TransitionType::INTERNAL:
-            std::cout << "Internal(";
+            res = "Internal(";
             break;
         case TransitionType::BOUNDARY:
-            std::cout << "Boundary(";
+            res = "Boundary(";
             break;
         case TransitionType::SUBDIVISION:
-            std::cout << "Subdivision(";
+            res = "Subdivision(";
             break;
         case TransitionType::PERMUTATION:
-            std::cout << "Permutation(";
+            res = "Permutation(";
             break;
     }
-    std::cout << m_name << ")";
+    res += m_name + ")";
+    return res;
+}
+
+void Transition::print() const {
+    Core::LOG_INFO(this->toString());
 }
 
 } // BCIFS

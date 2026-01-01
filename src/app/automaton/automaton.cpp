@@ -41,6 +41,21 @@ const State& Automaton::findStateByID(StateID id) const {
     throw std::runtime_error("State not found");
 }
 
+std::string Automaton::toString() const {
+    std::string res = "States:\n";
+    for (const State& state: m_states) {
+        res += state.name() + " with " + std::to_string(this->internalDimensions(state.id())) + " internal dimensions\n";
+    }
+    res += "\nTransitions:\n";
+    for (const Transition& transition: m_transitions) {
+        res += this->findStateByID(transition.from()).name() + " ";
+        res += transition.toString();
+        res += " " + this->findStateByID(transition.to()).name() + "\n";
+    }
+    res += '\n';
+    return res;
+}
+
 void Automaton::print() const {
     std::cout << "States:\n";
     for (const State& state: m_states) {

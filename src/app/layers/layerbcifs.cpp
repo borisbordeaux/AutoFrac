@@ -199,8 +199,7 @@ void LayerBcifs::testSubdQuad() {
     BCIFS::TransitionID s1face = m_bcifs.addSubdivision("1", face, face);
     BCIFS::TransitionID s2face = m_bcifs.addSubdivision("2", face, face);
     BCIFS::TransitionID s3face = m_bcifs.addSubdivision("3", face, face);
-    [[maybe_unused]] BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
-    //BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+    BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
     // permutation constraints
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0edge }, { b1edge });
@@ -235,45 +234,16 @@ void LayerBcifs::testSubdQuad() {
     m_bcifs.addConstraint({ b1face, b1edge }, { b2face, b0edge });
     m_bcifs.addConstraint({ b2face, b1edge }, { b3face, b0edge });
     m_bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
-    // on init state
-    //m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
+
+    // init control points
+    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+            {-1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, -1.0f, -1.0f},
+            {-1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+            {1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}
+    }, BCIFS::CoefType::CONST));
 
     // define all matrices
     m_bcifs.validate();
-
-    // init control points
-    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
-    matrices[0].get(0, 0)->setValue(-1.0f);
-    matrices[0].get(1, 0)->setValue(-1.0f);
-    matrices[0].get(2, 0)->setValue(1.0f);
-
-    matrices[0].get(0, 1)->setValue(0.0f);
-    matrices[0].get(1, 1)->setValue(-1.0f);
-    matrices[0].get(2, 1)->setValue(0.0f);
-
-    matrices[0].get(0, 2)->setValue(1.0f);
-    matrices[0].get(1, 2)->setValue(-1.0f);
-    matrices[0].get(2, 2)->setValue(-1.0f);
-
-    matrices[0].get(0, 3)->setValue(1.0f);
-    matrices[0].get(1, 3)->setValue(0.0f);
-    matrices[0].get(2, 3)->setValue(0.0f);
-
-    matrices[0].get(0, 4)->setValue(1.0f);
-    matrices[0].get(1, 4)->setValue(1.0f);
-    matrices[0].get(2, 4)->setValue(1.0f);
-
-    matrices[0].get(0, 5)->setValue(0.0f);
-    matrices[0].get(1, 5)->setValue(1.0f);
-    matrices[0].get(2, 5)->setValue(0.0f);
-
-    matrices[0].get(0, 6)->setValue(-1.0f);
-    matrices[0].get(1, 6)->setValue(1.0f);
-    matrices[0].get(2, 6)->setValue(-1.0f);
-
-    matrices[0].get(0, 7)->setValue(-1.0f);
-    matrices[0].get(1, 7)->setValue(0.0f);
-    matrices[0].get(2, 7)->setValue(0.0f);
 }
 
 void LayerBcifs::testSierpinski() {
@@ -329,26 +299,21 @@ void LayerBcifs::testSierpinski() {
     // on init state
     m_bcifs.addConstraint({ s0init, b0face }, { s1init, b0face });
 
+    // init control points
+    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+        {-1.0f, 1.0f, 0.0f},
+        {0.0f, 0.0f, 1.7f},
+        {1.0f, 0.0f, 0.0f}
+    }, BCIFS::CoefType::CONST));
+
+    m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
+        {1.0f, -1.0f, 0.0f},
+        {0.0f, 0.0f, -1.0f},
+        {0.0f, 1.0f, 2.0f}
+    }, BCIFS::CoefType::CONST));
+
     // define all matrices
     m_bcifs.validate();
-
-    // init control points
-    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
-    matrices[0].get(0, 0)->setValue(-1.0f);
-    matrices[0].get(1, 0)->setValue(0.0f);
-    matrices[0].get(2, 0)->setValue(1.0f);
-
-    matrices[0].get(0, 1)->setValue(1.0f);
-    matrices[0].get(1, 1)->setValue(0.0f);
-    matrices[0].get(2, 1)->setValue(0.0f);
-
-    matrices[0].get(0, 2)->setValue(0.0f);
-    matrices[0].get(1, 2)->setValue(1.7f);
-    matrices[0].get(2, 2)->setValue(0.0f);
-
-    matrices[1].get(0, 2)->setValue(0.0f);
-    matrices[1].get(1, 2)->setValue(-1.0f);
-    matrices[1].get(2, 2)->setValue(2.0f);
 }
 
 void LayerBcifs::testG2() {
@@ -381,17 +346,10 @@ void LayerBcifs::testG2() {
             {{ b4face, b0cantor }, { b4face, b1cantor }},
             {{ b5face, b0bezier }, { b5face, internalBezier[0] }, { b5face, b1bezier }}
     });
-//    m_bcifs.addGrid(cantor, {
-//            {{ b0cantor }, { b1cantor }}
-//    });
-//    m_bcifs.addGrid(bezier, {
-//            {{ b0bezier }, { internalBezier[0] }, { b1bezier }}
-//    });
 
     // space of states
     m_bcifs.setSpace(bezier, { b0bezier, internalBezier[0], b1bezier });
-    m_bcifs.setSpace(cantor, { b0cantor,
-                               b1cantor });
+    m_bcifs.setSpace(cantor, { b0cantor, b1cantor });
     m_bcifs.setSpace(face, { b0face, b1face, b2face, b3face, b4face, b5face });
     // subdivision of states
     BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
@@ -405,13 +363,12 @@ void LayerBcifs::testG2() {
     BCIFS::TransitionID s3face = m_bcifs.addSubdivision("3", face, face);
     BCIFS::TransitionID s4face = m_bcifs.addSubdivision("4", face, face);
     BCIFS::TransitionID s5face = m_bcifs.addSubdivision("5", face, face);
-    [[maybe_unused]] BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
-    //BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+    BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
     // permutation constraints
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0cantor }, { b1cantor });
     m_bcifs.addConstraint({ permut, b1cantor }, { b0cantor });
-    // to constraint subdivision operators using permutation operators
+    // to constrain subdivision operators using permutation operators
     m_bcifs.addConstraint({ permut, s0cantor }, { s1cantor, permut });
     m_bcifs.addConstraint({ permut, s1cantor }, { s0cantor, permut });
     // incidence constraints
@@ -450,9 +407,8 @@ void LayerBcifs::testG2() {
     m_bcifs.addConstraint({ b3face, b1bezier }, { b4face, b0cantor });
     m_bcifs.addConstraint({ b4face, b1cantor }, { b5face, b0bezier });
     m_bcifs.addConstraint({ b5face, b1bezier }, { b0face, b0cantor });
-    // on init state
-    //m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
 
+    // init matrices for edges
     m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
         {1.0f, 2.0f / 3.0f},
         {0.0f, 1.0f / 3.0f}
@@ -474,34 +430,31 @@ void LayerBcifs::testG2() {
         {0.25f, 0.5f, 1.0f}
     }, BCIFS::CoefType::CONST));
 
+    // init control points
+    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+        {std::cos(0.0f * M_PIf * 2.0f / 6.0f),
+            std::cos(1.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
+            std::cos(2.0f * M_PIf * 2.0f / 6.0f),
+            std::cos(3.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
+            std::cos(4.0f * M_PIf * 2.0f / 6.0f),
+            std::cos(5.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)},
+        {std::sin(0.0f * M_PIf * 2.0f / 6.0f),
+            std::sin(1.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
+            std::sin(2.0f * M_PIf * 2.0f / 6.0f),
+            std::sin(3.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
+            std::sin(4.0f * M_PIf * 2.0f / 6.0f),
+            std::sin(5.0f * M_PIf * 2.0f / 6.0f),
+            0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+    }, BCIFS::CoefType::CONST));
+
     // define all matrices
     m_bcifs.validate();
-
-    // init control points
-    std::vector<BCIFS::FormalMatrix> matrices = m_bcifs.controlPoints();
-
-    for (std::size_t i = 0; i < 9; i++) {
-        matrices[0].get(2, i)->setValue(0.0f);
-    }
-    matrices[0].get(0, 0)->setValue(std::cos(0.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 0)->setValue(std::sin(0.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(0, 1)->setValue(std::cos(1.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 1)->setValue(std::sin(1.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(0, 3)->setValue(std::cos(2.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 3)->setValue(std::sin(2.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(0, 4)->setValue(std::cos(3.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 4)->setValue(std::sin(3.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(0, 6)->setValue(std::cos(4.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 6)->setValue(std::sin(4.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(0, 7)->setValue(std::cos(5.0f * M_PIf * 2.0f / 6.0f));
-    matrices[0].get(1, 7)->setValue(std::sin(5.0f * M_PIf * 2.0f / 6.0f));
-
-    matrices[0].get(0, 2)->setValue(0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 2)->setValue(0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(0, 5)->setValue(0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 5)->setValue(0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(0, 8)->setValue(0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 8)->setValue(0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f));
 }
 
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
@@ -522,9 +475,10 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         // get all faces for the current iteration level
         // and add them to the buffer
         std::vector<std::vector<glm::vec3>> faces = m_bcifs.faces(m_iterationLevel);
+        m_nbFaces = faces.size();
 
-        std::size_t nbTriangles = LayerBcifs::findNbTriangles(faces);
-        std::size_t nbAdds = 3 * nbTriangles;
+        m_nbTriangles = LayerBcifs::findNbTriangles(faces);
+        std::size_t nbAdds = 3 * m_nbTriangles;
         m_data.resize(nbAdds * m_floatsPerVertex);
 
         for (const std::vector<glm::vec3>& face: faces) {
@@ -534,7 +488,6 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         m_vbo.bind();
         m_vbo.bufferData(m_data);
         m_vbo.unbind();
-
 
         if (m_displayGrid) {
             m_countGrid = 0;
@@ -620,6 +573,7 @@ void LayerBcifs::onImGuiRender() {
         if (m_iterationLevel < 0)
             m_iterationLevel = 0;
         m_bcifsChanged = true;
+        m_bcifs.invalidate();
     }
 
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);
@@ -636,6 +590,9 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Button("Print mss")) {
         m_bcifs.printMSS();
     }
+
+    ImGui::Text("Faces: %zu", m_nbFaces);
+    ImGui::Text("Triangles: %zu", m_nbTriangles);
 
     ImGui::Text("Control points");
     float speed = 0.01f;
