@@ -453,6 +453,27 @@ void LayerBcifs::testG2() {
     // on init state
     //m_bcifs.addConstraint({ s0init, b0face, permut }, { s1init, b0face });
 
+    m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
+        {1.0f, 2.0f / 3.0f},
+        {0.0f, 1.0f / 3.0f}
+    }, BCIFS::CoefType::CONST));
+    m_bcifs.setInitMat(s1cantor, BCIFS::FormalMatrix({
+        {1.0f / 3.0f, 0.0f},
+        {2.0f / 3.0f, 1.0f}
+    }, BCIFS::CoefType::CONST));
+
+    m_bcifs.setInitMat(s0bezier, BCIFS::FormalMatrix({
+        {1.0f, 0.5f, 0.25f},
+        {0.0f, 0.5f, 0.50f},
+        {0.0f, 0.0f, 0.25f}
+    }, BCIFS::CoefType::CONST));
+
+    m_bcifs.setInitMat(s1bezier, BCIFS::FormalMatrix({
+        {0.25f, 0.0f, 0.0f},
+        {0.50f, 0.5f, 0.0f},
+        {0.25f, 0.5f, 1.0f}
+    }, BCIFS::CoefType::CONST));
+
     // define all matrices
     m_bcifs.validate();
 
@@ -475,12 +496,12 @@ void LayerBcifs::testG2() {
     matrices[0].get(0, 7)->setValue(std::cos(5.0f * M_PIf * 2.0f / 6.0f));
     matrices[0].get(1, 7)->setValue(std::sin(5.0f * M_PIf * 2.0f / 6.0f));
 
-    matrices[0].get(0, 2)->setValue(std::cos(3.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 2)->setValue(std::sin(3.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(0, 5)->setValue(std::cos(7.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 5)->setValue(std::sin(7.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(0, 8)->setValue(std::cos(11.0f * M_PIf * 2.0f / 12.0f));
-    matrices[0].get(1, 8)->setValue(std::sin(11.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(0, 2)->setValue(0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 2)->setValue(0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(0, 5)->setValue(0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 5)->setValue(0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(0, 8)->setValue(0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f));
+    matrices[0].get(1, 8)->setValue(0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f));
 }
 
 void LayerBcifs::onUpdate(float /*deltaTime*/) {

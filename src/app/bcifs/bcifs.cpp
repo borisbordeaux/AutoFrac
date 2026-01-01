@@ -62,6 +62,10 @@ void Bcifs::addConstraint(const Path& lhs, const Path& rhs) {
     }
 }
 
+void Bcifs::setInitMat(TransitionID id, const FormalMatrix& matrix) {
+    m_mapInitMat[id] = matrix;
+}
+
 void Bcifs::print() const {
     m_automaton.print();
     std::cout << "Classic constraints:\n";
@@ -121,7 +125,7 @@ void Bcifs::validate() {
     this->initializeMatrices(); // initialize all boundary and internal operators
     this->resolveConstraints(); // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators(); // initialize all subdivision operators not implied in a constraint
-    this->completeSubdvisionMatrices(); // make sure matrices are barycentric transformations
+    this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
     this->buildMassSpringSystems(); // initialize all mass spring systems for each state with a user defined grid
 }
 
@@ -569,10 +573,23 @@ void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
     std::cout << std::endl;
 }
 
-void Bcifs::completeSubdvisionMatrices() {
+void Bcifs::completeSubdivisionMatrices() {
     for (const Transition& transition: m_automaton.transitions()) {
         if (transition.type() == TransitionType::SUBDIVISION) {
-            m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
+            if (m_mapInitMat.find(transition.id()) == m_mapInitMat.end()) {
+                m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
+            } else {
+                if (m_mapOperators[transition.id()].rows() == m_mapInitMat[transition.id()].rows() && m_mapOperators[transition.id()].cols() == m_mapInitMat[transition.id()].cols()) {
+                    for (std::size_t row = 0; row < m_mapOperators[transition.id()].rows(); row++) {
+                        for (std::size_t col = 0; col < m_mapOperators[transition.id()].cols(); col++) {
+                            if (m_mapOperators[transition.id()].get(row, col)->type() == CoefType::VAR) {
+                                m_mapOperators[transition.id()].get(row, col)->setValue(m_mapInitMat[transition.id()].get(row, col)->value());
+                                m_mapOperators[transition.id()].get(row, col)->setType(m_mapInitMat[transition.id()].get(row, col)->type());
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

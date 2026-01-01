@@ -42,6 +42,21 @@ FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols, bool initRandom) 
     }
 }
 
+FormalMatrix::FormalMatrix(const std::vector<std::vector<float>>& values, CoefType type) {
+    m_rows = values.size();
+    m_cols = values[0].size();
+    for (std::size_t row = 0; row < m_rows; row++) {
+        m_coefficients.emplace_back();
+        for (std::size_t col = 0; col < m_cols; col++) {
+            if (type == CoefType::CONST) {
+                m_coefficients[row].push_back(FormalCoef::constant(values[row][col]));
+            } else {
+                m_coefficients[row].push_back(FormalCoef::var(values[row][col]));
+            }
+        }
+    }
+}
+
 FormalMatrix FormalMatrix::operator*(const FormalMatrix& other) const {
     if (m_cols != other.m_rows)
         throw std::runtime_error("Dimensions not compatible for multiplication");

@@ -6,7 +6,7 @@
 namespace BCIFS {
 
 enum class CoefType {
-    ZERO, ONE, VAR
+    ZERO, ONE, VAR, CONST
 };
 
 class FormalCoef;
@@ -21,6 +21,7 @@ public:
     static FormalCoefRef zero();
     static FormalCoefRef one();
     static FormalCoefRef var(float v);
+    static FormalCoefRef constant(float v);
 
     static FormalCoefRef multiply(const FormalCoefRef& v1, const FormalCoefRef& v2);
     static FormalCoefRef multiplyValues(const FormalCoefRef& v1, const FormalCoefRef& v2);
@@ -34,9 +35,10 @@ public:
 
     inline CoefType type() const { return const_cast<FormalCoef*>(this)->findRoot()->m_type; }
 
-    void setValue(float value) { const_cast<FormalCoef*>(this)->findRoot()->m_value = value; }
+    void setValue(float value) { this->findRoot()->m_value = value; }
+    void setType(CoefType type) { this->findRoot()->m_type = type; }
 
-    void setInitialized() { const_cast<FormalCoef*>(this)->findRoot()->m_initialized = true; }
+    void setInitialized() { this->findRoot()->m_initialized = true; }
 
     inline bool initialized() const { return const_cast<FormalCoef*>(this)->findRoot()->m_initialized; }
 

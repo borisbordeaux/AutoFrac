@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <memory>
-#include <glm/detail/type_mat4x4.hpp>
 #include <armadillo>
 #include "formalcoef.h"
 
@@ -17,6 +16,7 @@ public:
     FormalMatrix(std::size_t rows, std::size_t cols);
     explicit FormalMatrix(std::size_t rows, std::size_t cols, float value);
     explicit FormalMatrix(std::size_t rows, std::size_t cols, bool initRandom);
+    FormalMatrix(const std::vector<std::vector<float>>& values, CoefType type);
 
     inline std::size_t rows() const { return m_rows; }
 

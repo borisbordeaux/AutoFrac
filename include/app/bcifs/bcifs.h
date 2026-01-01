@@ -28,6 +28,7 @@ public:
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
+    void setInitMat(TransitionID id, const FormalMatrix& matrix);
     void print() const;
     void validate();
 
@@ -72,7 +73,7 @@ private:
 
     void printConstraintMatrices(const Constraint& constraint);
 
-    void completeSubdvisionMatrices();
+    void completeSubdivisionMatrices();
 
     void buildMassSpringSystems();
 
@@ -93,6 +94,7 @@ private:
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
     float m_damping = 0.3f;
     float m_k = 0.05f;
+    std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
 };
 
 } // BCIFS
