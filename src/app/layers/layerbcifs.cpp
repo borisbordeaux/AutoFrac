@@ -690,7 +690,8 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
         m_bcifsChanged = true;
     }
-    if (ImGui::InputInt("Iteration level", &m_iterationLevel)) {
+    ImGui::InputInt("Iteration level", &m_iterationLevel);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_iterationLevel < 0)
             m_iterationLevel = 0;
         m_bcifsChanged = true;
