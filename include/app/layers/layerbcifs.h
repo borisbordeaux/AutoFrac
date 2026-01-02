@@ -31,6 +31,7 @@ public:
     void testSubdQuad();
     void testSierpinski();
     void testG2();
+    void testSquareSierpinski();
 
     void onUpdate(float deltaTime) override;
     void onRender() override;

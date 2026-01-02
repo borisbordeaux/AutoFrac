@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
+#include <queue>
+#include <unordered_set>
 
 namespace BCIFS {
 
@@ -159,6 +161,51 @@ std::vector<Path> Automaton::allSubdivisionPaths(StateID from, int depth) const 
     this->dfs(from, 0, depth, currentPath, res);
 
     return res;
+}
+
+std::unordered_map<StateID, Path> Automaton::shortestPaths(StateID from) const {
+    std::unordered_map<StateID, Path> result;
+    std::unordered_set<StateID> visited;
+    std::unordered_map<StateID, TransitionID> parent;
+
+    std::queue<StateID> q;
+
+    visited.insert(from);
+    q.push(from);
+
+    while (!q.empty()) {
+        StateID current = q.front();
+        q.pop();
+
+        for (const TransitionID& transitionId : this->subdivisionTransitionsOf(current)) {
+            Transition transition = this->findTransitionByID(transitionId);
+            StateID next = transition.to();
+
+            if (visited.count(next) == 0) {
+                visited.insert(next);
+                parent[next] = transitionId;
+                q.push(next);
+            }
+        }
+    }
+
+    // Path reconstruction
+    for (const auto& [node, _] : parent) {
+        Path path;
+        StateID cur = node;
+
+        while (cur != from) {
+            const TransitionID& transitionId = parent[cur];
+            path.push_back(transitionId);
+            Transition transition = this->findTransitionByID(transitionId);
+            cur = transition.from();
+        }
+
+        std::reverse(path.begin(), path.end());
+        result[node] = path;
+    }
+
+    return result;
 }
 
 void Automaton::dfs(StateID from, int depth, int maxDepth, Path& currentPath, std::vector<Path>& result) const {

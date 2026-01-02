@@ -105,7 +105,7 @@ std::string FormalMatrix::toString(bool showAddress) const {
 }
 
 void FormalMatrix::print(bool showAddress) const {
-    Core::LOG_INFO(this->toString(showAddress));
+    Core::LOG_INFO("Matrix\n"+this->toString(showAddress));
 }
 
 BooleanMatrix FormalMatrix::toBooleanMatrix() const {

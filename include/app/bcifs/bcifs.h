@@ -45,6 +45,8 @@ public:
     inline float* damping() { return &m_damping; }
 
     void invalidate();
+    Automaton& automaton() { return m_automaton; }
+    StateID initState() const { return m_initStateID.value_or(-1); }
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -81,6 +83,7 @@ private:
     void buildMassSpringSystems();
 
     FormalMatrix getOperatorOfPath(const Path& path) const;
+    FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
     FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
     FormalMatrix globalMatrixOf(StateID id) const;
 

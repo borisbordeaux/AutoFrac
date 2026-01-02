@@ -201,19 +201,21 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
 std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
     if (!m_initStateID.has_value()) { return {}; }
 
-    std::vector<FormalMatrix> controlPoints = this->controlPoints();
-
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
+    std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
-        std::vector<mss::Spring> springs = keyval.second.springs();
-        for (mss::Spring& spring: springs) {
-            FormalMatrix pos1BarycentricSpace = spring.m1().position();
-            FormalMatrix pos13D = controlPoints[0].multiplyValues(pos1BarycentricSpace);
+        if (paths.find(keyval.first) != paths.end()) {
+            std::vector<mss::Spring> springs = keyval.second.springs();
+            for (mss::Spring& spring: springs) {
+                FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
+                FormalMatrix pos1BarycentricSpace = spring.m1().position();
+                FormalMatrix pos13D = op.multiplyValues(pos1BarycentricSpace);
 
-            FormalMatrix pos2BarycentricSpace = spring.m2().position();
-            FormalMatrix pos23D = controlPoints[0].multiplyValues(pos2BarycentricSpace);
-            res.emplace_back(glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
-                             glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+                FormalMatrix pos2BarycentricSpace = spring.m2().position();
+                FormalMatrix pos23D = op.multiplyValues(pos2BarycentricSpace);
+                res.emplace_back(glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
+                                 glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+            }
         }
     }
 
@@ -628,13 +630,18 @@ void Bcifs::completeSubdivisionMatrices() {
 }
 
 void Bcifs::buildMassSpringSystems() {
+    std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     // for each state, look at its subdivisions
     for (const State& state: m_automaton.states()) {
         bool needMSS = false;
-        for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
-            const Transition& transition = m_automaton.findTransitionByID(transitionId);
-            if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
-                needMSS = true;
+        // if current state is accessible
+        if (paths.find(state.id()) != paths.end()) {
+            for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
+                const Transition& transition = m_automaton.findTransitionByID(transitionId);
+                // if arrival state has a grid
+                if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
+                    needMSS = true;
+                }
             }
         }
         // if at least one of the arrival state has a grid
@@ -682,6 +689,14 @@ void Bcifs::buildMassSpringSystems() {
 FormalMatrix Bcifs::getOperatorOfPath(const Path& path) const {
     FormalMatrix res = this->getOperator(path[1]);
     for (std::size_t i = 2; i < path.size(); i++) {
+        res = res.multiplyValues(this->getOperator(path[i]));
+    }
+    return res;
+}
+
+FormalMatrix Bcifs::getOperatorOfPathForMSS(const Path& path) const {
+    FormalMatrix res = this->getOperator(path[0]);
+    for (std::size_t i = 1; i < path.size(); i++) {
         res = res.multiplyValues(this->getOperator(path[i]));
     }
     return res;

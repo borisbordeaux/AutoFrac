@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <optional>
+#include <unordered_map>
+
 #include "state.h"
 #include "transition.h"
 
@@ -41,6 +43,7 @@ public:
     std::vector<TransitionID> subdivisionTransitionsOf(StateID id) const;
     std::vector<TransitionID> subdivisionTransitionsTo(StateID id, StateID ignoredId) const;
     std::vector<Path> allSubdivisionPaths(StateID from, int depth) const;
+    std::unordered_map<StateID, Path> shortestPaths(StateID from) const;
 
     void reset();
 
