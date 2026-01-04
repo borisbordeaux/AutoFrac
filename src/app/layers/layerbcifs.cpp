@@ -20,38 +20,6 @@ LayerBcifs::LayerBcifs() :
         m_mousePos(0.0f, 0.0f),
         m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
         m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)) {
-    m_vao.bind();
-    m_vbo.bind();
-
-    m_layout.pushFloats(3); // position
-    m_layout.pushFloats(3); // normal
-
-    m_vao.addBuffer(m_vbo, m_layout);
-
-    m_program.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/bcifs/vertexShader.glsl");
-    m_program.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/bcifs/fragmentShader.glsl");
-    m_program.link();
-
-    // unbind the vao *before* the vbo
-    m_vao.unbind();
-    m_vbo.unbind();
-    m_program.unbind();
-
-    m_vaoGrid.bind();
-    m_vboGrid.bind();
-
-    m_layoutGrid.pushFloats(3); // position
-
-    m_vaoGrid.addBuffer(m_vboGrid, m_layoutGrid);
-
-    m_programGrid.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/grid/vertexShader.glsl");
-    m_programGrid.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/grid/fragmentShader.glsl");
-    m_programGrid.link();
-
-    // unbind the vao *before* the vbo
-    m_vaoGrid.unbind();
-    m_vboGrid.unbind();
-    m_programGrid.unbind();
 }
 
 void LayerBcifs::testConstraints() {
@@ -587,41 +555,10 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
     }
     if (m_bcifsChanged) {
         // update data from BCIFS
-        m_count = 0;
-        m_data.clear();
-        // get all faces for the current iteration level
-        // and add them to the buffer
-        std::vector<std::vector<glm::vec3>> faces = m_bcifs.faces(m_iterationLevel);
-        m_nbFaces = faces.size();
-
-        m_nbTriangles = LayerBcifs::findNbTriangles(faces);
-        std::size_t nbAdds = 3 * m_nbTriangles;
-        m_data.resize(nbAdds * m_floatsPerVertex);
-
-        for (const std::vector<glm::vec3>& face: faces) {
-            this->addFace(face);
-        }
-
-        m_vbo.bind();
-        m_vbo.bufferData(m_data);
-        m_vbo.unbind();
+        m_batchFace.setBcifs(m_bcifs, m_iterationLevel);
 
         if (m_displayGrid) {
-            m_countGrid = 0;
-            m_dataGrid.clear();
-            std::vector<std::pair<glm::vec3, glm::vec3>> springs = m_bcifs.springs();
-
-            std::size_t nbLines = springs.size();
-            std::size_t nbAddsLine = 2 * nbLines;
-            m_dataGrid.resize(nbAddsLine * m_floatsPerVertexGrid);
-
-            for (const std::pair<glm::vec3, glm::vec3>& line: springs) {
-                this->addLine(line);
-            }
-
-            m_vboGrid.bind();
-            m_vboGrid.bufferData(m_dataGrid);
-            m_vboGrid.unbind();
+            m_batchGrid.setBcifs(m_bcifs);
         }
 
         m_bcifsChanged = false;
@@ -630,36 +567,16 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
 
 void LayerBcifs::onRender() {
     if (m_uniformsDirty) {
-        m_program.bind();
-        glm::mat4 view = m_camera.getViewMatrix();
-        glm::mat4 mvp = m_proj * view;
-        m_program.setUniformMat4f("u_mvp", mvp);
-        m_program.setUniform3f("lightPos", m_camera.getEye());
-        m_program.setUniform3f("cameraPos", m_camera.getEye());
-        m_program.unbind();
-
-        m_programGrid.bind();
-        m_camera.zoom(0.001f);
-        glm::mat4 viewGrid = m_camera.getViewMatrix();
-        m_camera.dezoom(0.001f);
-        glm::mat4 mvpGrid = m_proj * viewGrid;
-        m_programGrid.setUniformMat4f("u_mvp", mvpGrid);
-        m_programGrid.unbind();
+        m_batchFace.setMVP(m_camera, m_proj);
+        m_batchGrid.setMVP(m_camera, m_proj);
 
         m_uniformsDirty = false;
     }
-    Core::Renderer::draw(m_vao, m_count / m_floatsPerVertex, m_program);
-
-    Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
+    m_batchFace.render();
 
     if (m_displayGrid) {
-        m_programGrid.bind();
-        m_vaoGrid.bind();
-        Core::GLCall(glDrawArrays(GL_LINES, 0, m_countGrid / m_floatsPerVertexGrid));
-        m_programGrid.unbind();
-        m_vaoGrid.unbind();
+        m_batchGrid.render();
     }
-
 }
 
 void LayerBcifs::onImGuiRender() {
@@ -725,8 +642,8 @@ void LayerBcifs::onImGuiRender() {
         std::cout << std::endl;
     }
 
-    ImGui::Text("Faces: %zu", m_nbFaces);
-    ImGui::Text("Triangles: %zu", m_nbTriangles);
+    ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
+    ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
 
     ImGui::Text("Control points");
     float speed = 0.01f;
@@ -836,64 +753,4 @@ bool LayerBcifs::onMouseScrolledEvent(Core::MouseScrolledEvent& event) {
 
     m_uniformsDirty = true;
     return true;
-}
-
-std::size_t LayerBcifs::findNbTriangles(const std::vector<std::vector<glm::vec3>>& faces) {
-    std::size_t res = 0;
-    for (const std::vector<glm::vec3>& face: faces) {
-        res += face.size();
-    }
-    return res;
-}
-
-void LayerBcifs::addFace(const std::vector<glm::vec3>& vertices) {
-    glm::vec3 barycenter { 0, 0, 0 };
-    for (const glm::vec3& vertex: vertices) {
-        barycenter += vertex;
-    }
-    barycenter /= static_cast<float>(vertices.size());
-    for (std::size_t i = 0; i < vertices.size(); i++) {
-        this->addTriangle(barycenter, vertices[i], vertices[(i + 1) % vertices.size()]);
-    }
-}
-
-void LayerBcifs::addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3) {
-    //compute the normal of the triangleSphere
-    glm::vec3 n = glm::normalize(glm::cross(pos2 - pos1, pos3 - pos2));
-
-    //add the vertices to the data
-    this->addVertexFace(pos1, n);
-    this->addVertexFace(pos2, n);
-    this->addVertexFace(pos3, n);
-}
-
-void LayerBcifs::addVertexFace(const glm::vec3& v, const glm::vec3& n) {
-    // add to the end of the data already added
-    float* p = m_data.data() + m_count;
-    // the coordinates of the vertex
-    *p++ = v.x;
-    *p++ = v.y;
-    *p++ = v.z;
-    // the normal of the vertex
-    *p++ = n.x;
-    *p++ = n.y;
-    *p++ = n.z;
-    // we update the amount of data
-    m_count += m_floatsPerVertex;
-}
-
-void LayerBcifs::addLine(const std::pair<glm::vec3, glm::vec3>& line) {
-    this->addVertexLine(line.first);
-    this->addVertexLine(line.second);
-}
-
-void LayerBcifs::addVertexLine(const glm::vec3& v) {
-// add to the end of the data already added
-    float* p = m_dataGrid.data() + m_countGrid;
-    // the coordinates of the vertex
-    *p++ = v.x;
-    *p++ = v.y;
-    *p++ = v.z;
-    // we update the amount of data
-    m_countGrid += m_floatsPerVertexGrid;
 }
