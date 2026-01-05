@@ -1,6 +1,7 @@
 #ifndef AUTOFRAC_LAYERBCIFS_H
 #define AUTOFRAC_LAYERBCIFS_H
 
+#include "app/batch/batchcontrolpoint.h"
 #include "app/batch/batchface.h"
 #include "app/batch/batchgrid.h"
 #include "core/layer.h"
@@ -54,6 +55,7 @@ private:
 
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;
+    BatchControlPoint m_batchControlPoint;
 
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;

@@ -1,5 +1,5 @@
-#ifndef AUTOFRAC_BATCHGRID_H
-#define AUTOFRAC_BATCHGRID_H
+#ifndef AUTOFRAC_BATCHCONTROLPOINT_H
+#define AUTOFRAC_BATCHCONTROLPOINT_H
 
 #include "core/shader.h"
 #include "core/vertexarray.h"
@@ -14,16 +14,15 @@ namespace BCIFS {
 class Bcifs;
 }
 
-class BatchGrid {
+class BatchControlPoint {
 public:
-    BatchGrid();
+    BatchControlPoint();
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
     void setBcifs(const BCIFS::Bcifs& bcifs);
     void render() const;
 
 private:
-    void addLine(const std::pair<glm::vec3,glm::vec3>& line, const glm::vec3& color);
-    void addVertexLine(const glm::vec3& v, const glm::vec3& color);
+    void addVertex(const glm::vec3& v);
 
 private:
     Core::VertexArray m_vao;
@@ -32,7 +31,7 @@ private:
     Core::ShaderProgram m_program;
     std::vector<float> m_data;
     int m_count = 0;
-    int m_floatsPerVertex = 6;
+    int m_floatsPerVertex = 3;
 };
 
-#endif //AUTOFRAC_BATCHGRID_H
+#endif // AUTOFRAC_BATCHCONTROLPOINT_H

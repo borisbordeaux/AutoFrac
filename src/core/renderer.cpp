@@ -63,6 +63,8 @@ void Renderer::initOpenGL() {
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     GLCall(glEnable(GL_DEPTH_TEST));
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
 } // Core

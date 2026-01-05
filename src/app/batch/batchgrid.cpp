@@ -4,70 +4,74 @@
 #include "core/renderer.h"
 
 BatchGrid::BatchGrid() {
-    m_vaoGrid.bind();
-    m_vboGrid.bind();
+    m_vao.bind();
+    m_vbo.bind();
 
-    m_layoutGrid.pushFloats(3); // position
+    m_layout.pushFloats(3); // position
+    m_layout.pushFloats(3); // color
 
-    m_vaoGrid.addBuffer(m_vboGrid, m_layoutGrid);
+    m_vao.addBuffer(m_vbo, m_layout);
 
-    m_programGrid.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/grid/vertexShader.glsl");
-    m_programGrid.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/grid/fragmentShader.glsl");
-    m_programGrid.link();
+    m_program.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/grid/vertexShader.glsl");
+    m_program.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/grid/fragmentShader.glsl");
+    m_program.link();
 
     // unbind the vao *before* the vbo
-    m_vaoGrid.unbind();
-    m_vboGrid.unbind();
-    m_programGrid.unbind();
+    m_vao.unbind();
+    m_vbo.unbind();
+    m_program.unbind();
 }
 
 void BatchGrid::setMVP(const Core::Camera& camera, const glm::mat4& proj) {
-    m_programGrid.bind();
+    m_program.bind();
     glm::mat4 viewGrid = camera.getViewMatrix();
     glm::mat4 mvpGrid = proj * viewGrid;
-    m_programGrid.setUniformMat4f("u_mvp", mvpGrid);
-    m_programGrid.unbind();
+    m_program.setUniformMat4f("u_mvp", mvpGrid);
+    m_program.unbind();
 }
 
 void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs) {
-    m_countGrid = 0;
-    m_dataGrid.clear();
+    m_count = 0;
+    m_data.clear();
     std::vector<std::pair<glm::vec3, glm::vec3>> springs = bcifs.springs();
 
     std::size_t nbLines = springs.size();
     std::size_t nbAddsLine = 2 * nbLines;
-    m_dataGrid.resize(nbAddsLine * m_floatsPerVertexGrid);
+    m_data.resize(nbAddsLine * m_floatsPerVertex);
 
     for (const std::pair<glm::vec3, glm::vec3>& line: springs) {
-        this->addLine(line);
+        this->addLine(line, glm::vec3{0.0, 0.0, 1.0});
     }
 
-    m_vboGrid.bind();
-    m_vboGrid.bufferData(m_dataGrid);
-    m_vboGrid.unbind();
+    m_vbo.bind();
+    m_vbo.bufferData(m_data);
+    m_vbo.unbind();
 }
 
 void BatchGrid::render() const {
     Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
-    m_programGrid.bind();
-    m_vaoGrid.bind();
-    Core::GLCall(glDrawArrays(GL_LINES, 0, m_countGrid / m_floatsPerVertexGrid));
-    m_programGrid.unbind();
-    m_vaoGrid.unbind();
+    m_program.bind();
+    m_vao.bind();
+    Core::GLCall(glDrawArrays(GL_LINES, 0, m_count / m_floatsPerVertex));
+    m_program.unbind();
+    m_vao.unbind();
 }
 
-void BatchGrid::addLine(const std::pair<glm::vec3, glm::vec3>& line) {
-    this->addVertexLine(line.first);
-    this->addVertexLine(line.second);
+void BatchGrid::addLine(const std::pair<glm::vec3, glm::vec3>& line, const glm::vec3& color) {
+    this->addVertexLine(line.first, color);
+    this->addVertexLine(line.second, color);
 }
 
-void BatchGrid::addVertexLine(const glm::vec3& v) {
+void BatchGrid::addVertexLine(const glm::vec3& v, const glm::vec3& color) {
     // add to the end of the data already added
-    float* p = m_dataGrid.data() + m_countGrid;
+    float* p = m_data.data() + m_count;
     // the coordinates of the vertex
     *p++ = v.x;
     *p++ = v.y;
     *p++ = v.z;
+    *p++ = color.x;
+    *p++ = color.y;
+    *p++ = color.z;
     // we update the amount of data
-    m_countGrid += m_floatsPerVertexGrid;
+    m_count += m_floatsPerVertex;
 }

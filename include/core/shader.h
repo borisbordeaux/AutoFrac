@@ -2,7 +2,6 @@
 #define AUTOFRAC_SHADER_H
 
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <optional>
 #include <glm/fwd.hpp>
@@ -46,6 +45,7 @@ private:
     private:
         static std::string strOfType(ShaderType type);
         static unsigned int GLTypeOfType(ShaderType type);
+
     private:
         unsigned int m_rendererID;
         ShaderType m_type;
