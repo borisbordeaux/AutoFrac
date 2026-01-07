@@ -129,6 +129,7 @@ void Bcifs::validate() {
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
     this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
+    this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
 }
 
 void Bcifs::reset() {
@@ -234,6 +235,22 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
     return res;
 }
 
+std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings() const {
+    if (!m_initStateID.has_value()) { return {}; }
+
+    std::vector<std::pair<glm::vec3, glm::vec3>> res;
+    std::vector<mss::Spring> springs = m_MSSControlPoints.springs();
+    for (mss::Spring& spring : springs) {
+        FormalMatrix pos13D = spring.m1().position();
+        FormalMatrix pos23D = spring.m2().position();
+        res.emplace_back(
+            glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
+            glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+    }
+
+    return res;
+}
+
 void Bcifs::updateMSS() {
     for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         keyval.second.update();
@@ -249,6 +266,7 @@ void Bcifs::printMSS() const {
     for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         Core::LOG_INFO(keyval.second.toString());
     }
+    Core::LOG_INFO(m_MSSControlPoints.toString());
 }
 
 void Bcifs::invalidate(bool controlPointsOnly) {
@@ -603,7 +621,7 @@ const arma::mat& Bcifs::getOperatorMat(TransitionID id) const {
     return m_mapOperatorsMat.find(id)->second;
 }
 
-void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
+void Bcifs::printConstraintMatrices(const Constraint& constraint) {
     std::cout << "LHS:\n";
     for (TransitionID transitionId : constraint.first) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
@@ -699,6 +717,44 @@ void Bcifs::buildMassSpringSystems() {
                             lastMassIndex = index;
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+void Bcifs::buildMSSForControlPoints() {
+    // build a mss for the init state (so, in the dimension of the init state and not the arrival state)
+    m_MSSControlPoints.clear(m_mapDimensions[m_initStateID.value()]);
+    // at first, build a global formal matrix by concatenating all subdivision operators
+    // simplify the global matrix by removing all identical columns
+    FormalMatrix globalMatrix = this->globalMatrixOf(m_initStateID.value());
+    // for each column in the global matrix
+    for (std::size_t i = 0; i < globalMatrix.cols(); i++) {
+        // create a mass
+        m_MSSControlPoints.addMass(globalMatrix.getCol(i), m_dampingControlPoints);
+    }
+    std::size_t lastMassIndex = 0;
+    // for each subdivision operator
+    for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
+        const Transition& transition = m_automaton.findTransitionByID(transitionId);
+        if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
+            // for each Figure of the grid of the arrival state
+            for (const Figure& figure : m_mapGrids[transition.to()]) {
+                bool firstMass = true;
+                // for each consecutive Path of the Figure
+                for (const Path& path : figure) {
+                    // identify the column index of the Paths in the global matrix
+                    // add a spring between the 2 masses at the found indices
+                    FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
+                    // always assume it is a one column matrix
+                    FormalMatrix finalColumn = m_mapOperators[transitionId] * matrix;
+                    std::size_t index = globalMatrix.indexOf(finalColumn);
+                    if (!firstMass) {
+                        m_MSSControlPoints.addSpring(lastMassIndex, index, m_kControlPoints, m_lengthControlPoints);
+                    }
+                    firstMass = false;
+                    lastMassIndex = index;
                 }
             }
         }

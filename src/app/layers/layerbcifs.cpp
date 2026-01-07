@@ -642,10 +642,12 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Button("Print shortest paths")) {
         std::unordered_map<BCIFS::StateID, BCIFS::Path> paths = m_bcifs.automaton().shortestPaths(m_bcifs.initState());
         for (const std::pair<const BCIFS::StateID, BCIFS::Path>& path : paths) {
-            std::cout << "For state " << path.first << ": ";
+            std::cout << "For state " << m_bcifs.automaton().findStateByID(path.first).name() << ": ";
             for (BCIFS::TransitionID transitionId : path.second) {
                 BCIFS::Transition transition = m_bcifs.automaton().findTransitionByID(transitionId);
-                std::cout << transition.toString() << ", ";
+                std::cout << m_bcifs.automaton().findStateByID(transition.from()).name();
+                std::cout << " --" << transition.toString() << "--> ";
+                std::cout << m_bcifs.automaton().findStateByID(transition.to()).name() << ", ";
             }
         }
         std::cout << std::endl;

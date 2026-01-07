@@ -34,11 +34,15 @@ void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs) {
     m_count = 0;
     m_data.clear();
     std::vector<std::pair<glm::vec3, glm::vec3>> springs = bcifs.springs();
+    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings = bcifs.controlPointsSprings();
 
-    std::size_t nbLines = springs.size();
+    std::size_t nbLines = springs.size() + controlPointsSprings.size();
     std::size_t nbAddsLine = 2 * nbLines;
     m_data.resize(nbAddsLine * m_floatsPerVertex);
 
+    for (const std::pair<glm::vec3, glm::vec3>& line: controlPointsSprings) {
+        this->addLine(line, glm::vec3{1.0, 0.0, 0.0});
+    }
     for (const std::pair<glm::vec3, glm::vec3>& line: springs) {
         this->addLine(line, glm::vec3{0.0, 0.0, 1.0});
     }

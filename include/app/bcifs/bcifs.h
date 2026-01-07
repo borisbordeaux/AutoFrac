@@ -37,6 +37,7 @@ public:
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
+    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings() const;
     void updateMSS();
     void printMSS() const;
 
@@ -82,6 +83,7 @@ private:
     void completeSubdivisionMatrices();
 
     void buildMassSpringSystems();
+    void buildMSSForControlPoints();
 
     arma::mat getOperatorOfPath(const Path& path) const;
     FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
@@ -100,8 +102,12 @@ private:
     std::unordered_map<TransitionID, arma::mat> m_mapOperatorsMat;
     std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
+    mss::MassSpringSystem m_MSSControlPoints;
     float m_damping = 0.3f;
     float m_k = 0.05f;
+    float m_dampingControlPoints = 0.3f;
+    float m_kControlPoints = 0.01f;
+    float m_lengthControlPoints = 1.0f;
     std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
     bool m_invalidatedMatrices = true;
     bool m_invalidatedMatricesControlPoints = false;
