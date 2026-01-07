@@ -401,26 +401,26 @@ void LayerBcifs::testG2() {
     // init control points
     m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
         {
-            std::cos(0.0f * M_PIf * 2.0f / 6.0f),
-            std::cos(1.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
-            std::cos(2.0f * M_PIf * 2.0f / 6.0f),
-            std::cos(3.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
-            std::cos(4.0f * M_PIf * 2.0f / 6.0f),
-            std::cos(5.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
+            3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::cos(2.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::cos(3.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
         },
         {
-            std::sin(0.0f * M_PIf * 2.0f / 6.0f),
-            std::sin(1.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
-            std::sin(2.0f * M_PIf * 2.0f / 6.0f),
-            std::sin(3.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
-            std::sin(4.0f * M_PIf * 2.0f / 6.0f),
-            std::sin(5.0f * M_PIf * 2.0f / 6.0f),
-            0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
+            3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(1.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::sin(2.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(3.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::sin(4.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(5.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
         },
         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
     }, BCIFS::CoefType::CONST));
@@ -655,19 +655,21 @@ void LayerBcifs::onImGuiRender() {
     ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
 
     ImGui::Text("Control points");
-    float speed = 0.01f;
     std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints();
     for (std::size_t j = 0; j < controlPoints.size(); j++) {
         for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
             ImGui::Text("Control point %zu", i);
-            if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(0, i)->valueRef(), speed)) {
+            if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(0, i)->valueRef(), 0.01f)) {
                 m_bcifsChanged = true;
+                m_bcifs.invalidate(true);
             }
-            if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(1, i)->valueRef(), speed)) {
+            if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(1, i)->valueRef(), 0.01f)) {
                 m_bcifsChanged = true;
+                m_bcifs.invalidate(true);
             }
-            if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(2, i)->valueRef(), speed)) {
+            if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(2, i)->valueRef(), 0.01f)) {
                 m_bcifsChanged = true;
+                m_bcifs.invalidate(true);
             }
         }
     }
@@ -677,14 +679,14 @@ void LayerBcifs::onImGuiRender() {
 
 void LayerBcifs::onEvent(Core::Event& event) {
     Core::EventDispatcher dispatcher(event);
-    dispatcher.dispatch<Core::MouseMovedEvent>([this](Core::MouseMovedEvent& e) { return this->onMouseMovedEvent(e); });
-    dispatcher.dispatch<Core::MouseButtonPressedEvent>([this](Core::MouseButtonPressedEvent& e) { return this->onMousePressedEvent(e); });
-    dispatcher.dispatch<Core::MouseButtonReleasedEvent>([this](Core::MouseButtonReleasedEvent& e) { return this->onMouseReleasedEvent(e); });
-    dispatcher.dispatch<Core::MouseScrolledEvent>([this](Core::MouseScrolledEvent& e) { return this->onMouseScrolledEvent(e); });
-    dispatcher.dispatch<Core::WindowResizedEvent>([this](Core::WindowResizedEvent& e) { return this->onWindowResizedEvent(e); });
+    dispatcher.dispatch<Core::MouseMovedEvent>([this](const Core::MouseMovedEvent& e) { return this->onMouseMovedEvent(e); });
+    dispatcher.dispatch<Core::MouseButtonPressedEvent>([this](const Core::MouseButtonPressedEvent& e) { return this->onMousePressedEvent(e); });
+    dispatcher.dispatch<Core::MouseButtonReleasedEvent>([this](const Core::MouseButtonReleasedEvent& e) { return this->onMouseReleasedEvent(e); });
+    dispatcher.dispatch<Core::MouseScrolledEvent>([this](const Core::MouseScrolledEvent& e) { return this->onMouseScrolledEvent(e); });
+    dispatcher.dispatch<Core::WindowResizedEvent>([this](const Core::WindowResizedEvent& e) { return this->onWindowResizedEvent(e); });
 }
 
-bool LayerBcifs::onMousePressedEvent(Core::MouseButtonPressedEvent& event) {
+bool LayerBcifs::onMousePressedEvent(const Core::MouseButtonPressedEvent& event) {
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
         m_leftMousePressed = true;
         m_mousePos = Core::Application::get().window()->mousePos();
@@ -703,7 +705,7 @@ bool LayerBcifs::onMousePressedEvent(Core::MouseButtonPressedEvent& event) {
     return false;
 }
 
-bool LayerBcifs::onMouseMovedEvent(Core::MouseMovedEvent& event) {
+bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
     //compute rotations
     double dx = event.x() - m_mousePos.x;
     double dy = event.y() - m_mousePos.y;
@@ -726,7 +728,7 @@ bool LayerBcifs::onMouseMovedEvent(Core::MouseMovedEvent& event) {
     return false;
 }
 
-bool LayerBcifs::onMouseReleasedEvent(Core::MouseButtonReleasedEvent& event) {
+bool LayerBcifs::onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& event) {
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
         m_leftMousePressed = false;
         return true;
@@ -738,13 +740,13 @@ bool LayerBcifs::onMouseReleasedEvent(Core::MouseButtonReleasedEvent& event) {
     return false;
 }
 
-bool LayerBcifs::onWindowResizedEvent(Core::WindowResizedEvent& event) {
+bool LayerBcifs::onWindowResizedEvent(const Core::WindowResizedEvent& event) {
     m_proj = glm::perspective(glm::pi<float>() / 4.0f, static_cast<float>(event.width()) / static_cast<float>(event.height()), 0.005f, 250.0f);
     m_uniformsDirty = true;
     return false;
 }
 
-bool LayerBcifs::onMouseScrolledEvent(Core::MouseScrolledEvent& event) {
+bool LayerBcifs::onMouseScrolledEvent(const Core::MouseScrolledEvent& event) {
     // compute new distance of camera from object
     float val = static_cast<float>(event.yOffset()) / 500.0f;
 

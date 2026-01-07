@@ -38,11 +38,11 @@ public:
     void onEvent(Core::Event& event) override;
 
 private:
-    bool onMousePressedEvent(Core::MouseButtonPressedEvent& event);
-    bool onMouseMovedEvent(Core::MouseMovedEvent& event);
-    bool onMouseReleasedEvent(Core::MouseButtonReleasedEvent& event);
-    bool onWindowResizedEvent(Core::WindowResizedEvent& event);
-    bool onMouseScrolledEvent(Core::MouseScrolledEvent& event);
+    bool onMousePressedEvent(const Core::MouseButtonPressedEvent& event);
+    bool onMouseMovedEvent(const Core::MouseMovedEvent& event);
+    bool onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& event);
+    bool onWindowResizedEvent(const Core::WindowResizedEvent& event);
+    bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
 
 private:
     BCIFS::Bcifs m_bcifs;

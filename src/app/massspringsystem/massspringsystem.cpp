@@ -12,8 +12,12 @@ void MassSpringSystem::addMass(const BCIFS::FormalMatrix& pos, float damping) {
 
 void MassSpringSystem::addSpring(std::size_t indexMass1, std::size_t indexMass2, float k, float length) {
     if (indexMass1 < m_masses.size() && indexMass2 < m_masses.size() && indexMass1 != indexMass2) {
-        m_springs.emplace_back(m_masses[indexMass1], m_masses[indexMass2], k, length);
-        m_springIndices.emplace_back(indexMass1, indexMass2);
+        bool presentInOtherDirection = std::find(m_springIndices.begin(), m_springIndices.end(), std::make_pair(indexMass1, indexMass2)) != m_springIndices.end();
+        bool presentInOneDirection = std::find(m_springIndices.begin(), m_springIndices.end(), std::make_pair(indexMass2, indexMass1)) != m_springIndices.end();
+        if (!presentInOneDirection && !presentInOtherDirection) {
+            m_springs.emplace_back(m_masses[indexMass1], m_masses[indexMass2], k, length);
+            m_springIndices.emplace_back(indexMass1, indexMass2);
+        }
     }
 }
 

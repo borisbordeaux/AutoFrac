@@ -44,7 +44,7 @@ public:
 
     inline float* damping() { return &m_damping; }
 
-    void invalidate();
+    void invalidate(bool controlPointsOnly = false);
     Automaton& automaton() { return m_automaton; }
     StateID initState() const { return m_initStateID.value_or(-1); }
 
@@ -75,6 +75,7 @@ private:
     void initSubdivisionOperators();
     const FormalMatrix& getOrInitOperator(TransitionID id);
     const FormalMatrix& getOperator(TransitionID id) const;
+    const arma::mat& getOperatorMat(TransitionID id) const;
 
     void printConstraintMatrices(const Constraint& constraint);
 
@@ -82,7 +83,7 @@ private:
 
     void buildMassSpringSystems();
 
-    FormalMatrix getOperatorOfPath(const Path& path) const;
+    arma::mat getOperatorOfPath(const Path& path) const;
     FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
     FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
     FormalMatrix globalMatrixOf(StateID id) const;
@@ -96,13 +97,15 @@ private:
     std::vector<Constraint> m_permutationConstraints;
     std::unordered_map<StateID, std::size_t> m_mapDimensions;
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
+    std::unordered_map<TransitionID, arma::mat> m_mapOperatorsMat;
     std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
     float m_damping = 0.3f;
     float m_k = 0.05f;
     std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
     bool m_invalidatedMatrices = true;
-    std::vector<std::pair<Path, FormalMatrix>> m_facesPaths;
+    bool m_invalidatedMatricesControlPoints = false;
+    std::vector<std::pair<Path, arma::mat>> m_facesPaths;
 };
 
 } // BCIFS

@@ -69,19 +69,19 @@ std::string Bcifs::toString() const {
     std::string res = "BCIFS Description:\n";
     res += m_automaton.toString();
     res += "Classic constraints:\n";
-    for (const auto& constraint: m_constraints) {
+    for (const auto& constraint : m_constraints) {
         res += this->printConstraint(constraint);
     }
     res += "\nAdjacency constraints on incidence operators:\n";
-    for (const auto& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
+    for (const auto& constraint : m_adjacencyConstraintsOnIncidenceOperators) {
         res += this->printConstraint(constraint);
     }
     res += "\nDimensions of states:\n";
-    for (const std::pair<const StateID, std::size_t>& keyval: m_mapDimensions) {
+    for (const std::pair<const StateID, std::size_t>& keyval : m_mapDimensions) {
         res += m_automaton.findStateByID(keyval.first).name() + " has " + std::to_string(keyval.second) + " dimensions\n";
     }
     res += "\nAll operators:\n";
-    for (const std::pair<const BCIFS::TransitionID, FormalMatrix>& keyval: m_mapOperators) {
+    for (const std::pair<const BCIFS::TransitionID, FormalMatrix>& keyval : m_mapOperators) {
         TransitionID transitionId = keyval.first;
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         res += "Operator ";
@@ -95,13 +95,13 @@ std::string Bcifs::toString() const {
         res += keyval.second.toString();
     }
     res += "\nAll grids:\n";
-    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval: m_mapGrids) {
+    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval : m_mapGrids) {
         res += "For state " + std::to_string(keyval.first) + ", grid is:\n";
-        for (const Figure& figure: keyval.second) {
+        for (const Figure& figure : keyval.second) {
             res += "Figure [";
-            for (const Path& path: figure) {
+            for (const Path& path : figure) {
                 res += " [";
-                for (const TransitionID& transitionId: path) {
+                for (const TransitionID& transitionId : path) {
                     res += " ";
                     const Transition& transition = m_automaton.findTransitionByID(transitionId);
                     res += transition.toString();
@@ -121,14 +121,14 @@ void Bcifs::print() const {
 
 void Bcifs::validate() {
     //TODO: try catch all this block to stop when there is a problem and signal it to the user without crashing
-    this->checkAutomaton(); // all states used in transitions exist
-    this->checkSpaces(); // all states have a valid space
-    this->checkConstraints(); // same arrival (existing) state for each path
-    this->initializeMatrices(); // initialize all boundary and internal operators
-    this->resolveConstraints(); // resolve all constraints to finish the matrices initialization
-    this->initSubdivisionOperators(); // initialize all subdivision operators not implied in a constraint
+    this->checkAutomaton();              // all states used in transitions exist
+    this->checkSpaces();                 // all states have a valid space
+    this->checkConstraints();            // same arrival (existing) state for each path
+    this->initializeMatrices();          // initialize all boundary and internal operators
+    this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
+    this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
-    this->buildMassSpringSystems(); // initialize all mass spring systems for each state with a user defined grid
+    this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
 }
 
 void Bcifs::reset() {
@@ -144,6 +144,7 @@ void Bcifs::reset() {
     m_mapMSS.clear();
     m_mapInitMat.clear();
     m_invalidatedMatrices = true;
+    m_invalidatedMatricesControlPoints = false;
     m_facesPaths.clear();
 }
 
@@ -151,35 +152,45 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
     if (!m_initStateID.has_value()) { return {}; }
     if (m_invalidatedMatrices) {
         m_invalidatedMatrices = false;
+
+        m_mapOperatorsMat.clear();
+        for (const std::pair<const TransitionID, FormalMatrix>& keyval : m_mapOperators) {
+            m_mapOperatorsMat.insert({ keyval.first, keyval.second.toMat() });
+        }
+
         m_facesPaths.clear();
         if (iterationLevel != 0) {
             // each path will give a matrix that contains the position of all the points of a face
             std::vector<Path> allPaths = m_automaton.allSubdivisionPaths(m_initStateID.value(), iterationLevel + 1);
 
-            for (const Path& path: allPaths) {
-                FormalMatrix mat = this->getOperatorOfPath(path);
+            for (const Path& path : allPaths) {
+                arma::mat mat = this->getOperatorOfPath(path);
                 m_facesPaths.emplace_back(path, mat);
             }
         } else {
             for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
-                m_facesPaths.emplace_back(Path({transitionId}), this->getOperator(transitionId));
+                m_facesPaths.emplace_back(Path({ transitionId }), this->getOperatorMat(transitionId));
             }
+        }
+    } else if (m_invalidatedMatricesControlPoints) {
+        m_invalidatedMatricesControlPoints = false;
+        for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
+            m_mapOperatorsMat[transitionId] = m_mapOperators[transitionId].toMat();
         }
     }
 
     std::vector<std::vector<glm::vec3>> res;
-    for (const std::pair<Path, FormalMatrix>& keyval: m_facesPaths) {
+    for (const std::pair<Path, arma::mat>& keyval : m_facesPaths) {
         std::vector<glm::vec3> vertices;
-        FormalMatrix mat;
+        arma::mat mat;
         if (iterationLevel != 0) {
-            mat = this->getOperator(keyval.first[0]).multiplyValues(keyval.second);
-        }
-        else {
+            mat = this->getOperatorMat(keyval.first[0]) * keyval.second;
+        } else {
             mat = keyval.second;
         }
-        vertices.reserve(mat.cols());
-        for (std::size_t i = 0; i < mat.cols(); i++) {
-            vertices.emplace_back(mat.get(0, i)->value(), mat.get(1, i)->value(), mat.get(2, i)->value());
+        vertices.reserve(mat.n_cols);
+        for (std::size_t i = 0; i < mat.n_cols; i++) {
+            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
         }
         res.push_back(vertices);
     }
@@ -192,7 +203,7 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
     std::vector<FormalMatrix> res;
     std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(m_initStateID.value());
     res.reserve(transitions.size());
-    for (TransitionID transitionId: transitions) {
+    for (TransitionID transitionId : transitions) {
         res.push_back(this->getOperator(transitionId));
     }
     return res;
@@ -203,18 +214,19 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
 
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
-    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+    for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         if (paths.find(keyval.first) != paths.end()) {
             std::vector<mss::Spring> springs = keyval.second.springs();
-            for (mss::Spring& spring: springs) {
+            for (mss::Spring& spring : springs) {
                 FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
                 FormalMatrix pos1BarycentricSpace = spring.m1().position();
                 FormalMatrix pos13D = op.multiplyValues(pos1BarycentricSpace);
 
                 FormalMatrix pos2BarycentricSpace = spring.m2().position();
                 FormalMatrix pos23D = op.multiplyValues(pos2BarycentricSpace);
-                res.emplace_back(glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
-                                 glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+                res.emplace_back(
+                    glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
+                    glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
             }
         }
     }
@@ -223,10 +235,10 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
 }
 
 void Bcifs::updateMSS() {
-    for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+    for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         keyval.second.update();
         std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(keyval.first);
-        for (TransitionID id: transitions) {
+        for (TransitionID id : transitions) {
             m_mapOperators[id].setSumToOne();
         }
     }
@@ -234,13 +246,16 @@ void Bcifs::updateMSS() {
 }
 
 void Bcifs::printMSS() const {
-    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval: m_mapMSS) {
+    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         Core::LOG_INFO(keyval.second.toString());
     }
 }
 
-void Bcifs::invalidate() {
-    m_invalidatedMatrices = true;
+void Bcifs::invalidate(bool controlPointsOnly) {
+    if (!controlPointsOnly) {
+        m_invalidatedMatrices = true;
+    }
+    m_invalidatedMatricesControlPoints = true;
 }
 
 Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
@@ -276,7 +291,7 @@ TransitionID Bcifs::addTransition(std::string name, StateID from, StateID to, Tr
 std::string Bcifs::printConstraint(const Constraint& constraint) const {
     std::string res = "[ ";
     bool firstTransition = true;
-    for (const auto& transition: constraint.first) {
+    for (const auto& transition : constraint.first) {
         const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
             res += m_automaton.findStateByID(trans.from()).name();
@@ -288,7 +303,7 @@ std::string Bcifs::printConstraint(const Constraint& constraint) const {
     }
     res += " ] = [ ";
     firstTransition = true;
-    for (const auto& transition: constraint.second) {
+    for (const auto& transition : constraint.second) {
         const Transition& trans = m_automaton.findTransitionByID(transition);
         if (firstTransition) {
             res += m_automaton.findStateByID(trans.from()).name();
@@ -308,12 +323,12 @@ void Bcifs::checkAutomaton() const {
 }
 
 void Bcifs::checkSpaces() const {
-    for (const State& state: m_automaton.states()) {
+    for (const State& state : m_automaton.states()) {
         if (auto it = m_mapSpaces.find(state.id()); it != m_mapSpaces.end()) {
             StateID id = it->first;
             const std::vector<TransitionID>& space = it->second;
             std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionsOf(id);
-            for (TransitionID transitionID: space) {
+            for (TransitionID transitionID : space) {
                 const Transition& transition = m_automaton.findTransitionByID(transitionID);
                 if (transition.type() == TransitionType::INTERNAL) {
                     if (transition.from() != state.id()) {
@@ -331,11 +346,11 @@ void Bcifs::checkSpaces() const {
 }
 
 void Bcifs::checkConstraints() const {
-    for (const Constraint& constraint: m_constraints) {
-        for (TransitionID id: constraint.first) {
+    for (const Constraint& constraint : m_constraints) {
+        for (TransitionID id : constraint.first) {
             m_automaton.findTransitionByID(id);
         }
-        for (TransitionID id: constraint.second) {
+        for (TransitionID id : constraint.second) {
             m_automaton.findTransitionByID(id);
         }
     }
@@ -343,7 +358,7 @@ void Bcifs::checkConstraints() const {
 }
 
 void Bcifs::initializeMatrices() {
-    for (const State& state: m_automaton.states()) {
+    for (const State& state : m_automaton.states()) {
         this->initializeMatrices(state.id());
     }
 }
@@ -354,7 +369,7 @@ void Bcifs::initializeMatrices(StateID id) {
 
     // compute the dimension of the state (ignoring adjacency on incidence operators)
     std::size_t dim = m_automaton.internalDimensions(id);
-    for (StateID boundaryId: m_automaton.boundaryStatesOf(id)) {
+    for (StateID boundaryId : m_automaton.boundaryStatesOf(id)) {
         this->initializeMatrices(boundaryId);
         dim += m_mapDimensions[boundaryId];
     }
@@ -362,9 +377,9 @@ void Bcifs::initializeMatrices(StateID id) {
     // initialize temporary boundary operators
     std::unordered_map<TransitionID, BooleanMatrix> tempOperators;
     std::size_t lastIndex = 0;
-    for (TransitionID transitionId: m_automaton.boundaryTransitionsOf(id)) {
+    for (TransitionID transitionId : m_automaton.boundaryTransitionsOf(id)) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
-        tempOperators.insert({ transitionId, { dim, m_mapDimensions[transition.to()] }});
+        tempOperators.insert({ transitionId, { dim, m_mapDimensions[transition.to()] } });
         // insert identity matrix from lastIndex
         for (std::size_t i = 0; i < m_mapDimensions[transition.to()]; i++) {
             tempOperators[transitionId].set(lastIndex + i, i, true);
@@ -378,8 +393,8 @@ void Bcifs::initializeMatrices(StateID id) {
     }
 
     // initialize temporary internal operators
-    for (TransitionID internalID: m_automaton.internalTransitionsOf(id)) {
-        tempOperators.insert({ internalID, { dim, 1 }});
+    for (TransitionID internalID : m_automaton.internalTransitionsOf(id)) {
+        tempOperators.insert({ internalID, { dim, 1 } });
         // insert 1 at lastIndex row
         tempOperators[internalID].set(lastIndex, 0, true);
         std::cout << "Temp operator init of ";
@@ -395,7 +410,7 @@ void Bcifs::initializeMatrices(StateID id) {
     std::cout << "Init M matrix of state " << m_automaton.findStateByID(id).name() << " is:\n";
     M.print();
     std::cout.flush();
-    for (const Constraint& constraint: m_adjacencyConstraintsOnIncidenceOperators) {
+    for (const Constraint& constraint : m_adjacencyConstraintsOnIncidenceOperators) {
         if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
             BooleanMatrix lhs = tempOperators[constraint.first[0]];
             for (std::size_t i = 1; i < constraint.first.size(); i++) {
@@ -431,7 +446,7 @@ void Bcifs::initializeMatrices(StateID id) {
     m_mapDimensions[id] = proj.rows();
 
     // set final boundary and internal operators
-    for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionsOf(id)) {
+    for (TransitionID transitionId : m_automaton.boundaryAndInternalTransitionsOf(id)) {
         BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
         FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
         m_mapOperators.insert({ transitionId, boundaryOperator });
@@ -447,14 +462,14 @@ void Bcifs::initializeMatrices(StateID id) {
     if (m_mapSpaces.find(id) != m_mapSpaces.end()) {
         // find number of column for the permutation space matrix
         std::size_t nbCols = 0;
-        for (TransitionID transitionID: m_mapSpaces[id]) {
+        for (TransitionID transitionID : m_mapSpaces[id]) {
             nbCols += m_mapOperators[transitionID].cols();
         }
 
         // init the permutation space matrix by concatenating the values of boundary transitions specified in the space
         BooleanMatrix permutationSpace(proj.rows(), nbCols);
         std::size_t lastColumnIndex = 0;
-        for (TransitionID transitionID: m_mapSpaces[id]) {
+        for (TransitionID transitionID : m_mapSpaces[id]) {
             for (std::size_t col = 0; col < m_mapOperators[transitionID].cols(); col++) {
                 for (std::size_t row = 0; row < m_mapOperators[transitionID].rows(); row++) {
                     permutationSpace.set(row, col + lastColumnIndex, m_mapOperators[transitionID].get(row, col)->type() == CoefType::ONE);
@@ -482,7 +497,7 @@ void Bcifs::initializeMatrices(StateID id) {
 
         // apply this matrix to all boundary and internal operators to update them
         std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
-        for (TransitionID transitionId: m_automaton.boundaryAndInternalTransitionsOf(id)) {
+        for (TransitionID transitionId : m_automaton.boundaryAndInternalTransitionsOf(id)) {
             m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
             std::cout << "Operator of ";
             const Transition& transition = m_automaton.findTransitionByID(transitionId);
@@ -499,7 +514,7 @@ void Bcifs::initializeMatrices(StateID id) {
 
 void Bcifs::resolvePermutationConstraints(StateID id) {
     std::cout << "Resolving permutation constraints...\n";
-    for (const Constraint& constraint: m_permutationConstraints) {
+    for (const Constraint& constraint : m_permutationConstraints) {
         const Transition& firstTransLeft = m_automaton.findTransitionByID(constraint.first[0]);
         const Transition& firstTransRight = m_automaton.findTransitionByID(constraint.second[0]);
         if (firstTransLeft.from() == id && firstTransRight.from() == id) {
@@ -532,7 +547,7 @@ void Bcifs::resolvePermutationConstraints(StateID id) {
 
 void Bcifs::resolveConstraints() {
     std::cout << "Resolving constraints...\n";
-    for (const Constraint& constraint: m_constraints) {
+    for (const Constraint& constraint : m_constraints) {
         std::cout << "Constraint before solve:\n";
         this->printConstraintMatrices(constraint);
 
@@ -559,7 +574,7 @@ void Bcifs::resolveConstraints() {
 }
 
 void Bcifs::initSubdivisionOperators() {
-    for (const Transition& transition: m_automaton.transitions()) {
+    for (const Transition& transition : m_automaton.transitions()) {
         auto itOperator = m_mapOperators.find(transition.id());
         if (itOperator == m_mapOperators.end()) {
             // if the matrix does not exist, then it is an undefined matrix, so we can initialize it with a random value
@@ -584,9 +599,13 @@ const FormalMatrix& Bcifs::getOperator(TransitionID id) const {
     return m_mapOperators.find(id)->second;
 }
 
+const arma::mat& Bcifs::getOperatorMat(TransitionID id) const {
+    return m_mapOperatorsMat.find(id)->second;
+}
+
 void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
     std::cout << "LHS:\n";
-    for (TransitionID transitionId: constraint.first) {
+    for (TransitionID transitionId : constraint.first) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         transition.print();
         std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
@@ -595,7 +614,7 @@ void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
         this->getOrInitOperator(transitionId).print(true);
     }
     std::cout << "\nRHS:\n";
-    for (TransitionID transitionId: constraint.second) {
+    for (TransitionID transitionId : constraint.second) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         transition.print();
         std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
@@ -607,7 +626,7 @@ void Bcifs::printConstraintMatrices(const Bcifs::Constraint& constraint) {
 }
 
 void Bcifs::completeSubdivisionMatrices() {
-    for (const Transition& transition: m_automaton.transitions()) {
+    for (const Transition& transition : m_automaton.transitions()) {
         if (transition.type() == TransitionType::SUBDIVISION) {
             if (m_mapInitMat.find(transition.id()) == m_mapInitMat.end()) {
                 m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
@@ -632,11 +651,11 @@ void Bcifs::completeSubdivisionMatrices() {
 void Bcifs::buildMassSpringSystems() {
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     // for each state, look at its subdivisions
-    for (const State& state: m_automaton.states()) {
+    for (const State& state : m_automaton.states()) {
         bool needMSS = false;
         // if current state is accessible
         if (paths.find(state.id()) != paths.end()) {
-            for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
+            for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(state.id())) {
                 const Transition& transition = m_automaton.findTransitionByID(transitionId);
                 // if arrival state has a grid
                 if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
@@ -659,14 +678,14 @@ void Bcifs::buildMassSpringSystems() {
             }
             std::size_t lastMassIndex = 0;
             // for each subdivision operator
-            for (TransitionID transitionId: m_automaton.subdivisionTransitionsOf(state.id())) {
-                bool firstMass = true;
+            for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(state.id())) {
                 const Transition& transition = m_automaton.findTransitionByID(transitionId);
                 if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
                     // for each Figure of the grid of the arrival state
-                    for (const Figure& figure: m_mapGrids[transition.to()]) {
+                    for (const Figure& figure : m_mapGrids[transition.to()]) {
+                        bool firstMass = true;
                         // for each consecutive Path of the Figure
-                        for (const Path& path: figure) {
+                        for (const Path& path : figure) {
                             // identify the column index of the Paths in the global matrix
                             // add a spring between the 2 masses at the found indices
                             FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
@@ -686,10 +705,10 @@ void Bcifs::buildMassSpringSystems() {
     }
 }
 
-FormalMatrix Bcifs::getOperatorOfPath(const Path& path) const {
-    FormalMatrix res = this->getOperator(path[1]);
+arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
+    arma::mat res = this->getOperatorMat(path[1]);
     for (std::size_t i = 2; i < path.size(); i++) {
-        res = res.multiplyValues(this->getOperator(path[i]));
+        res *= this->getOperatorMat(path[i]);
     }
     return res;
 }
