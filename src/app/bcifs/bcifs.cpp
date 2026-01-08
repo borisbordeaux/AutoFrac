@@ -210,6 +210,42 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
     return res;
 }
 
+std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> Bcifs::subdivisionPoints() const {
+    std::vector<glm::vec3> resVar;
+    std::vector<glm::vec3> resConst;
+    std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
+    // for each state, look at its subdivisions
+    for (const State& state : m_automaton.states()) {
+        bool hasMSS = m_mapMSS.find(state.id()) != m_mapMSS.end();
+
+        // if the state has a mass spring system
+        if (hasMSS && state.id() != m_initStateID.value()) {
+            for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+                if (paths.find(keyval.first) != paths.end()) {
+                    std::vector<mss::Mass> masses = keyval.second.masses();
+                    for (mss::Mass& mass : masses) {
+                        FormalMatrix& posBarycentricSpace = mass.position();
+                        bool fixed = true;
+                        for (std::size_t i = 0; i < posBarycentricSpace.rows(); i++) {
+                            if (posBarycentricSpace.get(i, 0)->type() == CoefType::VAR) {
+                                fixed = false;
+                            }
+                        }
+                        FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
+                        FormalMatrix pos3D = op.multiplyValues(posBarycentricSpace);
+                        if (fixed) {
+                            resConst.emplace_back(pos3D.get(0, 0)->value(), pos3D.get(1, 0)->value(), pos3D.get(2, 0)->value());
+                        } else {
+                            resVar.emplace_back(pos3D.get(0, 0)->value(), pos3D.get(1, 0)->value(), pos3D.get(2, 0)->value());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return { resVar, resConst };
+}
+
 std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
     if (!m_initStateID.has_value()) { return {}; }
 

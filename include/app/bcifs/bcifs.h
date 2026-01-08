@@ -36,6 +36,7 @@ public:
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints() const;
+    std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> subdivisionPoints() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings() const;
     void updateMSS();

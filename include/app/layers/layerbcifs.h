@@ -4,6 +4,7 @@
 #include "app/batch/batchcontrolpoint.h"
 #include "app/batch/batchface.h"
 #include "app/batch/batchgrid.h"
+#include "app/batch/batchsubdivisionpoint.h"
 #include "core/layer.h"
 #include "app/bcifs/bcifs.h"
 #include "core/camera.h"
@@ -56,6 +57,7 @@ private:
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;
     BatchControlPoint m_batchControlPoint;
+    BatchSubdivisionPoint m_batchSubdivisionPoint;
 
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;

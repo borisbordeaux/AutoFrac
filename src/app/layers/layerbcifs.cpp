@@ -332,6 +332,7 @@ void LayerBcifs::testG2() {
     BCIFS::TransitionID s4face = m_bcifs.addSubdivision("4", face, face);
     BCIFS::TransitionID s5face = m_bcifs.addSubdivision("5", face, face);
     BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
+    BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
     // permutation constraints
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0cantor }, { b1cantor });
@@ -410,6 +411,32 @@ void LayerBcifs::testG2() {
             3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
             3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
             3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
+        },
+        {
+            3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(1.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::sin(2.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(3.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
+            3.0f * std::sin(4.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * std::sin(5.0f * M_PIf * 2.0f / 6.0f),
+            3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
+        },
+        { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+    }, BCIFS::CoefType::CONST));
+
+    m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
+        {
+            7.0f + 3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * 0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
+            7.0f + 3.0f * std::cos(2.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * std::cos(3.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * 0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
+            7.0f + 3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
+            7.0f + 3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
         },
         {
             3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
@@ -566,6 +593,7 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         if (m_displayGrid) {
             m_batchGrid.setBcifs(m_bcifs);
             m_batchControlPoint.setBcifs(m_bcifs);
+            m_batchSubdivisionPoint.setBcifs(m_bcifs);
         }
 
         m_bcifsChanged = false;
@@ -577,6 +605,7 @@ void LayerBcifs::onRender() {
         m_batchFace.setMVP(m_camera, m_proj);
         m_batchGrid.setMVP(m_camera, m_proj);
         m_batchControlPoint.setMVP(m_camera, m_proj);
+        m_batchSubdivisionPoint.setMVP(m_camera, m_proj);
 
         m_uniformsDirty = false;
     }
@@ -585,6 +614,7 @@ void LayerBcifs::onRender() {
     if (m_displayGrid) {
         m_batchGrid.render();
         m_batchControlPoint.render();
+        m_batchSubdivisionPoint.render();
     }
 }
 
