@@ -722,6 +722,7 @@ bool LayerBcifs::onMousePressedEvent(const Core::MouseButtonPressedEvent& event)
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
         m_leftMousePressed = true;
         m_mousePos = Core::Application::get().window()->mousePos();
+        this->handleSelection();
         return true;
     }
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
@@ -746,10 +747,39 @@ bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
     m_mousePos.y = event.y();
 
     if (m_leftMousePressed) {
-        glm::vec2 size = Core::Application::get().framebufferSize();
-        m_camera.rotateAzimuth(static_cast<float>(dx / size.x * 8.0));
-        m_camera.rotatePolar(static_cast<float>(dy / size.y * 4.0));
-        m_uniformsDirty = true;
+        if (m_currentControlPoint.has_value()) {
+            // move the control point
+            float t;
+            glm::vec3 planePoint(m_currentControlPoint->get(0, 0)->value(), m_currentControlPoint->get(1, 0)->value(), m_currentControlPoint->get(2, 0)->value());
+            glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
+
+            glm::vec2 size = Core::Application::get().framebufferSize();
+            float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
+            float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
+            glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+
+            glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
+            rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+
+            glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
+
+            glm::vec3 rayOrigin = m_camera.getEye();
+
+            if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
+                glm::vec3 newPos = rayOrigin + t * rayDirection;
+                m_currentControlPoint->get(0, 0)->setValue(newPos.x);
+                m_currentControlPoint->get(1, 0)->setValue(newPos.y);
+                m_currentControlPoint->get(2, 0)->setValue(newPos.z);
+            }
+            m_bcifs.invalidate(true);
+            m_bcifsChanged = true;
+        } else {
+            // move the camera
+            glm::vec2 size = Core::Application::get().framebufferSize();
+            m_camera.rotateAzimuth(static_cast<float>(dx / size.x * 8.0));
+            m_camera.rotatePolar(static_cast<float>(dy / size.y * 4.0));
+            m_uniformsDirty = true;
+        }
     }
 
     if (m_rightMousePressed) {
@@ -763,6 +793,7 @@ bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
 bool LayerBcifs::onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& event) {
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
         m_leftMousePressed = false;
+        m_currentControlPoint = std::nullopt;
         return true;
     }
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
@@ -790,4 +821,55 @@ bool LayerBcifs::onMouseScrolledEvent(const Core::MouseScrolledEvent& event) {
 
     m_uniformsDirty = true;
     return true;
+}
+
+void LayerBcifs::handleSelection() {
+    glm::vec2 size = Core::Application::get().framebufferSize();
+    float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
+    float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
+    glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+
+    glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+
+    glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
+
+    glm::vec3 rayOrigin = m_camera.getEye();
+
+    float bestT = 1000000.0f;
+    float tanHalfFovy = 1.0f / m_proj[1][1];
+    float pixelRadius = 8.0f;
+
+    for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints()) {
+        for (std::size_t col = 0; col < points.cols(); col++) {
+            BCIFS::FormalMatrix point = points.getCol(col);
+            glm::vec3 pointPos(point.get(0, 0)->value(), point.get(1, 0)->value(), point.get(2, 0)->value());
+            glm::vec3 toV = pointPos - rayOrigin;
+            float t = glm::dot(toV, rayDirection);
+            if (t <= 0.0f) {
+                continue;
+            }
+
+            glm::vec3 closest = rayOrigin + t * rayDirection;
+            float dist2 = glm::dot(pointPos - closest, pointPos - closest);
+
+            float worldPerPixel = (2.0f * t * tanHalfFovy) / size.y;
+            float radius = pixelRadius * worldPerPixel;
+            float radius2 = radius * radius;
+
+            if (dist2 <= radius2 && t < bestT) {
+                bestT = t;
+                m_currentControlPoint = point;
+            }
+        }
+    }
+}
+
+bool LayerBcifs::intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t) {
+    float denom = dot(rayDirection, planeNormal);
+    if (std::abs(denom) < 1e-6f)
+        return false;
+
+    t = dot(planePoint - rayOrigin, planeNormal) / denom;
+    return t >= 0.0f;
 }

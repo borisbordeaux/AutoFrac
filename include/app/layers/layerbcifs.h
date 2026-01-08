@@ -45,6 +45,9 @@ private:
     bool onWindowResizedEvent(const Core::WindowResizedEvent& event);
     bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
 
+    void handleSelection();
+    static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
+
 private:
     BCIFS::Bcifs m_bcifs;
     int m_iterationLevel = 0;
@@ -65,6 +68,8 @@ private:
     glm::vec<2, double, glm::defaultp> m_mousePos;
     Core::Camera m_camera;
     glm::mat4 m_proj;
+
+    std::optional<BCIFS::FormalMatrix> m_currentControlPoint;
 };
 
 

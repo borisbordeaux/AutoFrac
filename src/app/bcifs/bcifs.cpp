@@ -178,6 +178,12 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
         for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
             m_mapOperatorsMat[transitionId] = m_mapOperators[transitionId].toMat();
         }
+        if (iterationLevel == 0) {
+            m_facesPaths.clear();
+            for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
+                m_facesPaths.emplace_back(Path({ transitionId }), this->getOperatorMat(transitionId));
+            }
+        }
     }
 
     std::vector<std::vector<glm::vec3>> res;
