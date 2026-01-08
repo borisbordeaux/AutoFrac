@@ -217,13 +217,14 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
 }
 
 std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> Bcifs::subdivisionPoints() const {
+    if (!m_initStateID.has_value()) { return {}; }
+
     std::vector<glm::vec3> resVar;
     std::vector<glm::vec3> resConst;
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     // for each state, look at its subdivisions
     for (const State& state : m_automaton.states()) {
         bool hasMSS = m_mapMSS.find(state.id()) != m_mapMSS.end();
-
         // if the state has a mass spring system
         if (hasMSS && state.id() != m_initStateID.value()) {
             for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
