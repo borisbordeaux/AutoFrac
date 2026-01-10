@@ -46,6 +46,8 @@ private:
     bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
 
     void handleSelection();
+    void handleMoveControlPoint();
+    void handleMoveSubdivisionPoint();
     static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
 
 private:
@@ -65,11 +67,12 @@ private:
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;
     bool m_uniformsDirty = true;
-    glm::vec<2, double, glm::defaultp> m_mousePos;
+    glm::vec<2, double> m_mousePos;
     Core::Camera m_camera;
     glm::mat4 m_proj;
 
     std::optional<BCIFS::FormalMatrix> m_currentControlPoint;
+    std::optional<BCIFS::SubdivisionPoint> m_currentSubdivisionPoint;
 };
 
 

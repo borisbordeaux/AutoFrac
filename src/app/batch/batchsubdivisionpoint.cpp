@@ -33,19 +33,20 @@ void BatchSubdivisionPoint::setMVP(const Core::Camera& camera, const glm::mat4& 
 void BatchSubdivisionPoint::setBcifs(const BCIFS::Bcifs& bcifs) {
     m_count = 0;
     m_data.clear();
-    std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> subdivisionPoints = bcifs.subdivisionPoints();
-    std::vector<glm::vec3> varSubdivisionPoints = subdivisionPoints.first;
-    std::vector<glm::vec3> constSubdivisionPoints = subdivisionPoints.second;
+
+    std::pair<std::vector<BCIFS::SubdivisionPoint>, std::vector<BCIFS::SubdivisionPoint>> subdivisionPoints = bcifs.subdivisionPoints();
+    std::vector<BCIFS::SubdivisionPoint> varSubdivisionPoints = subdivisionPoints.first;
+    std::vector<BCIFS::SubdivisionPoint> constSubdivisionPoints = subdivisionPoints.second;
 
     std::size_t nbAdds = varSubdivisionPoints.size() + constSubdivisionPoints.size();
 
     m_data.resize(nbAdds * m_floatsPerVertex);
 
-    for (const glm::vec3& point : varSubdivisionPoints) {
-        this->addVertex(point, true);
+    for (const BCIFS::SubdivisionPoint& point : varSubdivisionPoints) {
+        this->addVertex(point.posR3(), true);
     }
-    for (const glm::vec3& point : constSubdivisionPoints) {
-        this->addVertex(point, false);
+    for (const BCIFS::SubdivisionPoint& point : constSubdivisionPoints) {
+        this->addVertex(point.posR3(), false);
     }
 
     m_vbo.bind();

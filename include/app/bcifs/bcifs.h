@@ -10,6 +10,19 @@
 
 namespace BCIFS {
 
+class SubdivisionPoint {
+public:
+    SubdivisionPoint(FormalMatrix T, FormalMatrix posBary);
+    const FormalMatrix& T() const { return m_T; }
+    const FormalMatrix& posBary() const { return m_posBary; }
+    FormalMatrix& posBary() { return m_posBary; }
+    glm::vec3 posR3() const;
+
+private:
+    FormalMatrix m_T;
+    FormalMatrix m_posBary;
+};
+
 class Bcifs {
 public:
     Bcifs() = default;
@@ -36,7 +49,11 @@ public:
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints() const;
-    std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> subdivisionPoints() const;
+    /**
+     * Getter for all subdivision points.
+     * @return a pair of vectors, the first one contains variable subdivision points and the second one contains constant subdivision points.
+     */
+    std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> subdivisionPoints() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings() const;
     void updateMSS();
@@ -52,10 +69,11 @@ public:
 
 private:
     using Constraint = std::pair<Path, Path>;
+
     enum class ConstraintType {
-        SUBDIVISION,  // constrains subdivision operators
-        PERMUTATION,  // constrains permutation operators
-        ADJACENCY_ON_INCIDENCE_OPERATORS  // merge spaces
+        SUBDIVISION,                     // constrains subdivision operators
+        PERMUTATION,                     // constrains permutation operators
+        ADJACENCY_ON_INCIDENCE_OPERATORS // merge spaces
     };
 
     ConstraintType constraintType(const Constraint& constraint) const;

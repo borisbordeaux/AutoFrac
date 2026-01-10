@@ -43,9 +43,12 @@ public:
 
     void concatenateColumns(const FormalMatrix& matrix);
 
-    std::size_t indexOf(const FormalMatrix& columnMatrix);
+    std::size_t indexOf(const FormalMatrix& columnMatrix) const;
 
     FormalMatrix getCol(std::size_t indexCol) const;
+
+    FormalMatrix variableEmbeddingMatrix() const;
+    FormalMatrix variableMatrix() const;
 
 private:
     std::size_t m_rows;

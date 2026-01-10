@@ -7,13 +7,15 @@
 
 namespace BCIFS {
 
-FormalMatrix::FormalMatrix() : FormalMatrix(0, 0) {}
+FormalMatrix::FormalMatrix() : FormalMatrix(0, 0) {
+}
 
 FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols) :
-        m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols, FormalCoef::zero())) {}
+    m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols, FormalCoef::zero())) {
+}
 
 FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols, float value) :
-        m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols)) {
+    m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols)) {
     if (m_cols == 1 && m_rows == 1) {
         this->set(0, 0, FormalCoef::one());
     } else {
@@ -26,7 +28,7 @@ FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols, float value) :
 }
 
 FormalMatrix::FormalMatrix(std::size_t rows, std::size_t cols, bool initRandom) :
-        m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols)) {
+    m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<FormalCoefRef>(cols)) {
     if (initRandom) {
         std::random_device rd;
         std::mt19937 generator(rd());
@@ -105,7 +107,7 @@ std::string FormalMatrix::toString(bool showAddress) const {
 }
 
 void FormalMatrix::print(bool showAddress) const {
-    Core::LOG_INFO("Matrix\n"+this->toString(showAddress));
+    Core::LOG_INFO("Matrix\n" + this->toString(showAddress));
 }
 
 BooleanMatrix FormalMatrix::toBooleanMatrix() const {
@@ -137,7 +139,6 @@ void FormalMatrix::setRandomValuesOnFreeCoefs() {
 void FormalMatrix::setSumToOne() {
     for (std::size_t col = 0; col < m_cols; col++) {
         float sum = 0.0f;
-        std::vector<std::size_t> differentValueIndices;
         std::vector<float*> valueReferences;
 
         for (std::size_t row = 0; row < m_rows; row++) {
@@ -149,7 +150,7 @@ void FormalMatrix::setSumToOne() {
             }
         }
 
-        for (float* f: valueReferences) {
+        for (float* f : valueReferences) {
             *f = *f / sum;
         }
     }
@@ -176,7 +177,7 @@ void FormalMatrix::concatenateColumns(const FormalMatrix& matrix) {
     m_cols += matrix.m_cols;
 }
 
-size_t FormalMatrix::indexOf(const FormalMatrix& columnMatrix) {
+size_t FormalMatrix::indexOf(const FormalMatrix& columnMatrix) const {
     for (std::size_t col = 0; col < m_cols; col++) {
         bool sameCol = true;
         for (std::size_t row = 0; row < m_rows; row++) {
@@ -196,6 +197,60 @@ FormalMatrix FormalMatrix::getCol(std::size_t indexCol) const {
     for (std::size_t row = 0; row < m_rows; row++) {
         res.set(row, 0, this->get(row, indexCol));
     }
+    return res;
+}
+
+FormalMatrix FormalMatrix::variableEmbeddingMatrix() const {
+    if (m_cols != 1) { throw std::runtime_error("The variable embedding matrix can be computed only for column matrices."); }
+
+    std::vector<std::size_t> differentValueIndices;
+    std::vector<float*> valueReferences;
+
+    for (std::size_t row = 0; row < m_rows; row++) {
+        if (this->get(row, 0)->type() == CoefType::VAR) {
+            auto it = std::find(valueReferences.begin(), valueReferences.end(), this->get(row, 0)->valueRef());
+            std::size_t index = std::distance(valueReferences.begin(), it);
+            differentValueIndices.push_back(index);
+            if (it == valueReferences.end()) {
+                valueReferences.push_back(this->get(row, 0)->valueRef());
+            }
+        } else {
+            differentValueIndices.push_back(m_rows); // an error value
+        }
+    }
+
+    FormalMatrix res(m_rows, valueReferences.size());
+    for (std::size_t row = 0; row < m_rows; row++) {
+        std::size_t col = differentValueIndices[row];
+        if (col < valueReferences.size()) {
+            res.set(row, col, FormalCoef::one());
+        }
+    }
+
+    return res;
+}
+
+FormalMatrix FormalMatrix::variableMatrix() const {
+    if (m_cols != 1) { throw std::runtime_error("The variable embedding matrix can be computed only for column matrices."); }
+
+    std::vector<std::size_t> differentValueIndices;
+    std::vector<float*> valueReferences;
+
+    for (std::size_t row = 0; row < m_rows; row++) {
+        if (this->get(row, 0)->type() == CoefType::VAR) {
+            auto it = std::find(valueReferences.begin(), valueReferences.end(), this->get(row, 0)->valueRef());
+            if (it == valueReferences.end()) {
+                valueReferences.push_back(this->get(row, 0)->valueRef());
+                differentValueIndices.push_back(row);
+            }
+        }
+    }
+
+    FormalMatrix res(differentValueIndices.size(), 1);
+    for (std::size_t row = 0; row < res.rows(); row++) {
+        res.set(row, 0, this->get(differentValueIndices[row], 0));
+    }
+
     return res;
 }
 

@@ -8,6 +8,18 @@
 
 namespace BCIFS {
 
+SubdivisionPoint::SubdivisionPoint(FormalMatrix T, FormalMatrix posBary) : m_T(std::move(T)), m_posBary(std::move(posBary)) {
+}
+
+glm::vec3 SubdivisionPoint::posR3() const {
+    glm::vec3 res;
+    FormalMatrix posR3 = m_T.multiplyValues(m_posBary);
+    res.x = posR3.get(0, 0)->value();
+    res.y = posR3.get(1, 0)->value();
+    res.z = posR3.get(2, 0)->value();
+    return res;
+}
+
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
     State s(m_automaton.states().size(), std::move(name));
     m_automaton.addState(s);
@@ -81,7 +93,7 @@ std::string Bcifs::toString() const {
         res += m_automaton.findStateByID(keyval.first).name() + " has " + std::to_string(keyval.second) + " dimensions\n";
     }
     res += "\nAll operators:\n";
-    for (const std::pair<const BCIFS::TransitionID, FormalMatrix>& keyval : m_mapOperators) {
+    for (const std::pair<const TransitionID, FormalMatrix>& keyval : m_mapOperators) {
         TransitionID transitionId = keyval.first;
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         res += "Operator ";
@@ -127,7 +139,9 @@ void Bcifs::validate() {
     this->initializeMatrices();          // initialize all boundary and internal operators
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
+    this->print();
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
+    this->print();
     this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
     this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
 }
@@ -216,11 +230,11 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
     return res;
 }
 
-std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> Bcifs::subdivisionPoints() const {
+std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::subdivisionPoints() const {
     if (!m_initStateID.has_value()) { return {}; }
 
-    std::vector<glm::vec3> resVar;
-    std::vector<glm::vec3> resConst;
+    std::vector<SubdivisionPoint> resVar;
+    std::vector<SubdivisionPoint> resConst;
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     // for each state, look at its subdivisions
     for (const State& state : m_automaton.states()) {
@@ -239,11 +253,10 @@ std::pair<std::vector<glm::vec3>, std::vector<glm::vec3>> Bcifs::subdivisionPoin
                             }
                         }
                         FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
-                        FormalMatrix pos3D = op.multiplyValues(posBarycentricSpace);
                         if (fixed) {
-                            resConst.emplace_back(pos3D.get(0, 0)->value(), pos3D.get(1, 0)->value(), pos3D.get(2, 0)->value());
+                            resConst.emplace_back(std::move(op), posBarycentricSpace);
                         } else {
-                            resVar.emplace_back(pos3D.get(0, 0)->value(), pos3D.get(1, 0)->value(), pos3D.get(2, 0)->value());
+                            resVar.emplace_back(std::move(op), posBarycentricSpace);
                         }
                     }
                 }
@@ -295,7 +308,7 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings() const
 }
 
 void Bcifs::updateMSS() {
-    for (std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+    for (std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         keyval.second.update();
         std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(keyval.first);
         for (TransitionID id : transitions) {
@@ -306,7 +319,7 @@ void Bcifs::updateMSS() {
 }
 
 void Bcifs::printMSS() const {
-    for (const std::pair<const BCIFS::StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+    for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
         Core::LOG_INFO(keyval.second.toString());
     }
     Core::LOG_INFO(m_MSSControlPoints.toString());
@@ -698,6 +711,7 @@ void Bcifs::completeSubdivisionMatrices() {
                             if (m_mapOperators[transition.id()].get(row, col)->type() == CoefType::VAR) {
                                 m_mapOperators[transition.id()].get(row, col)->setValue(m_mapInitMat[transition.id()].get(row, col)->value());
                                 m_mapOperators[transition.id()].get(row, col)->setType(m_mapInitMat[transition.id()].get(row, col)->type());
+                                m_mapOperators[transition.id()].get(row, col)->setInitialized();
                             }
                         }
                     }

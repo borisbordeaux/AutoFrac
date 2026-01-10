@@ -14,6 +14,7 @@
 #include "core/mouseevents.h"
 #include "core/windowevents.h"
 #include "core/application.h"
+#include "core/log.h"
 #include "core/renderer.h"
 
 LayerBcifs::LayerBcifs() :
@@ -294,6 +295,7 @@ void LayerBcifs::testG2() {
     BCIFS::StateID init = m_bcifs.addInitState();
     // permutations
     BCIFS::TransitionID permut = m_bcifs.addPermutation("0", cantor, cantor);
+    BCIFS::TransitionID permutB = m_bcifs.addPermutation("0", bezier, bezier);
     // boundary of states
     BCIFS::TransitionID b0bezier = m_bcifs.addBoundary("0", bezier, vert);
     BCIFS::TransitionID b1bezier = m_bcifs.addBoundary("1", bezier, vert);
@@ -321,8 +323,8 @@ void LayerBcifs::testG2() {
     m_bcifs.setSpace(face, { b0face, b1face, b2face, b3face, b4face, b5face });
     // subdivision of states
     BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
-    BCIFS::TransitionID s0bezier = m_bcifs.addSubdivision("0", bezier, bezier);
-    BCIFS::TransitionID s1bezier = m_bcifs.addSubdivision("1", bezier, bezier);
+    BCIFS::TransitionID s0bezier = m_bcifs.addSubdivision("s0b", bezier, bezier);
+    BCIFS::TransitionID s1bezier = m_bcifs.addSubdivision("s1b", bezier, bezier);
     BCIFS::TransitionID s0cantor = m_bcifs.addSubdivision("0", cantor, cantor);
     BCIFS::TransitionID s1cantor = m_bcifs.addSubdivision("1", cantor, cantor);
     BCIFS::TransitionID s0face = m_bcifs.addSubdivision("0", face, face);
@@ -337,9 +339,14 @@ void LayerBcifs::testG2() {
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0cantor }, { b1cantor });
     m_bcifs.addConstraint({ permut, b1cantor }, { b0cantor });
+    m_bcifs.addConstraint({ permutB, b0bezier }, { b1bezier });
+    m_bcifs.addConstraint({ permutB, internalBezier[0] }, { internalBezier[0] });
+    m_bcifs.addConstraint({ permutB, b1bezier }, { b0bezier });
     // to constrain subdivision operators using permutation operators
     m_bcifs.addConstraint({ permut, s0cantor }, { s1cantor, permut });
     m_bcifs.addConstraint({ permut, s1cantor }, { s0cantor, permut });
+    m_bcifs.addConstraint({ permutB, s0bezier }, { s1bezier, permutB });
+    m_bcifs.addConstraint({ permutB, s1bezier }, { s0bezier, permutB });
     // incidence constraints
     // on edge
     m_bcifs.addConstraint({ b0cantor, s0vert }, { s0cantor, b0cantor });
@@ -381,23 +388,23 @@ void LayerBcifs::testG2() {
     m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
         { 1.0f, 2.0f / 3.0f },
         { 0.0f, 1.0f / 3.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
     m_bcifs.setInitMat(s1cantor, BCIFS::FormalMatrix({
         { 1.0f / 3.0f, 0.0f },
         { 2.0f / 3.0f, 1.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     m_bcifs.setInitMat(s0bezier, BCIFS::FormalMatrix({
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     m_bcifs.setInitMat(s1bezier, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     // init control points
     m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
@@ -748,31 +755,9 @@ bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
 
     if (m_leftMousePressed) {
         if (m_currentControlPoint.has_value()) {
-            // move the control point
-            float t;
-            glm::vec3 planePoint(m_currentControlPoint->get(0, 0)->value(), m_currentControlPoint->get(1, 0)->value(), m_currentControlPoint->get(2, 0)->value());
-            glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
-
-            glm::vec2 size = Core::Application::get().framebufferSize();
-            float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
-            float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
-            glm::vec4 rayClip(x, y, -1.0f, 1.0f);
-
-            glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
-            rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
-
-            glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
-
-            glm::vec3 rayOrigin = m_camera.getEye();
-
-            if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
-                glm::vec3 newPos = rayOrigin + t * rayDirection;
-                m_currentControlPoint->get(0, 0)->setValue(newPos.x);
-                m_currentControlPoint->get(1, 0)->setValue(newPos.y);
-                m_currentControlPoint->get(2, 0)->setValue(newPos.z);
-            }
-            m_bcifs.invalidate(true);
-            m_bcifsChanged = true;
+            this->handleMoveControlPoint();
+        } else if (m_currentSubdivisionPoint.has_value()) {
+            this->handleMoveSubdivisionPoint();
         } else {
             // move the camera
             glm::vec2 size = Core::Application::get().framebufferSize();
@@ -794,6 +779,7 @@ bool LayerBcifs::onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& even
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
         m_leftMousePressed = false;
         m_currentControlPoint = std::nullopt;
+        m_currentSubdivisionPoint = std::nullopt;
         return true;
     }
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
@@ -840,6 +826,7 @@ void LayerBcifs::handleSelection() {
     float tanHalfFovy = 1.0f / m_proj[1][1];
     float pixelRadius = 8.0f;
 
+    // test control points
     for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints()) {
         for (std::size_t col = 0; col < points.cols(); col++) {
             BCIFS::FormalMatrix point = points.getCol(col);
@@ -863,6 +850,125 @@ void LayerBcifs::handleSelection() {
             }
         }
     }
+
+    // also test subdivision points
+    for (const BCIFS::SubdivisionPoint& point : m_bcifs.subdivisionPoints().first) {
+        glm::vec3 pointPos = point.posR3();
+        glm::vec3 toV = pointPos - rayOrigin;
+        float t = glm::dot(toV, rayDirection);
+        if (t <= 0.0f) {
+            continue;
+        }
+
+        glm::vec3 closest = rayOrigin + t * rayDirection;
+        float dist2 = glm::dot(pointPos - closest, pointPos - closest);
+
+        float worldPerPixel = (2.0f * t * tanHalfFovy) / size.y;
+        float radius = pixelRadius * worldPerPixel;
+        float radius2 = radius * radius;
+
+        if (dist2 <= radius2 && t < bestT) {
+            bestT = t;
+            m_currentSubdivisionPoint = point;
+        }
+    }
+}
+
+void LayerBcifs::handleMoveControlPoint() {
+    // move the control point
+    float t;
+    glm::vec3 planePoint(m_currentControlPoint->get(0, 0)->value(), m_currentControlPoint->get(1, 0)->value(), m_currentControlPoint->get(2, 0)->value());
+    glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
+
+    glm::vec2 size = Core::Application::get().framebufferSize();
+    float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
+    float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
+    glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+
+    glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+
+    glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
+
+    glm::vec3 rayOrigin = m_camera.getEye();
+
+    if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
+        glm::vec3 newPos = rayOrigin + t * rayDirection;
+        m_currentControlPoint->get(0, 0)->setValue(newPos.x);
+        m_currentControlPoint->get(1, 0)->setValue(newPos.y);
+        m_currentControlPoint->get(2, 0)->setValue(newPos.z);
+    }
+    m_bcifs.invalidate(true);
+    m_bcifsChanged = true;
+}
+
+void LayerBcifs::handleMoveSubdivisionPoint() {
+    float t;
+    glm::vec3 planePoint = m_currentSubdivisionPoint->posR3();
+    glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
+
+    glm::vec2 size = Core::Application::get().framebufferSize();
+    float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
+    float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
+    glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+
+    glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+
+    glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
+
+    glm::vec3 rayOrigin = m_camera.getEye();
+
+    if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
+        glm::vec3 newPos = rayOrigin + t * rayDirection;
+        BCIFS::FormalMatrix Uv = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix();
+        arma::mat q = m_currentSubdivisionPoint->posBary().toMat();
+        std::cout << "q  : " << std::endl << q << std::endl;
+        arma::mat pv = Uv.toMat();
+        std::cout << "pv  : " << std::endl << pv << std::endl;
+        arma::mat matTrue = m_currentSubdivisionPoint->T().toMat();
+        std::cout << "mat True  : " << std::endl << matTrue << std::endl;
+        arma::mat mat(matTrue.n_rows + 1, matTrue.n_cols);
+        mat.ones();
+        for (std::size_t row = 0; row < matTrue.n_rows; row++) {
+            for (std::size_t col = 0; col < matTrue.n_cols; col++) {
+                mat.at(row, col) = matTrue.at(row, col);
+            }
+        }
+        std::cout << "mat  : " << std::endl << mat << std::endl;
+        BCIFS::FormalMatrix mv = m_currentSubdivisionPoint->posBary().variableMatrix();
+        std::cout << "mv  : " << std::endl << mv.toString() << std::endl;
+
+        glm::vec3 deltaR3glm = newPos;
+        arma::mat p_(4, 1);
+        p_.at(0, 0) = deltaR3glm.x;
+        p_.at(1, 0) = deltaR3glm.y;
+        p_.at(2, 0) = deltaR3glm.z;
+        p_.at(3, 0) = 1.0f;
+        arma::mat dp = p_;
+        std::cout << "dp : " << std::endl << dp << std::endl;
+        arma::mat m2 = dp;
+        std::cout << "m2 : " << std::endl << m2 << std::endl;
+        arma::mat m3 = mat * pv;
+        std::cout << "m3 : " << std::endl << m3 << std::endl;
+        arma::mat m4 = arma::pinv(m3, 0.01);
+        std::cout << "m4 : " << std::endl << m4 << std::endl;
+        arma::mat m6 = m4 * m2;
+        std::cout << "m6 : " << std::endl << m6 << std::endl;
+        for (std::size_t row = 0; row < mv.rows(); row++) {
+            mv.get(row, 0)->setValue(m6.at(row, 0));
+        }
+        arma::mat coord = mat * m_currentSubdivisionPoint->posBary().toMat();
+        float r = 1.0f / coord.at(3, 0);
+        arma::mat m7 = m6 * r;
+        std::cout << "m7 : " << std::endl << m7 << std::endl;
+        for (std::size_t row = 0; row < mv.rows(); row++) {
+            mv.get(row, 0)->setValue(m7.at(row, 0));
+        }
+    }
+
+    m_bcifs.invalidate();
+    m_bcifsChanged = true;
 }
 
 bool LayerBcifs::intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t) {
