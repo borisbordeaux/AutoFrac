@@ -10,10 +10,15 @@ uniform vec3 cameraPos;
 
 void main()
 {
-    vec3 color = vec3(163.0/255.0, 227.0/255.0, 92.0/255.0);
+    vec3 color;
+    if (gl_FrontFacing) {
+        color = vec3(100.0/255.0, 100.0/255.0, 100.0/255.0);
+    } else {
+        color = vec3(104.0/255.0, 146.0/255.0, 59.0/255.0);
+    }
     vec3 ambientColor = 0.3 * color;
     vec3 diffuseColor = color;
-    vec3 specularColor = vec3(1.0);
+    vec3 specularColor = vec3(0.5);
     vec3 N = normalize(vertexNormal);
     vec3 L = normalize(lightPos - vertexPos);
 

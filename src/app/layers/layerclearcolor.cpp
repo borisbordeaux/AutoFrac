@@ -3,7 +3,7 @@
 #include "imgui/imgui.h"
 
 LayerClearColor::LayerClearColor() :
-        m_clearColor(0.59f, 0.73f, 1.0f, 1.0f) {}
+        m_clearColor(0, 30.0f/255.0f, 90.0f/255.0f, 1.0f) {}
 
 void LayerClearColor::onRender() {
     Core::Renderer::setClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
