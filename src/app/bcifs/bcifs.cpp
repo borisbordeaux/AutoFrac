@@ -48,6 +48,10 @@ void Bcifs::setSpace(StateID id, std::vector<TransitionID> transitions) {
     m_mapSpaces[id] = std::move(transitions);
 }
 
+void Bcifs::setPrimitive(StateID id, std::vector<Figure> primitive) {
+    m_mapPrimitives[id] = std::move(primitive);
+}
+
 TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::SUBDIVISION);
 }
@@ -139,9 +143,7 @@ void Bcifs::validate() {
     this->initializeMatrices();          // initialize all boundary and internal operators
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
-    this->print();
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
-    this->print();
     this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
     this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
 }
@@ -161,6 +163,9 @@ void Bcifs::reset() {
     m_invalidatedMatrices = true;
     m_invalidatedMatricesControlPoints = false;
     m_facesPaths.clear();
+    m_mapPrimitives.clear();
+    m_mapPrimitivesMat.clear();
+    m_needUpdatePrimitivesWhenChangingMatrices = true;
 }
 
 std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
@@ -187,6 +192,13 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
                 m_facesPaths.emplace_back(Path({ transitionId }), this->getOperatorMat(transitionId));
             }
         }
+
+        if (m_needUpdatePrimitivesWhenChangingMatrices) {
+            // if primitives don't depend on subdivision matrices,
+            // they will be initialized only one time
+            m_needUpdatePrimitivesWhenChangingMatrices = false;
+            this->initPrimitives();
+        }
     } else if (m_invalidatedMatricesControlPoints) {
         m_invalidatedMatricesControlPoints = false;
         for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
@@ -202,18 +214,34 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
 
     std::vector<std::vector<glm::vec3>> res;
     for (const std::pair<Path, arma::mat>& keyval : m_facesPaths) {
-        std::vector<glm::vec3> vertices;
-        arma::mat mat;
         if (iterationLevel != 0) {
-            mat = this->getOperatorMat(keyval.first[0]) * keyval.second;
+            TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
+            const Transition& lastTransition = m_automaton.findTransitionByID(lastTransitionId);
+            const std::vector<arma::mat>& primitiveMatrices = this->getPrimitiveMat(lastTransition.to());
+            // each primitive mat is a face
+            for (const arma::mat& primitive : primitiveMatrices) {
+                std::vector<glm::vec3> vertices;
+                arma::mat mat = this->getOperatorMat(keyval.first[0]) * keyval.second * primitive;
+                vertices.reserve(mat.n_cols);
+                for (std::size_t i = 0; i < mat.n_cols; i++) {
+                    vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                }
+                res.push_back(vertices);
+            }
         } else {
-            mat = keyval.second;
+            TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
+            const Transition& lastTransition = m_automaton.findTransitionByID(lastTransitionId);
+            const std::vector<arma::mat>& primitiveMatrices = this->getPrimitiveMat(lastTransition.to());
+            for (const arma::mat& primitive : primitiveMatrices) {
+                std::vector<glm::vec3> vertices;
+                arma::mat mat = keyval.second * primitive;
+                vertices.reserve(mat.n_cols);
+                for (std::size_t i = 0; i < mat.n_cols; i++) {
+                    vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                }
+                res.push_back(vertices);
+            }
         }
-        vertices.reserve(mat.n_cols);
-        for (std::size_t i = 0; i < mat.n_cols; i++) {
-            vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
-        }
-        res.push_back(vertices);
     }
 
     return res;
@@ -826,6 +854,14 @@ arma::mat Bcifs::getOperatorOfPath(const Path& path) const {
     return res;
 }
 
+arma::mat Bcifs::getOperatorOfPathForPrimitive(const Path& path) const {
+    arma::mat res = this->getOperatorMat(path[0]);
+    for (std::size_t i = 1; i < path.size(); i++) {
+        res *= this->getOperatorMat(path[i]);
+    }
+    return res;
+}
+
 FormalMatrix Bcifs::getOperatorOfPathForMSS(const Path& path) const {
     FormalMatrix res = this->getOperator(path[0]);
     for (std::size_t i = 1; i < path.size(); i++) {
@@ -849,6 +885,42 @@ FormalMatrix Bcifs::globalMatrixOf(StateID id) const {
         res.concatenateColumns(this->getOperator(transitions[i]));
     }
     return res;
+}
+
+const std::vector<arma::mat>& Bcifs::getPrimitiveMat(StateID id) const {
+    return m_mapPrimitivesMat.find(id)->second;
+}
+
+void Bcifs::initPrimitives() {
+    // for each state, use the given primitive or init a defaut one
+    // then compute the arma matrix and store it
+    for (const State& state : m_automaton.states()) {
+        auto it = m_mapPrimitives.find(state.id());
+        if (it != m_mapPrimitives.end()) {
+            // TODO: use given primitive
+            m_mapPrimitivesMat[state.id()] = {};
+            for (const Figure& figure : it->second) {
+                // each figure is a face, each face is a path, that has a matrix associated,
+                // each column is a point of the primitive
+                // for now we assume each path gives a one-column matrix
+                arma::mat primitive(m_mapDimensions[state.id()], figure.size());
+                std::size_t currentCol = 0;
+                for (const Path& path : figure) {
+                    if (m_automaton.containsSubdvision(path)) {
+                        m_needUpdatePrimitivesWhenChangingMatrices = true;
+                    }
+                    arma::mat mat = this->getOperatorOfPathForPrimitive(path);
+                    primitive.col(currentCol) = mat;
+                    currentCol++;
+                }
+                m_mapPrimitivesMat[state.id()].push_back(std::move(primitive));
+            }
+        } else {
+            // init a default primitive, the identity matrix
+            arma::mat identity(m_mapDimensions[state.id()], m_mapDimensions[state.id()], arma::fill::eye);
+            m_mapPrimitivesMat[state.id()] = { identity };
+        }
+    }
 }
 
 } // BCIFS

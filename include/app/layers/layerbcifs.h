@@ -30,7 +30,7 @@ public:
     static void testConstraints();
     void testSubdQuad();
     void testSierpinski();
-    void testG2();
+    void testG2(int rows, int cols);
     void testSquareSierpinski();
 
     void onUpdate(float deltaTime) override;

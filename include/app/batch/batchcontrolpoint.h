@@ -22,7 +22,7 @@ public:
     void render() const;
 
 private:
-    void addVertex(const glm::vec3& v);
+    void addVertex(const glm::vec3& v, bool isVar);
 
 private:
     Core::VertexArray m_vao;
@@ -31,7 +31,7 @@ private:
     Core::ShaderProgram m_program;
     std::vector<float> m_data;
     int m_count = 0;
-    int m_floatsPerVertex = 3;
+    int m_floatsPerVertex = 4;
 };
 
 #endif // AUTOFRAC_BATCHCONTROLPOINT_H

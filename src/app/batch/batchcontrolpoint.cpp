@@ -8,6 +8,7 @@ BatchControlPoint::BatchControlPoint() {
     m_vbo.bind();
 
     m_layout.pushFloats(3); // position
+    m_layout.pushFloats(1); // constness (const is 1.0f and var is 2.0f)
 
     m_vao.addBuffer(m_vbo, m_layout);
 
@@ -43,8 +44,14 @@ void BatchControlPoint::setBcifs(const BCIFS::Bcifs& bcifs) {
     m_data.resize(nbAdds * m_floatsPerVertex);
 
     for (const BCIFS::FormalMatrix& matrix : controlPoints) {
-        for (std::size_t i = 0; i < matrix.cols(); ++i) {
-            this->addVertex(glm::vec3{ matrix.get(0, i)->value(), matrix.get(1, i)->value(), matrix.get(2, i)->value() });
+        for (std::size_t col = 0; col < matrix.cols(); ++col) {
+            bool isVar = false;
+            for (std::size_t row = 0; row < matrix.rows(); ++row) {
+                if (matrix.get(row, col)->type() == BCIFS::CoefType::VAR) {
+                    isVar = true;
+                }
+            }
+            this->addVertex(glm::vec3{ matrix.get(0, col)->value(), matrix.get(1, col)->value(), matrix.get(2, col)->value() }, isVar);
         }
     }
 
@@ -61,13 +68,14 @@ void BatchControlPoint::render() const {
     m_vao.unbind();
 }
 
-void BatchControlPoint::addVertex(const glm::vec3& v) {
+void BatchControlPoint::addVertex(const glm::vec3& v, bool isVar) {
     // add to the end of the data already added
     float* p = m_data.data() + m_count;
     // the coordinates of the vertex
     *p++ = v.x;
     *p++ = v.y;
     *p++ = v.z;
+    *p = isVar ? 2.0f : 1.0f;
     // we update the amount of data
     m_count += m_floatsPerVertex;
 }

@@ -38,6 +38,7 @@ public:
     TransitionID addBoundary(std::string name, StateID from, StateID to);
     void addGrid(StateID id, std::vector<Figure> grid);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
+    void setPrimitive(StateID id, std::vector<Figure> primitive);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
@@ -64,8 +65,6 @@ public:
     inline float* damping() { return &m_damping; }
 
     void invalidate(bool controlPointsOnly = false);
-    Automaton& automaton() { return m_automaton; }
-    StateID initState() const { return m_initStateID.value_or(-1); }
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -105,9 +104,12 @@ private:
     void buildMSSForControlPoints();
 
     arma::mat getOperatorOfPath(const Path& path) const;
+    arma::mat getOperatorOfPathForPrimitive(const Path& path) const;
     FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
     FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
     FormalMatrix globalMatrixOf(StateID id) const;
+    const std::vector<arma::mat>& getPrimitiveMat(StateID id) const;
+    void initPrimitives();
 
 private:
     Automaton m_automaton;
@@ -131,6 +133,9 @@ private:
     bool m_invalidatedMatrices = true;
     bool m_invalidatedMatricesControlPoints = false;
     std::vector<std::pair<Path, arma::mat>> m_facesPaths;
+    std::unordered_map<StateID, std::vector<Figure>> m_mapPrimitives;
+    std::unordered_map<StateID, std::vector<arma::mat>> m_mapPrimitivesMat;
+    bool m_needUpdatePrimitivesWhenChangingMatrices = true;
 };
 
 } // BCIFS

@@ -209,7 +209,7 @@ void LayerBcifs::testSubdQuad() {
         { -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, -1.0f, -1.0f },
         { -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     // define all matrices
     m_bcifs.validate();
@@ -247,6 +247,11 @@ void LayerBcifs::testSierpinski() {
     BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
     BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
 
+    // primitive of states
+    m_bcifs.setPrimitive(face, {
+        { { b0face, b1edge }, { b1face, b1edge }, { b2face, b1edge } }
+    });
+
     // incidence constraints
     // on edge
     m_bcifs.addConstraint({ b0edge, s0vert }, { s0edge, b0edge });
@@ -273,19 +278,19 @@ void LayerBcifs::testSierpinski() {
         { -1.0f, 1.0f, 0.0f },
         { 0.0f, 0.0f, 1.7f },
         { 1.0f, 0.0f, 0.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
         { 1.0f, -1.0f, 0.0f },
         { 0.0f, 0.0f, -1.0f },
         { 0.0f, 1.0f, 2.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     // define all matrices
     m_bcifs.validate();
 }
 
-void LayerBcifs::testG2() {
+void LayerBcifs::testG2(int rows, int cols) {
     m_bcifs.reset();
     // states
     auto [vert, internalVert] = m_bcifs.addState("V", 1);
@@ -323,8 +328,8 @@ void LayerBcifs::testG2() {
     m_bcifs.setSpace(face, { b0face, b1face, b2face, b3face, b4face, b5face });
     // subdivision of states
     BCIFS::TransitionID s0vert = m_bcifs.addSubdivision("0", vert, vert);
-    BCIFS::TransitionID s0bezier = m_bcifs.addSubdivision("s0b", bezier, bezier);
-    BCIFS::TransitionID s1bezier = m_bcifs.addSubdivision("s1b", bezier, bezier);
+    BCIFS::TransitionID s0bezier = m_bcifs.addSubdivision("0", bezier, bezier);
+    BCIFS::TransitionID s1bezier = m_bcifs.addSubdivision("1", bezier, bezier);
     BCIFS::TransitionID s0cantor = m_bcifs.addSubdivision("0", cantor, cantor);
     BCIFS::TransitionID s1cantor = m_bcifs.addSubdivision("1", cantor, cantor);
     BCIFS::TransitionID s0face = m_bcifs.addSubdivision("0", face, face);
@@ -333,8 +338,33 @@ void LayerBcifs::testG2() {
     BCIFS::TransitionID s3face = m_bcifs.addSubdivision("3", face, face);
     BCIFS::TransitionID s4face = m_bcifs.addSubdivision("4", face, face);
     BCIFS::TransitionID s5face = m_bcifs.addSubdivision("5", face, face);
-    BCIFS::TransitionID s0init = m_bcifs.addSubdivision("0", init, face);
-    BCIFS::TransitionID s1init = m_bcifs.addSubdivision("1", init, face);
+
+    std::vector<BCIFS::TransitionID> initSubs;
+    for (int subs = 0; subs < rows * cols; subs++) {
+        initSubs.emplace_back(m_bcifs.addSubdivision(std::to_string(subs), init, face));
+    }
+
+    // primitive of states
+    m_bcifs.setPrimitive(face, {
+        {
+            { b0face, b0cantor },
+            { b1face, b0bezier },
+            { b1face, s0bezier, s1bezier, b0bezier },
+            { b1face, s1bezier, b0bezier },
+            { b1face, s1bezier, s1bezier, b0bezier },
+            { b2face, b0cantor },
+            { b3face, b0bezier },
+            { b3face, s0bezier, s1bezier, b0bezier },
+            { b3face, s1bezier, b0bezier },
+            { b3face, s1bezier, s1bezier, b0bezier },
+            { b4face, b0cantor },
+            { b5face, b0bezier },
+            { b5face, s0bezier, s1bezier, b0bezier },
+            { b5face, s1bezier, b0bezier },
+            { b5face, s1bezier, s1bezier, b0bezier },
+        }
+    });
+
     // permutation constraints
     // to define permutation operators
     m_bcifs.addConstraint({ permut, b0cantor }, { b1cantor });
@@ -388,76 +418,54 @@ void LayerBcifs::testG2() {
     m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
         { 1.0f, 2.0f / 3.0f },
         { 0.0f, 1.0f / 3.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefType::CONST));
     m_bcifs.setInitMat(s1cantor, BCIFS::FormalMatrix({
         { 1.0f / 3.0f, 0.0f },
         { 2.0f / 3.0f, 1.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefType::CONST));
 
     m_bcifs.setInitMat(s0bezier, BCIFS::FormalMatrix({
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefType::CONST));
 
     m_bcifs.setInitMat(s1bezier, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefType::CONST));
 
     // init control points
-    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
-        {
-            3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::cos(2.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::cos(3.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
-        },
-        {
-            3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(1.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::sin(2.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(3.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::sin(4.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(5.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
-        },
-        { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-    }, BCIFS::CoefType::CONST));
-
-    m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
-        {
-            7.0f + 3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * 0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
-            7.0f + 3.0f * std::cos(2.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * std::cos(3.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * 0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
-            7.0f + 3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
-            7.0f + 3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
-        },
-        {
-            3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(1.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::sin(2.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(3.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
-            3.0f * std::sin(4.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * std::sin(5.0f * M_PIf * 2.0f / 6.0f),
-            3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
-        },
-        { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-    }, BCIFS::CoefType::CONST));
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            m_bcifs.setInitMat(initSubs[row * cols + col], BCIFS::FormalMatrix({
+                {
+                    7.0f * col + 3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * 0.7f * std::cos(3.0f * M_PIf * 2.0f / 12.0f),
+                    7.0f * col + 3.0f * std::cos(2.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * std::cos(3.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * 0.7f * std::cos(7.0f * M_PIf * 2.0f / 12.0f),
+                    7.0f * col + 3.0f * std::cos(4.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * std::cos(5.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * col + 3.0f * 0.7f * std::cos(11.0f * M_PIf * 2.0f / 12.0f)
+                },
+                {
+                    7.0f * row + 3.0f * std::sin(0.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * std::sin(1.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * 0.7f * std::sin(3.0f * M_PIf * 2.0f / 12.0f),
+                    7.0f * row + 3.0f * std::sin(2.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * std::sin(3.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * 0.7f * std::sin(7.0f * M_PIf * 2.0f / 12.0f),
+                    7.0f * row + 3.0f * std::sin(4.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * std::sin(5.0f * M_PIf * 2.0f / 6.0f),
+                    7.0f * row + 3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
+                },
+                { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+            }, BCIFS::CoefType::VAR));
+        }
+    }
 
     // define all matrices
     m_bcifs.validate();
@@ -574,7 +582,7 @@ void LayerBcifs::testSquareSierpinski() {
         { -1.0f, 0.0f, 1.0f, 0.6f, 1.0f, 0.0f, -1.0f, -1.6f },
         { -1.0f, -0.6f, -1.0f, 0.0f, 1.0f, 1.6f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefType::VAR));
 
     // define all matrices
     m_bcifs.validate();
@@ -639,10 +647,13 @@ void LayerBcifs::onImGuiRender() {
         this->testSierpinski();
         m_bcifsChanged = true;
     }
+    static int dim[2] = { 1, 1 };
+    ImGui::SliderInt2("Grid size", dim, 1, 20);
     if (ImGui::Button("Create BC-IFS G2")) {
-        this->testG2();
+        this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
+
     if (ImGui::Button("Create BC-IFS Square Sierpinski")) {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
@@ -676,43 +687,32 @@ void LayerBcifs::onImGuiRender() {
         m_bcifs.printMSS();
     }
 
-    if (ImGui::Button("Print shortest paths")) {
-        std::unordered_map<BCIFS::StateID, BCIFS::Path> paths = m_bcifs.automaton().shortestPaths(m_bcifs.initState());
-        for (const std::pair<const BCIFS::StateID, BCIFS::Path>& path : paths) {
-            std::cout << "For state " << m_bcifs.automaton().findStateByID(path.first).name() << ": ";
-            for (BCIFS::TransitionID transitionId : path.second) {
-                BCIFS::Transition transition = m_bcifs.automaton().findTransitionByID(transitionId);
-                std::cout << m_bcifs.automaton().findStateByID(transition.from()).name();
-                std::cout << " --" << transition.toString() << "--> ";
-                std::cout << m_bcifs.automaton().findStateByID(transition.to()).name() << ", ";
-            }
-        }
-        std::cout << std::endl;
-    }
-
     ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
     ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
 
-    ImGui::Text("Control points");
-    std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints();
-    for (std::size_t j = 0; j < controlPoints.size(); j++) {
-        for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
-            ImGui::Text("Control point %zu", i);
-            if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(0, i)->valueRef(), 0.01f)) {
-                m_bcifsChanged = true;
-                m_bcifs.invalidate(true);
-            }
-            if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(1, i)->valueRef(), 0.01f)) {
-                m_bcifsChanged = true;
-                m_bcifs.invalidate(true);
-            }
-            if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(2, i)->valueRef(), 0.01f)) {
-                m_bcifsChanged = true;
-                m_bcifs.invalidate(true);
+    static bool editControlPoints = false;
+    ImGui::Checkbox("Edit control points", &editControlPoints);
+    if (editControlPoints) {
+        ImGui::Text("Control points");
+        std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints();
+        for (std::size_t j = 0; j < controlPoints.size(); j++) {
+            for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
+                ImGui::Text("Control point %zu", i);
+                if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(0, i)->valueRef(), 0.01f)) {
+                    m_bcifsChanged = true;
+                    m_bcifs.invalidate(true);
+                }
+                if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(1, i)->valueRef(), 0.01f)) {
+                    m_bcifsChanged = true;
+                    m_bcifs.invalidate(true);
+                }
+                if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(2, i)->valueRef(), 0.01f)) {
+                    m_bcifsChanged = true;
+                    m_bcifs.invalidate(true);
+                }
             }
         }
     }
-
     ImGui::End();
 }
 
@@ -810,6 +810,7 @@ bool LayerBcifs::onMouseScrolledEvent(const Core::MouseScrolledEvent& event) {
 }
 
 void LayerBcifs::handleSelection() {
+    if (!m_displayGrid) { return; }
     glm::vec2 size = Core::Application::get().framebufferSize();
     float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
     float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
@@ -829,6 +830,16 @@ void LayerBcifs::handleSelection() {
     // test control points
     for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints()) {
         for (std::size_t col = 0; col < points.cols(); col++) {
+            // be sure it is a selectable control points
+            bool selectable = false;
+            for (std::size_t row = 0; row < points.rows(); row++) {
+                if (points.get(row, col)->type() == BCIFS::CoefType::VAR) {
+                    selectable = true;
+                }
+            }
+            if (!selectable) {
+                continue;
+            }
             BCIFS::FormalMatrix point = points.getCol(col);
             glm::vec3 pointPos(point.get(0, 0)->value(), point.get(1, 0)->value(), point.get(2, 0)->value());
             glm::vec3 toV = pointPos - rayOrigin;
