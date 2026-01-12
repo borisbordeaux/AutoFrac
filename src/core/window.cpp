@@ -51,24 +51,24 @@ void Window::create() {
     });
 
     glfwSetWindowSizeCallback(m_handle, [](GLFWwindow* handle, int width, int height) {
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         glViewport(0, 0, width, height);
-        WindowResizedEvent event(static_cast<int>(width), static_cast<int>(height));
+        WindowResizedEvent event(width, height);
         window.raiseEvent(event);
     });
 
-    glfwSetKeyCallback(m_handle, [](GLFWwindow* handle, int key, int /*scancode*/, int action, int /*mods*/) {
+    glfwSetKeyCallback(m_handle, [](GLFWwindow* handle, int key, int scancode, int action, int /*mods*/) {
         if (ImGui::GetIO().WantCaptureKeyboard) return;
         Window& window = *((Window*) glfwGetWindowUserPointer(handle));
         switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT: {
-                KeyPressedEvent event(key, action == GLFW_REPEAT);
+                KeyPressedEvent event(key, scancode, glfwGetKeyName(key, scancode), action == GLFW_REPEAT);
                 window.raiseEvent(event);
                 break;
             }
             case GLFW_RELEASE: {
-                KeyReleasedEvent event(key);
+                KeyReleasedEvent event(key, scancode, glfwGetKeyName(key, scancode));
                 window.raiseEvent(event);
                 break;
             }
@@ -79,7 +79,7 @@ void Window::create() {
 
     glfwSetMouseButtonCallback(m_handle, [](GLFWwindow* handle, int button, int action, int /*mods*/) {
         if (ImGui::GetIO().WantCaptureMouse) return;
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         switch (action) {
             case GLFW_PRESS: {
                 MouseButtonPressedEvent event(button);
@@ -98,14 +98,14 @@ void Window::create() {
 
     glfwSetScrollCallback(m_handle, [](GLFWwindow* handle, double xOffset, double yOffset) {
         if (ImGui::GetIO().WantCaptureMouse) return;
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         MouseScrolledEvent event(xOffset, yOffset);
         window.raiseEvent(event);
     });
 
     glfwSetCursorPosCallback(m_handle, [](GLFWwindow* handle, double x, double y) {
         if (ImGui::GetIO().WantCaptureMouse) return;
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         MouseMovedEvent event(x, y);
         window.raiseEvent(event);
     });

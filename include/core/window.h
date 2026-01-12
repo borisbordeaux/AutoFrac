@@ -24,7 +24,7 @@ struct WindowSpecification {
 
 class Window {
 public:
-    explicit Window(WindowSpecification  specification = WindowSpecification());
+    explicit Window(WindowSpecification specification = WindowSpecification());
     ~Window();
 
     void create();

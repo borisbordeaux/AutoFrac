@@ -20,6 +20,10 @@ class MouseScrolledEvent;
 
 class WindowResizedEvent;
 
+class KeyPressedEvent;
+
+class KeyReleasedEvent;
+
 class Event;
 }
 
@@ -44,6 +48,8 @@ private:
     bool onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& event);
     bool onWindowResizedEvent(const Core::WindowResizedEvent& event);
     bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
+    bool onKeyPressedEvent(const Core::KeyPressedEvent& event);
+    bool onKeyReleasedEvent(const Core::KeyReleasedEvent& event);
 
     void handleSelection();
     void handleMoveControlPoint();
@@ -73,6 +79,12 @@ private:
 
     std::optional<BCIFS::FormalMatrix> m_currentControlPoint;
     std::optional<BCIFS::SubdivisionPoint> m_currentSubdivisionPoint;
+
+    glm::vec3 m_initialControlPointPosition;
+
+    bool m_xKeyPressed = false;
+    bool m_yKeyPressed = false;
+    bool m_zKeyPressed = false;
 };
 
 

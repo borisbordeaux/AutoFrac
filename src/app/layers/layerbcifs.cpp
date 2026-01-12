@@ -14,6 +14,7 @@
 #include "core/mouseevents.h"
 #include "core/windowevents.h"
 #include "core/application.h"
+#include "core/keyevents.h"
 #include "core/log.h"
 #include "core/renderer.h"
 
@@ -722,6 +723,8 @@ void LayerBcifs::onEvent(Core::Event& event) {
     dispatcher.dispatch<Core::MouseButtonPressedEvent>([this](const Core::MouseButtonPressedEvent& e) { return this->onMousePressedEvent(e); });
     dispatcher.dispatch<Core::MouseButtonReleasedEvent>([this](const Core::MouseButtonReleasedEvent& e) { return this->onMouseReleasedEvent(e); });
     dispatcher.dispatch<Core::MouseScrolledEvent>([this](const Core::MouseScrolledEvent& e) { return this->onMouseScrolledEvent(e); });
+    dispatcher.dispatch<Core::KeyPressedEvent>([this](const Core::KeyPressedEvent& e) { return this->onKeyPressedEvent(e); });
+    dispatcher.dispatch<Core::KeyReleasedEvent>([this](const Core::KeyReleasedEvent& e) { return this->onKeyReleasedEvent(e); });
     dispatcher.dispatch<Core::WindowResizedEvent>([this](const Core::WindowResizedEvent& e) { return this->onWindowResizedEvent(e); });
 }
 
@@ -809,6 +812,38 @@ bool LayerBcifs::onMouseScrolledEvent(const Core::MouseScrolledEvent& event) {
     return true;
 }
 
+bool LayerBcifs::onKeyPressedEvent(const Core::KeyPressedEvent& event) {
+    if (event.getKeyName() == 'x') {
+        m_xKeyPressed = true;
+        return true;
+    }
+    if (event.getKeyName() == 'y') {
+        m_yKeyPressed = true;
+        return true;
+    }
+    if (event.getKeyName() == 'z') {
+        m_zKeyPressed = true;
+        return true;
+    }
+    return false;
+}
+
+bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
+    if (event.getKeyName() == 'x') {
+        m_xKeyPressed = false;
+        return true;
+    }
+    if (event.getKeyName() == 'y') {
+        m_yKeyPressed = false;
+        return true;
+    }
+    if (event.getKeyName() == 'z') {
+        m_zKeyPressed = false;
+        return true;
+    }
+    return false;
+}
+
 void LayerBcifs::handleSelection() {
     if (!m_displayGrid) { return; }
     glm::vec2 size = Core::Application::get().framebufferSize();
@@ -858,6 +893,9 @@ void LayerBcifs::handleSelection() {
             if (dist2 <= radius2 && t < bestT) {
                 bestT = t;
                 m_currentControlPoint = point;
+                m_initialControlPointPosition.x = m_currentControlPoint->get(0, 0)->value();
+                m_initialControlPointPosition.y = m_currentControlPoint->get(1, 0)->value();
+                m_initialControlPointPosition.z = m_currentControlPoint->get(2, 0)->value();
             }
         }
     }
@@ -890,6 +928,16 @@ void LayerBcifs::handleMoveControlPoint() {
     float t;
     glm::vec3 planePoint(m_currentControlPoint->get(0, 0)->value(), m_currentControlPoint->get(1, 0)->value(), m_currentControlPoint->get(2, 0)->value());
     glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
+    if (m_xKeyPressed) {
+        planeNormal = glm::vec3(1, 0, 0);
+        planePoint = m_initialControlPointPosition;
+    } else if (m_yKeyPressed) {
+        planeNormal = glm::vec3(0, 1, 0);
+        planePoint = m_initialControlPointPosition;
+    } else if (m_zKeyPressed) {
+        planeNormal = glm::vec3(0, 0, 1);
+        planePoint = m_initialControlPointPosition;
+    }
 
     glm::vec2 size = Core::Application::get().framebufferSize();
     float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);

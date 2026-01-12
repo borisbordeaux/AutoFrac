@@ -7,23 +7,27 @@ namespace Core {
 
 class KeyEvent : public Event {
 public:
-    inline int getKeyCode() const { return m_keyCode; }
+    inline int getKey() const { return m_key; }
+    inline int getScanCode() const { return m_scanCode; }
+    inline const char& getKeyName() const { return m_keyName; }
 
 protected:
-    KeyEvent(int keyCode) : m_keyCode(keyCode) {}
+    KeyEvent(int key, int scanCode, const char* keyName) : m_key(key), m_scanCode(scanCode), m_keyName(keyName == nullptr ? '\0' : *keyName) {}
 
 private:
-    int m_keyCode;
+    int m_key;
+    int m_scanCode;
+    char m_keyName;
 };
 
 class KeyPressedEvent : public KeyEvent {
 public:
-    KeyPressedEvent(int keyCode, bool isRepeat) : KeyEvent(keyCode), m_isRepeat(isRepeat) {}
+    KeyPressedEvent(int key, int scanCode, const char* keyName, bool isRepeat) : KeyEvent(key, scanCode, keyName), m_isRepeat(isRepeat) {}
 
     inline bool isRepeat() const { return m_isRepeat; }
 
     std::string toString() const override {
-        return "KeyPressedEvent: " + std::to_string(this->getKeyCode()) + " (repeat=" + std::to_string(m_isRepeat) + ")";
+        return "KeyPressedEvent: " + std::to_string(this->getKey()) + ", " + std::to_string(this->getScanCode()) + ", " + this->getKeyName() + " (repeat=" + std::to_string(m_isRepeat) + ")";
     }
 
     EVENT_CLASS_TYPE(KeyPressed)
@@ -34,13 +38,13 @@ private:
 
 class KeyReleasedEvent : public KeyEvent {
 public:
-    KeyReleasedEvent(int keyCode) : KeyEvent(keyCode) {}
+    KeyReleasedEvent(int key, int scanCode, const char* keyName) : KeyEvent(key, scanCode, keyName) {}
 
     std::string toString() const override {
-        return "KeyReleasedEvent: " + std::to_string(this->getKeyCode());
+        return "KeyReleasedEvent: " + std::to_string(this->getKey()) + ", " + std::to_string(this->getScanCode()) + ", " + this->getKeyName();
     }
 
-    EVENT_CLASS_TYPE(KeyPressed)
+    EVENT_CLASS_TYPE(KeyReleased)
 };
 
 } // Core
