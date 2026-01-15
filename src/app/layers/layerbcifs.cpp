@@ -1046,15 +1046,20 @@ bool LayerBcifs::intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& 
 void LayerBcifs::loadLuaFile() {
     bool ok = true;
     try {
+        Core::LOG_INFO("Begin loading script...");
         BCIFS::BcifsBuilder bcifsBuilder(m_bcifs, "../res/scripts/example.lua");
+        Core::LOG_INFO("Script loaded.");
     } catch (const std::exception& e) {
         m_bcifs.reset();
         ok = false;
+        Core::LOG_ERROR("Error on script.");
     }
     if (ok) {
+        Core::LOG_INFO("Checking description...");
         try {
             m_bcifs.check();
             m_bcifs.finalize();
+            Core::LOG_INFO("Description is valid.");
         } catch (const std::exception& e) {
             std::cout << e.what() << std::endl;
             m_bcifs.reset();
