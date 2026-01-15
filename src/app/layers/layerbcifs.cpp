@@ -9,6 +9,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <GLFW/glfw3.h>
 
+#include "app/bcifs/bcifsbuilder.h"
 #include "imgui/imgui.h"
 #include "core/event.h"
 #include "core/mouseevents.h"
@@ -213,7 +214,7 @@ void LayerBcifs::testSubdQuad() {
     }, BCIFS::CoefType::VAR));
 
     // define all matrices
-    m_bcifs.validate();
+    m_bcifs.finalize();
 }
 
 void LayerBcifs::testSierpinski() {
@@ -288,7 +289,7 @@ void LayerBcifs::testSierpinski() {
     }, BCIFS::CoefType::VAR));
 
     // define all matrices
-    m_bcifs.validate();
+    m_bcifs.finalize();
 }
 
 void LayerBcifs::testG2(int rows, int cols) {
@@ -469,7 +470,7 @@ void LayerBcifs::testG2(int rows, int cols) {
     }
 
     // define all matrices
-    m_bcifs.validate();
+    m_bcifs.finalize();
 }
 
 void LayerBcifs::testSquareSierpinski() {
@@ -586,7 +587,7 @@ void LayerBcifs::testSquareSierpinski() {
     }, BCIFS::CoefType::VAR));
 
     // define all matrices
-    m_bcifs.validate();
+    m_bcifs.finalize();
 }
 
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
@@ -654,11 +655,14 @@ void LayerBcifs::onImGuiRender() {
         this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
-
     if (ImGui::Button("Create BC-IFS Square Sierpinski")) {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
     }
+    if (ImGui::Button("Load Lua file")) {
+        this->loadLuaFile();
+    }
+
     if (ImGui::Button("Print BC-IFS")) {
         m_bcifs.print();
     }
@@ -1037,4 +1041,24 @@ bool LayerBcifs::intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& 
 
     t = dot(planePoint - rayOrigin, planeNormal) / denom;
     return t >= 0.0f;
+}
+
+void LayerBcifs::loadLuaFile() {
+    bool ok = true;
+    try {
+        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs, "../res/scripts/example.lua");
+    } catch (const std::exception& e) {
+        m_bcifs.reset();
+        ok = false;
+    }
+    if (ok) {
+        try {
+            m_bcifs.check();
+            m_bcifs.finalize();
+        } catch (const std::exception& e) {
+            std::cout << e.what() << std::endl;
+            m_bcifs.reset();
+        }
+    }
+    m_bcifsChanged = true;
 }

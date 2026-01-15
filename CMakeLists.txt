@@ -9,7 +9,7 @@ add_executable(AutoFrac ${FILES})
 
 target_include_directories(AutoFrac PUBLIC include vendor)
 
-target_link_libraries(AutoFrac PRIVATE -lglfw3 -lGLEW -lGL -lfmt -lspdlog -larmadillo)
+target_link_libraries(AutoFrac PRIVATE -lglfw3 -lGLEW -lGL -lfmt -lspdlog -larmadillo -llua5.4)
 
 target_compile_options(AutoFrac PRIVATE -Wall -Wextra -Werror)
 

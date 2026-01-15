@@ -135,11 +135,14 @@ void Bcifs::print() const {
     Core::LOG_INFO(this->toString());
 }
 
-void Bcifs::validate() {
-    //TODO: try catch all this block to stop when there is a problem and signal it to the user without crashing
-    this->checkAutomaton();              // all states used in transitions exist
-    this->checkSpaces();                 // all states have a valid space
-    this->checkConstraints();            // same arrival (existing) state for each path
+void Bcifs::check() const {
+    // TODO: add other checks (on paths for instance)
+    this->checkAutomaton();   // all states used in transitions exist
+    this->checkSpaces();      // all states have a valid space
+    this->checkConstraints(); // same arrival (existing) state for each path
+}
+
+void Bcifs::finalize() {
     this->initializeMatrices();          // initialize all boundary and internal operators
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
@@ -880,6 +883,7 @@ FormalMatrix Bcifs::getOperatorOfPathNoSubdivision(const Path& path) const {
 
 FormalMatrix Bcifs::globalMatrixOf(StateID id) const {
     std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(id);
+    if (transitions.size() == 0) { throw std::runtime_error("There is no subdivision transitions on the state " + m_automaton.findStateByID(id).name()); }
     FormalMatrix res = this->getOperator(transitions[0]);
     for (std::size_t i = 1; i < transitions.size(); i++) {
         res.concatenateColumns(this->getOperator(transitions[i]));

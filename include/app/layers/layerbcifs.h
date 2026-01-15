@@ -56,6 +56,8 @@ private:
     void handleMoveSubdivisionPoint();
     static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
 
+    void loadLuaFile();
+
 private:
     BCIFS::Bcifs m_bcifs;
     int m_iterationLevel = 0;

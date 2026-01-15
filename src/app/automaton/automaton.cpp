@@ -83,9 +83,27 @@ std::size_t Automaton::internalDimensions(StateID id) const {
 }
 
 void Automaton::check() const {
+    if (m_states.size() < 2) {
+        throw std::runtime_error("Not enough states.");
+    }
+    if (m_transitions.size() < 2) {
+        throw std::runtime_error("Not enough transitions.");
+    }
+
     for (const Transition& transition: m_transitions) {
-        this->findStateByID(transition.from());
-        this->findStateByID(transition.to());
+        bool beginFound = false;
+        bool endFound = false;
+        for (const State& state: m_states) {
+            if (state.id() == transition.from()) {
+                beginFound = true;
+            }
+            if (state.id() == transition.to()) {
+                endFound = true;
+            }
+        }
+        if (!beginFound || !endFound) {
+            throw std::runtime_error("Transition not found");
+        }
     }
 }
 

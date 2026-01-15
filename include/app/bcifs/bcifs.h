@@ -45,7 +45,8 @@ public:
     void setInitMat(TransitionID id, const FormalMatrix& matrix);
     std::string toString() const;
     void print() const;
-    void validate();
+    void check() const;
+    void finalize();
 
     void reset();
     std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
