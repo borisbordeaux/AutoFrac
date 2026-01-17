@@ -424,7 +424,7 @@ std::string Bcifs::printConstraint(const Constraint& constraint) const {
 
 void Bcifs::checkAutomaton() const {
     m_automaton.check();
-    std::cout << "Automaton checked" << std::endl;
+    Core::LOG_DEBUG("Automaton checked");
 }
 
 void Bcifs::checkSpaces() const {
@@ -447,7 +447,7 @@ void Bcifs::checkSpaces() const {
             }
         }
     }
-    std::cout << "Spaces checked" << std::endl;
+    Core::LOG_DEBUG("Spaces checked");
 }
 
 void Bcifs::checkConstraints() const {
@@ -459,7 +459,7 @@ void Bcifs::checkConstraints() const {
             m_automaton.findTransitionByID(id);
         }
     }
-    std::cout << "Constraints checked" << std::endl;
+    Core::LOG_DEBUG("Constraints checked");
 }
 
 void Bcifs::initializeMatrices() {
@@ -489,11 +489,8 @@ void Bcifs::initializeMatrices(StateID id) {
         for (std::size_t i = 0; i < m_mapDimensions[transition.to()]; i++) {
             tempOperators[transitionId].set(lastIndex + i, i, true);
         }
-        std::cout << "Temp operator init of ";
-        transition.print();
-        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        Core::LOG_DEBUG("Temp operator init of " + transition.toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
         tempOperators[transitionId].print();
-        std::cout.flush();
         lastIndex += m_mapDimensions[transition.to()];
     }
 
@@ -502,9 +499,7 @@ void Bcifs::initializeMatrices(StateID id) {
         tempOperators.insert({ internalID, { dim, 1 } });
         // insert 1 at lastIndex row
         tempOperators[internalID].set(lastIndex, 0, true);
-        std::cout << "Temp operator init of ";
-        m_automaton.findTransitionByID(internalID).print();
-        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        Core::LOG_DEBUG("Temp operator init of " + m_automaton.findTransitionByID(internalID).toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
         tempOperators[internalID].print();
         lastIndex++;
     }
@@ -512,9 +507,8 @@ void Bcifs::initializeMatrices(StateID id) {
     // initialize equivalence relation matrix with identity
     BooleanMatrix M(dim, dim);
     M.setIdentity();
-    std::cout << "Init M matrix of state " << m_automaton.findStateByID(id).name() << " is:\n";
+    Core::LOG_DEBUG("Init M matrix of state " + m_automaton.findStateByID(id).name() + " is:" );
     M.print();
-    std::cout.flush();
     for (const Constraint& constraint : m_adjacencyConstraintsOnIncidenceOperators) {
         if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
             BooleanMatrix lhs = tempOperators[constraint.first[0]];
@@ -530,7 +524,7 @@ void Bcifs::initializeMatrices(StateID id) {
             for (std::size_t col = 0; col < lhs.cols(); col++) {
                 std::size_t indexLhs = lhs.lineOfTrueInColumn(col);
                 std::size_t indexRhs = rhs.lineOfTrueInColumn(col);
-                // set directly the M matrix symetric
+                // set directly the M matrix symmetric
                 M.set(indexLhs, indexRhs, true);
                 M.set(indexRhs, indexLhs, true);
             }
@@ -539,12 +533,12 @@ void Bcifs::initializeMatrices(StateID id) {
 
     // set M transitive
     M = M.transitived();
-    std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the M matrix is:\n";
+    Core::LOG_DEBUG("For state " + m_automaton.findStateByID(id).name() + ", the M matrix is:");
     M.print();
 
     // remove multiple rows of M to get projection matrix
     BooleanMatrix proj = M.removedMultipleRows();
-    std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the projection matrix is:\n";
+    Core::LOG_DEBUG("For state " + m_automaton.findStateByID(id).name() + ", the projection matrix is:");
     proj.print();
 
     // set the dimension of the current state
@@ -555,12 +549,8 @@ void Bcifs::initializeMatrices(StateID id) {
         BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
         FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
         m_mapOperators.insert({ transitionId, boundaryOperator });
-        std::cout << "Operator of ";
-        const Transition& transition = m_automaton.findTransitionByID(transitionId);
-        transition.print();
-        std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
+        Core::LOG_DEBUG("Operator of " + m_automaton.findTransitionByID(transitionId).toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
         boundaryOperatorBool.print();
-        std::cout.flush();
     }
 
     // take space into account
@@ -582,34 +572,30 @@ void Bcifs::initializeMatrices(StateID id) {
             }
             lastColumnIndex += m_mapOperators[transitionID].cols();
         }
-        std::cout << "For state " << m_automaton.findStateByID(id).name() << ", the permutation space matrix is:\n";
+        Core::LOG_DEBUG("For state " + m_automaton.findStateByID(id).name() + ", the permutation space matrix is:");
         permutationSpace.print();
 
         // remove multiple columns of the permutation space matrix
         permutationSpace = permutationSpace.removedMultipleCols();
-        std::cout << "after column simplification, it is:\n";
+        Core::LOG_DEBUG("after column simplification, it is:");
         permutationSpace.print();
 
         // square the matrix and fill by true to have a 1 per line and per column
         permutationSpace.squareAndFillByTrue();
-        std::cout << "and after fill by true to complete space, it is:\n";
+        Core::LOG_DEBUG("and after fill by true to complete space, it is:");
         permutationSpace.print();
 
         // transpose the matrix
         permutationSpace = permutationSpace.transposed();
-        std::cout << "and after transpose, it is:\n";
+        Core::LOG_DEBUG("and after transpose, it is:");
         permutationSpace.print();
 
         // apply this matrix to all boundary and internal operators to update them
-        std::cout << "Apply this matrix to all boundary and internal operators to update them" << std::endl;
+        Core::LOG_DEBUG("Apply this matrix to all boundary and internal operators to update them");
         for (TransitionID transitionId : m_automaton.boundaryAndInternalTransitionsOf(id)) {
             m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
-            std::cout << "Operator of ";
-            const Transition& transition = m_automaton.findTransitionByID(transitionId);
-            transition.print();
-            std::cout << " for state " << m_automaton.findStateByID(id).name() << " is:\n";
-            m_mapOperators[transitionId].print();
-            std::cout.flush();
+            Core::LOG_DEBUG("Operator of " + m_automaton.findTransitionByID(transitionId).toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
+            m_mapOperators[transitionId].printDebug();
         }
     }
 
@@ -618,64 +604,63 @@ void Bcifs::initializeMatrices(StateID id) {
 }
 
 void Bcifs::resolvePermutationConstraints(StateID id) {
-    std::cout << "Resolving permutation constraints...\n";
+    Core::LOG_DEBUG("Resolving permutation constraints...");
     for (const Constraint& constraint : m_permutationConstraints) {
         const Transition& firstTransLeft = m_automaton.findTransitionByID(constraint.first[0]);
         const Transition& firstTransRight = m_automaton.findTransitionByID(constraint.second[0]);
         if (firstTransLeft.from() == id && firstTransRight.from() == id) {
             FormalMatrix lhs = this->getOrInitOperator(constraint.first[0]);
-            std::cout << "lhs is:\n";
-            lhs.print(true);
+            Core::LOG_DEBUG("lhs is:");
+            lhs.printDebug(true);
             for (std::size_t i = 1; i < constraint.first.size(); i++) {
-                std::cout << "next matrix is:\n";
-                this->getOrInitOperator(constraint.first[i]).print();
+                Core::LOG_DEBUG("next matrix is:");
+                this->getOrInitOperator(constraint.first[i]).printDebug();
                 lhs = lhs * this->getOrInitOperator(constraint.first[i]);
-                std::cout << "new lhs is:\n";
-                lhs.print(true);
+                Core::LOG_DEBUG("new lhs is:");
+                lhs.printDebug(true);
             }
             FormalMatrix rhs = this->getOrInitOperator(constraint.second[0]);
-            std::cout << "rhs is:\n";
-            rhs.print(true);
+            Core::LOG_DEBUG("rhs is:");
+            rhs.printDebug(true);
             for (std::size_t i = 1; i < constraint.second.size(); i++) {
-                std::cout << "next matrix is:\n";
-                this->getOrInitOperator(constraint.second[i]).print();
+                Core::LOG_DEBUG("next matrix is:");
+                this->getOrInitOperator(constraint.second[i]).printDebug();
                 rhs = rhs * this->getOrInitOperator(constraint.second[i]);
-                std::cout << "new rhs is:\n";
-                rhs.print(true);
+                Core::LOG_DEBUG("new rhs is:");
+                rhs.printDebug(true);
             }
-            std::cout.flush();
             ConstraintSolver::solve(lhs, rhs);
         }
     }
-    std::cout << "Resolved all permutation constraints." << std::endl;
+    Core::LOG_DEBUG("Resolved all permutation constraints.");
 }
 
 void Bcifs::resolveConstraints() {
-    std::cout << "Resolving constraints...\n";
+    Core::LOG_DEBUG("Resolving constraints...");
     for (const Constraint& constraint : m_constraints) {
-        std::cout << "Constraint before solve:\n";
+        Core::LOG_DEBUG("Constraint before solve:");
         this->printConstraintMatrices(constraint);
 
         FormalMatrix lhs = this->getOrInitOperator(constraint.first[0]);
         for (std::size_t i = 1; i < constraint.first.size(); i++) {
             lhs = lhs * this->getOrInitOperator(constraint.first[i]);
         }
-        std::cout << "lhs is:\n";
-        lhs.print(true);
+        Core::LOG_DEBUG("lhs is:");
+        lhs.printDebug(true);
 
         FormalMatrix rhs = this->getOrInitOperator(constraint.second[0]);
         for (std::size_t i = 1; i < constraint.second.size(); i++) {
             rhs = rhs * this->getOrInitOperator(constraint.second[i]);
         }
-        std::cout << "rhs is:\n";
-        rhs.print(true);
+        Core::LOG_DEBUG("rhs is:");
+        rhs.printDebug(true);
 
         ConstraintSolver::solve(lhs, rhs);
 
-        std::cout << "Constraint after solve:\n";
+        Core::LOG_DEBUG("Constraint after solve:");
         this->printConstraintMatrices(constraint);
     }
-    std::cout << "Resolved all constraints." << std::endl;
+    Core::LOG_DEBUG("Resolved all constraints.");
 }
 
 void Bcifs::initSubdivisionOperators() {
@@ -709,25 +694,18 @@ const arma::mat& Bcifs::getOperatorMat(TransitionID id) const {
 }
 
 void Bcifs::printConstraintMatrices(const Constraint& constraint) {
-    std::cout << "LHS:\n";
+    Core::LOG_DEBUG("LHS:");
     for (TransitionID transitionId : constraint.first) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
-        transition.print();
-        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
-        std::cout << " to " << m_automaton.findStateByID(transition.to()).name();
-        std::cout << " is:\n";
-        this->getOrInitOperator(transitionId).print(true);
+        Core::LOG_DEBUG(transition.toString() + " from " + m_automaton.findStateByID(transition.from()).name() + " to " + m_automaton.findStateByID(transition.to()).name() + " is:");
+        this->getOrInitOperator(transitionId).printDebug(true);
     }
-    std::cout << "\nRHS:\n";
+    Core::LOG_DEBUG("RHS:");
     for (TransitionID transitionId : constraint.second) {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
-        transition.print();
-        std::cout << " from " << m_automaton.findStateByID(transition.from()).name();
-        std::cout << " to " << m_automaton.findStateByID(transition.to()).name();
-        std::cout << " is:\n";
-        this->getOrInitOperator(transitionId).print(true);
+        Core::LOG_DEBUG(transition.toString() + " from " + m_automaton.findStateByID(transition.from()).name() + " to " + m_automaton.findStateByID(transition.to()).name() + " is:");
+        this->getOrInitOperator(transitionId).printDebug(true);
     }
-    std::cout << std::endl;
 }
 
 void Bcifs::completeSubdivisionMatrices() {

@@ -11,6 +11,7 @@
 
 #include "app/bcifs/bcifsbuilder.h"
 #include "imgui/imgui.h"
+#include "imguifiledialog/ImGuiFileDialog.h"
 #include "core/event.h"
 #include "core/mouseevents.h"
 #include "core/windowevents.h"
@@ -659,8 +660,18 @@ void LayerBcifs::onImGuiRender() {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Load Lua file")) {
-        this->loadLuaFile();
+    if (ImGui::Button("Load Lua File...")) {
+        IGFD::FileDialogConfig config;
+        config.path = "../res/scripts";
+        config.flags |= ImGuiFileDialogFlags_Modal;
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Lua script file", ".lua", config);
+    }
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(700, 350))) {
+        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            this->loadLuaFile(filePathName);
+        }
+        ImGuiFileDialog::Instance()->Close();
     }
 
     if (ImGui::Button("Print BC-IFS")) {
@@ -1043,25 +1054,25 @@ bool LayerBcifs::intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& 
     return t >= 0.0f;
 }
 
-void LayerBcifs::loadLuaFile() {
+void LayerBcifs::loadLuaFile(const std::string& filename) {
     bool ok = true;
     try {
-        Core::LOG_INFO("Begin loading script...");
-        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs, "../res/scripts/example.lua");
-        Core::LOG_INFO("Script loaded.");
+        Core::LOG_DEBUG("Begin loading script...");
+        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs, filename);
+        Core::LOG_DEBUG("Script loaded.");
     } catch (const std::exception& e) {
+        Core::LOG_ERROR(e.what());
         m_bcifs.reset();
         ok = false;
-        Core::LOG_ERROR("Error on script.");
     }
     if (ok) {
-        Core::LOG_INFO("Checking description...");
+        Core::LOG_DEBUG("Checking description...");
         try {
             m_bcifs.check();
             m_bcifs.finalize();
-            Core::LOG_INFO("Description is valid.");
+            Core::LOG_DEBUG("Description is valid.");
         } catch (const std::exception& e) {
-            std::cout << e.what() << std::endl;
+            Core::LOG_ERROR(e.what());
             m_bcifs.reset();
         }
     }

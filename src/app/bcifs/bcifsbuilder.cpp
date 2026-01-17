@@ -18,15 +18,15 @@ void BcifsBuilder::state(const std::string& name, std::size_t internalDimension)
     auto [stateId, internalTransitionsIds] = m_bcifs.addState(name, internalDimension);
     m_mapStates.emplace(name, stateId);
     for (std::size_t internId = 0; internId < internalTransitionsIds.size(); internId++) {
-        m_mapTransitions.emplace(name + "_intern_" + std::to_string(internId), internalTransitionsIds[internId]);
+        m_mapTransitions[stateId].emplace("intern_" + std::to_string(internId), internalTransitionsIds[internId]);
     }
 }
 
 void BcifsBuilder::boundary(const std::string& name, const std::string& from, const std::string& to) {
-    this->assertTransitionDoesntExist(name);
     StateID fromId = this->getStateID(from);
+    this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions.emplace(name, m_bcifs.addBoundary(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addBoundary(std::move(name), fromId, toId));
 }
 
 void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures) {
@@ -36,8 +36,11 @@ void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<
         Figure& currentFigure = trueFigures.emplace_back();
         for (const std::vector<std::string>& path : figure) {
             Path& currentPath = currentFigure.emplace_back();
+            StateID currentStateId = stateId;
             for (const std::string& transitionName : path) {
-                TransitionID transitionId = this->getTransitionID(transitionName);
+                TransitionID transitionId = this->getTransitionID(currentStateId, transitionName);
+                const Transition& transition = m_bcifs.automaton().findTransitionByID(transitionId);
+                currentStateId = transition.to();
                 currentPath.push_back(transitionId);
             }
         }
@@ -46,17 +49,17 @@ void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<
 }
 
 void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to) {
-    this->assertTransitionDoesntExist(name);
     StateID fromId = this->getStateID(from);
+    this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions.emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId));
 }
 
 void BcifsBuilder::permutation(const std::string& name, const std::string& from, const std::string& to) {
-    this->assertTransitionDoesntExist(name);
     StateID fromId = this->getStateID(from);
+    this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions.emplace(name, m_bcifs.addPermutation(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addPermutation(std::move(name), fromId, toId));
 }
 
 void BcifsBuilder::space(const std::string& state, const std::vector<std::string>& boundaries) {
@@ -64,7 +67,7 @@ void BcifsBuilder::space(const std::string& state, const std::vector<std::string
     std::vector<TransitionID> transitions;
     transitions.reserve(boundaries.size());
     for (const std::string& transitionName : boundaries) {
-        TransitionID transitionId = this->getTransitionID(transitionName);
+        TransitionID transitionId = this->getTransitionID(stateId, transitionName);
         transitions.push_back(transitionId);
     }
     m_bcifs.setSpace(stateId, transitions);
@@ -77,8 +80,11 @@ void BcifsBuilder::primitive(const std::string& state, const std::vector<std::ve
         Figure& currentFigure = trueFigures.emplace_back();
         for (const std::vector<std::string>& path : figure) {
             Path& currentPath = currentFigure.emplace_back();
+            StateID currentStateId = stateId;
             for (const std::string& transitionName : path) {
-                TransitionID transitionId = this->getTransitionID(transitionName);
+                TransitionID transitionId = this->getTransitionID(currentStateId, transitionName);
+                const Transition& transition = m_bcifs.automaton().findTransitionByID(transitionId);
+                currentStateId = transition.to();
                 currentPath.push_back(transitionId);
             }
         }
@@ -86,22 +92,30 @@ void BcifsBuilder::primitive(const std::string& state, const std::vector<std::ve
     m_bcifs.setPrimitive(stateId, trueFigures);
 }
 
-void BcifsBuilder::constraint(const std::vector<std::string>& firstPath, const std::vector<std::string>& secondPath) {
+void BcifsBuilder::constraint(const std::string& state, const std::vector<std::string>& firstPath, const std::vector<std::string>& secondPath) {
+    StateID stateId = this->getStateID(state);
     std::vector<TransitionID> first;
+    StateID currentStateId = stateId;
     for (const std::string& transitionName : firstPath) {
-        TransitionID transitionId = this->getTransitionID(transitionName);
+        TransitionID transitionId = this->getTransitionID(currentStateId, transitionName);
+        const Transition& transition = m_bcifs.automaton().findTransitionByID(transitionId);
+        currentStateId = transition.to();
         first.push_back(transitionId);
     }
     std::vector<TransitionID> second;
+    currentStateId = stateId;
     for (const std::string& transitionName : secondPath) {
-        TransitionID transitionId = this->getTransitionID(transitionName);
+        TransitionID transitionId = this->getTransitionID(currentStateId, transitionName);
+        const Transition& transition = m_bcifs.automaton().findTransitionByID(transitionId);
+        currentStateId = transition.to();
         second.push_back(transitionId);
     }
     m_bcifs.addConstraint(first, second);
 }
 
-void BcifsBuilder::initMat(const std::string& transition, const std::vector<std::vector<float>>& matrix, const std::string& constness) {
-    TransitionID transitionId = this->getTransitionID(transition);
+void BcifsBuilder::initMat(const std::string& state, const std::string& transition, const std::vector<std::vector<float>>& matrix, const std::string& constness) {
+    StateID stateId = this->getStateID(state);
+    TransitionID transitionId = this->getTransitionID(stateId, transition);
     CoefType coefType = CoefType::CONST;
     if (constness == "VAR") {
         coefType = CoefType::VAR;
@@ -118,7 +132,6 @@ void BcifsBuilder::initializeLua() {
     m_lua.set_function("boundary", [&](const std::string& name, const std::string& from, const std::string& to) {
         this->boundary(name, from, to);
     });
-    //m_lua.set_function("grid", [&](const std::string& state, const & figures) {
     m_lua.set_function("grid", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
         this->grid(state, figures.value());
     });
@@ -134,11 +147,11 @@ void BcifsBuilder::initializeLua() {
     m_lua.set_function("primitive", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
         this->primitive(state, figures.value());
     });
-    m_lua.set_function("constraint", [&](sol::as_table_t<std::vector<std::string>> firstPath, sol::as_table_t<std::vector<std::string>> secondPath) {
-        this->constraint(firstPath.value(), secondPath.value());
+    m_lua.set_function("constraint", [&](const std::string& state, sol::as_table_t<std::vector<std::string>> firstPath, sol::as_table_t<std::vector<std::string>> secondPath) {
+        this->constraint(state, firstPath.value(), secondPath.value());
     });
-    m_lua.set_function("initMat", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<float>>> matrix, const std::string& constness) {
-        this->initMat(state, matrix.value(), constness);
+    m_lua.set_function("initMat", [&](const std::string& state, const std::string& transition, sol::as_table_t<std::vector<std::vector<float>>> matrix, const std::string& constness) {
+        this->initMat(state, transition, matrix.value(), constness);
     });
 }
 
@@ -150,10 +163,10 @@ StateID BcifsBuilder::getStateID(const std::string& name) {
     return it->second;
 }
 
-TransitionID BcifsBuilder::getTransitionID(const std::string& name) {
-    auto itTransition = m_mapTransitions.find(name);
-    if (itTransition == m_mapTransitions.end()) {
-        throw std::runtime_error("Transition " + name + " does not exist");
+TransitionID BcifsBuilder::getTransitionID(StateID stateId, const std::string& name) {
+    auto itTransition = m_mapTransitions[stateId].find(name);
+    if (itTransition == m_mapTransitions[stateId].end()) {
+        throw std::runtime_error("Transition " + name + " does not exist for state " + m_bcifs.automaton().findStateByID(stateId).name());
     }
     return itTransition->second;
 }
@@ -164,8 +177,8 @@ void BcifsBuilder::assertStateDoesntExist(const std::string& name) {
     }
 }
 
-void BcifsBuilder::assertTransitionDoesntExist(const std::string& name) {
-    if (m_mapTransitions.find(name) != m_mapTransitions.end()) {
+void BcifsBuilder::assertTransitionDoesntExist(StateID stateId, const std::string& name) {
+    if (m_mapTransitions[stateId].find(name) != m_mapTransitions[stateId].end()) {
         throw std::runtime_error("Transition " + name + " already exists");
     }
 }

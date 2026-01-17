@@ -67,6 +67,8 @@ public:
 
     void invalidate(bool controlPointsOnly = false);
 
+    const Automaton& automaton() const { return m_automaton; }
+
 private:
     using Constraint = std::pair<Path, Path>;
 

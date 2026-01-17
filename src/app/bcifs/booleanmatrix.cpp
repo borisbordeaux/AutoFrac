@@ -2,6 +2,7 @@
 #include <iostream>
 #include "app/bcifs/booleanmatrix.h"
 #include "app/bcifs/formalmatrix.h"
+#include "core/log.h"
 
 namespace BCIFS {
 
@@ -120,13 +121,19 @@ BooleanMatrix BooleanMatrix::operator*(const BooleanMatrix& other) const {
 }
 
 void BooleanMatrix::print() const {
+    Core::LOG_DEBUG(this->toString());
+}
+
+std::string BooleanMatrix::toString() const {
+    std::string res;
     for (std::size_t i = 0; i < m_rows; i++) {
         for (std::size_t j = 0; j < m_cols; j++) {
-            std::cout << (this->get(i, j) ? "1" : "0") << " ";
+            res += this->get(i, j) ? "1 " : "0 ";
         }
-        std::cout << "\n";
+        res += "\n";
     }
-    std::cout << "\n";
+    res += "\n";
+    return res;
 }
 
 FormalMatrix BooleanMatrix::toFormalMatrix() const {

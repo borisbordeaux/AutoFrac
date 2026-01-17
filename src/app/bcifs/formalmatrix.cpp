@@ -110,6 +110,10 @@ void FormalMatrix::print(bool showAddress) const {
     Core::LOG_INFO("Matrix\n" + this->toString(showAddress));
 }
 
+void FormalMatrix::printDebug(bool showAddress) const {
+    Core::LOG_DEBUG("Matrix\n" + this->toString(showAddress));
+}
+
 BooleanMatrix FormalMatrix::toBooleanMatrix() const {
     BooleanMatrix res(m_rows, m_cols);
     for (std::size_t row = 0; row < m_rows; row++) {

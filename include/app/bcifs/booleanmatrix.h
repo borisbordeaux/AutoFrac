@@ -35,6 +35,7 @@ public:
 
     BooleanMatrix operator*(const BooleanMatrix& other) const;
     void print() const;
+    std::string toString() const;
 
     FormalMatrix toFormalMatrix() const;
 

@@ -5,146 +5,146 @@ state("C", 0)
 state("F", 0)
 
 -- permutations
-permutation("permutC", "C", "C")
-permutation("permutB", "B", "B")
+permutation("permut", "C", "C")
+permutation("permut", "B", "B")
 
 -- boundary of states
-boundary("b0bezier", "B", "V")
-boundary("b1bezier", "B", "V")
-boundary("b0cantor", "C", "V")
-boundary("b1cantor", "C", "V")
-boundary("b0face", "F", "C")
-boundary("b1face", "F", "B")
-boundary("b2face", "F", "C")
-boundary("b3face", "F", "B")
-boundary("b4face", "F", "C")
-boundary("b5face", "F", "B")
+boundary("b0", "B", "V")
+boundary("b1", "B", "V")
+boundary("b0", "C", "V")
+boundary("b1", "C", "V")
+boundary("b0", "F", "C")
+boundary("b1", "F", "B")
+boundary("b2", "F", "C")
+boundary("b3", "F", "B")
+boundary("b4", "F", "C")
+boundary("b5", "F", "B")
 
 -- grid of states
 grid("F", {
-    { { "b0face", "b0cantor" }, { "b0face", "b1cantor" } },
-    { { "b1face", "b0bezier" }, { "b1face", "B_intern_0" }, { "b1face", "b1bezier" } },
-    { { "b2face", "b0cantor" }, { "b2face", "b1cantor" } },
-    { { "b3face", "b0bezier" }, { "b3face", "B_intern_0" }, { "b3face", "b1bezier" } },
-    { { "b4face", "b0cantor" }, { "b4face", "b1cantor" } },
-    { { "b5face", "b0bezier" }, { "b5face", "B_intern_0" }, { "b5face", "b1bezier" } }
+    { { "b0", "b0" }, { "b0", "b1" } },
+    { { "b1", "b0" }, { "b1", "intern_0" }, { "b1", "b1" } },
+    { { "b2", "b0" }, { "b2", "b1" } },
+    { { "b3", "b0" }, { "b3", "intern_0" }, { "b3", "b1" } },
+    { { "b4", "b0" }, { "b4", "b1" } },
+    { { "b5", "b0" }, { "b5", "intern_0" }, { "b5", "b1" } }
 })
 
 -- space of states
-space("B", { "b0bezier", "B_intern_0", "b1bezier" })
-space("C", { "b0cantor", "b1cantor" })
-space("F", { "b0face", "b1face", "b2face", "b3face", "b4face", "b5face" })
+space("B", { "b0", "intern_0", "b1" })
+space("C", { "b0", "b1" })
+space("F", { "b0", "b1", "b2", "b3", "b4", "b5" })
 
 -- subdivision of states
-subdivision("s0vert", "V", "V")
-subdivision("s0bezier", "B", "B")
-subdivision("s1bezier", "B", "B")
-subdivision("s0cantor", "C", "C")
-subdivision("s1cantor", "C", "C")
-subdivision("s0face", "F", "F")
-subdivision("s1face", "F", "F")
-subdivision("s2face", "F", "F")
-subdivision("s3face", "F", "F")
-subdivision("s4face", "F", "F")
-subdivision("s5face", "F", "F")
-subdivision("s0init", "init", "F")
+subdivision("s0", "V", "V")
+subdivision("s0", "B", "B")
+subdivision("s1", "B", "B")
+subdivision("s0", "C", "C")
+subdivision("s1", "C", "C")
+subdivision("s0", "F", "F")
+subdivision("s1", "F", "F")
+subdivision("s2", "F", "F")
+subdivision("s3", "F", "F")
+subdivision("s4", "F", "F")
+subdivision("s5", "F", "F")
+subdivision("s0", "init", "F")
 
 -- primitive of states
 primitive("F", {
     {
-        { "b0face", "b0cantor" },
-        { "b1face", "b0bezier" },
-        { "b1face", "s0bezier", "s1bezier", "b0bezier" },
-        { "b1face", "s1bezier", "b0bezier" },
-        { "b1face", "s1bezier", "s1bezier", "b0bezier" },
-        { "b2face", "b0cantor" },
-        { "b3face", "b0bezier" },
-        { "b3face", "s0bezier", "s1bezier", "b0bezier" },
-        { "b3face", "s1bezier", "b0bezier" },
-        { "b3face", "s1bezier", "s1bezier", "b0bezier" },
-        { "b4face", "b0cantor" },
-        { "b5face", "b0bezier" },
-        { "b5face", "s0bezier", "s1bezier", "b0bezier" },
-        { "b5face", "s1bezier", "b0bezier" },
-        { "b5face", "s1bezier", "s1bezier", "b0bezier" },
+        { "b0", "b0" },
+        { "b1", "b0" },
+        { "b1", "s0", "s1", "b0" },
+        { "b1", "s1", "b0" },
+        { "b1", "s1", "s1", "b0" },
+        { "b2", "b0" },
+        { "b3", "b0" },
+        { "b3", "s0", "s1", "b0" },
+        { "b3", "s1", "b0" },
+        { "b3", "s1", "s1", "b0" },
+        { "b4", "b0" },
+        { "b5", "b0" },
+        { "b5", "s0", "s1", "b0" },
+        { "b5", "s1", "b0" },
+        { "b5", "s1", "s1", "b0" },
     }
 })
 
 -- permutation constraints
 -- to define permutation operators
-constraint({ "permutC", "b0cantor" }, { "b1cantor" })
-constraint({ "permutC", "b1cantor" }, { "b0cantor" })
-constraint({ "permutB", "b0bezier" }, { "b1bezier" })
-constraint({ "permutB", "B_intern_0" }, { "B_intern_0" })
-constraint({ "permutB", "b1bezier" }, { "b0bezier" })
+constraint("C", { "permut", "b0" }, { "b1" })
+constraint("C", { "permut", "b1" }, { "b0" })
+constraint("B", { "permut", "b0" }, { "b1" })
+constraint("B", { "permut", "intern_0" }, { "intern_0" })
+constraint("B", { "permut", "b1" }, { "b0" })
 -- to constrain subdivision operators using permutation operators
-constraint({ "permutC", "s0cantor" }, { "s1cantor", "permutC" })
-constraint({ "permutC", "s1cantor" }, { "s0cantor", "permutC" })
-constraint({ "permutB", "s0bezier" }, { "s1bezier", "permutB" })
-constraint({ "permutB", "s1bezier" }, { "s0bezier", "permutB" })
+constraint("C", { "permut", "s0" }, { "s1", "permut" })
+constraint("C", { "permut", "s1" }, { "s0", "permut" })
+constraint("B", { "permut", "s0" }, { "s1", "permut" })
+constraint("B", { "permut", "s1" }, { "s0", "permut" })
 
 -- incidence constraints
 -- on edge
-constraint({ "b0cantor", "s0vert" }, { "s0cantor", "b0cantor" })
-constraint({ "b1cantor", "s0vert" }, { "s1cantor", "b1cantor" })
-constraint({ "b0bezier", "s0vert" }, { "s0bezier", "b0bezier" })
-constraint({ "b1bezier", "s0vert" }, { "s1bezier", "b1bezier" })
+constraint("C", { "b0", "s0" }, { "s0", "b0" })
+constraint("C", { "b1", "s0" }, { "s1", "b1" })
+constraint("B", { "b0", "s0" }, { "s0", "b0" })
+constraint("B", { "b1", "s0" }, { "s1", "b1" })
 -- on face
-constraint({ "b0face", "s0cantor" }, { "s5face", "b0face" })
-constraint({ "b0face", "s1cantor" }, { "s0face", "b0face" })
-constraint({ "b1face", "s0bezier" }, { "s0face", "b1face" })
-constraint({ "b1face", "s1bezier" }, { "s1face", "b1face" })
-constraint({ "b2face", "s0cantor" }, { "s1face", "b2face" })
-constraint({ "b2face", "s1cantor" }, { "s2face", "b2face" })
-constraint({ "b3face", "s0bezier" }, { "s2face", "b3face" })
-constraint({ "b3face", "s1bezier" }, { "s3face", "b3face" })
-constraint({ "b4face", "s0cantor" }, { "s3face", "b4face" })
-constraint({ "b4face", "s1cantor" }, { "s4face", "b4face" })
-constraint({ "b5face", "s0bezier" }, { "s4face", "b5face" })
-constraint({ "b5face", "s1bezier" }, { "s5face", "b5face" })
+constraint("F", { "b0", "s0" }, { "s5", "b0" })
+constraint("F", { "b0", "s1" }, { "s0", "b0" })
+constraint("F", { "b1", "s0" }, { "s0", "b1" })
+constraint("F", { "b1", "s1" }, { "s1", "b1" })
+constraint("F", { "b2", "s0" }, { "s1", "b2" })
+constraint("F", { "b2", "s1" }, { "s2", "b2" })
+constraint("F", { "b3", "s0" }, { "s2", "b3" })
+constraint("F", { "b3", "s1" }, { "s3", "b3" })
+constraint("F", { "b4", "s0" }, { "s3", "b4" })
+constraint("F", { "b4", "s1" }, { "s4", "b4" })
+constraint("F", { "b5", "s0" }, { "s4", "b5" })
+constraint("F", { "b5", "s1" }, { "s5", "b5" })
 
 -- adjacency constraints
 -- on edge
-constraint({ "s0bezier", "b1bezier" }, { "s1bezier", "b0bezier" })
+constraint("B", { "s0", "b1" }, { "s1", "b0" })
 -- on face
-constraint({ "s0face", "b2face", "permutC" }, { "s1face", "b0face" })
-constraint({ "s1face", "b4face", "permutC" }, { "s2face", "b0face" })
-constraint({ "s2face", "b4face", "permutC" }, { "s3face", "b2face" })
-constraint({ "s3face", "b0face", "permutC" }, { "s4face", "b2face" })
-constraint({ "s4face", "b0face", "permutC" }, { "s5face", "b4face" })
-constraint({ "s5face", "b2face", "permutC" }, { "s0face", "b4face" })
+constraint("F", { "s0", "b2", "permut" }, { "s1", "b0" })
+constraint("F", { "s1", "b4", "permut" }, { "s2", "b0" })
+constraint("F", { "s2", "b4", "permut" }, { "s3", "b2" })
+constraint("F", { "s3", "b0", "permut" }, { "s4", "b2" })
+constraint("F", { "s4", "b0", "permut" }, { "s5", "b4" })
+constraint("F", { "s5", "b2", "permut" }, { "s0", "b4" })
 -- on incidence operators
-constraint({ "b0face", "b1cantor" }, { "b1face", "b0bezier" })
-constraint({ "b1face", "b1bezier" }, { "b2face", "b0cantor" })
-constraint({ "b2face", "b1cantor" }, { "b3face", "b0bezier" })
-constraint({ "b3face", "b1bezier" }, { "b4face", "b0cantor" })
-constraint({ "b4face", "b1cantor" }, { "b5face", "b0bezier" })
-constraint({ "b5face", "b1bezier" }, { "b0face", "b0cantor" })
+constraint("F", { "b0", "b1" }, { "b1", "b0" })
+constraint("F", { "b1", "b1" }, { "b2", "b0" })
+constraint("F", { "b2", "b1" }, { "b3", "b0" })
+constraint("F", { "b3", "b1" }, { "b4", "b0" })
+constraint("F", { "b4", "b1" }, { "b5", "b0" })
+constraint("F", { "b5", "b1" }, { "b0", "b0" })
 
 -- init matrices for edges
 -- for cantor
-initMat("s0cantor", {
+initMat("C", "s0", {
     { 1.0, 2.0 / 3.0 },
     { 0.0, 1.0 / 3.0 }
 }, "CONST")
-initMat("s1cantor", {
+initMat("C", "s1", {
     { 1.0 / 3.0, 0.0 },
     { 2.0 / 3.0, 1.0 }
 }, "CONST")
 -- for bezier
-initMat("s0bezier", {
+initMat("B", "s0", {
     { 1.0, 0.5, 0.25 },
     { 0.0, 0.5, 0.50 },
     { 0.0, 0.0, 0.25 }
 }, "CONST")
-initMat("s1bezier", {
+initMat("B", "s1", {
     { 0.25, 0.0, 0.0 },
     { 0.50, 0.5, 0.0 },
     { 0.25, 0.5, 1.0 }
 }, "CONST")
 
 -- init control points
-initMat("s0init", {
+initMat("init", "s0", {
     {
         3.0 * math.cos(0.0 * math.pi * 2.0 / 6.0),
         3.0 * math.cos(1.0 * math.pi * 2.0 / 6.0),

@@ -3,11 +3,14 @@ project(AutoFrac)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE FILES "src/*.cpp" "vendor/*.cpp")
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+file(GLOB_RECURSE VENDOR_FILES "vendor/*.cpp")
 
-add_executable(AutoFrac ${FILES})
+add_executable(AutoFrac ${SOURCE_FILES} ${VENDOR_FILES})
 
-target_include_directories(AutoFrac PUBLIC include vendor)
+target_include_directories(AutoFrac PUBLIC include SYSTEM PRIVATE vendor)
+
+set_source_files_properties(${VENDOR_FILES} PROPERTIES COMPILE_OPTIONS "-w")
 
 target_link_libraries(AutoFrac PRIVATE -lglfw3 -lGLEW -lGL -lfmt -lspdlog -larmadillo -llua5.4)
 

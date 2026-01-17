@@ -33,6 +33,7 @@ public:
 
     std::string toString(bool showAddress = false) const;
     void print(bool showAddress = false) const;
+    void printDebug(bool showAddress = false) const;
 
     BooleanMatrix toBooleanMatrix() const;
 
