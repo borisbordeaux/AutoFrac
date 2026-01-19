@@ -60,7 +60,7 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
     this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
     if (frontColor.size() != 3) {
-        throw std::runtime_error("Color on transition " + name + " must contain 3 component");
+        throw sol::error("The color must be an array of 3 floats");
     }
     glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
     m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId, std::move(frontColorVec)));
@@ -71,7 +71,7 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
     this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
     if (frontColor.size() != 3 || backColor.size() != 3) {
-        throw std::runtime_error("Each color on transition " + name + " must contain 3 component");
+        throw sol::error("The color must be an array of 3 floats");
     }
     glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
     glm::vec3 backColorVec(backColor[0], backColor[1], backColor[2]);
@@ -143,7 +143,7 @@ void BcifsBuilder::initMat(const std::string& state, const std::string& transiti
     if (constness == "VAR") {
         coefType = CoefType::VAR;
     } else if (constness != "CONST") {
-        throw std::runtime_error("Constness must be \"VAR\" or \"CONST\"");
+        throw sol::error("Constness must be \"VAR\" or \"CONST\"");
     }
     m_bcifs.setInitMat(transitionId, FormalMatrix(matrix, coefType));
 }
@@ -160,7 +160,7 @@ void BcifsBuilder::initializeLua() {
     });
     m_lua.set_function("subdivision", [&](const sol::variadic_args& args) {
         if (args.size() != 3 && args.size() != 4 && args.size() != 5) {
-            throw std::runtime_error("subdivision(): expected (name, from, to [, frontColor[, backColor]])");
+            throw sol::error("subdivision(): expected (name, from, to [, frontColor[, backColor]])");
         }
         std::string name = args[0].as<std::string>();
         std::string from = args[1].as<std::string>();
@@ -169,12 +169,12 @@ void BcifsBuilder::initializeLua() {
             this->subdivision(name, from, to);
             return;
         }
-        std::vector<float> frontColor = args[3].as<sol::as_table_t<std::vector<float>>>();
+        std::vector<float> frontColor = BcifsBuilder::parseColor(args[3]);
         if (args.size() == 4) {
             this->subdivision(name, from, to, frontColor);
             return;
         }
-        std::vector<float> backColor = args[4].as<sol::as_table_t<std::vector<float>>>();
+        std::vector<float> backColor = BcifsBuilder::parseColor(args[4]);
         this->subdivision(name, from, to, frontColor, backColor);
     });
 
@@ -195,10 +195,28 @@ void BcifsBuilder::initializeLua() {
     });
 }
 
+std::vector<float> BcifsBuilder::parseColor(sol::object obj) {
+    if (!obj.is<sol::table>()) {
+        throw sol::error(std::string("The color must be an array of 3 floats"));
+    }
+
+    sol::table t = obj;
+    std::vector<float> color;
+
+    for (const auto& [key, value] : t) {
+        if (!value.is<float>()) {
+            throw sol::error(std::string("The color must be an array of 3 floats"));
+        }
+        color.push_back(value.as<float>());
+    }
+
+    return color;
+}
+
 StateID BcifsBuilder::getStateID(const std::string& name) {
     auto it = m_mapStates.find(name);
     if (it == m_mapStates.end()) {
-        throw std::runtime_error("State " + name + " does not exist");
+        throw sol::error("State " + name + " does not exist");
     }
     return it->second;
 }
@@ -206,20 +224,20 @@ StateID BcifsBuilder::getStateID(const std::string& name) {
 TransitionID BcifsBuilder::getTransitionID(StateID stateId, const std::string& name) {
     auto itTransition = m_mapTransitions[stateId].find(name);
     if (itTransition == m_mapTransitions[stateId].end()) {
-        throw std::runtime_error("Transition " + name + " does not exist for state " + m_bcifs.automaton().findStateByID(stateId).name());
+        throw sol::error("Transition " + name + " does not exist for state " + m_bcifs.automaton().findStateByID(stateId).name());
     }
     return itTransition->second;
 }
 
 void BcifsBuilder::assertStateDoesntExist(const std::string& name) {
     if (m_mapStates.find(name) != m_mapStates.end()) {
-        throw std::runtime_error("State " + name + " already exists");
+        throw sol::error("State " + name + " already exists");
     }
 }
 
 void BcifsBuilder::assertTransitionDoesntExist(StateID stateId, const std::string& name) {
     if (m_mapTransitions[stateId].find(name) != m_mapTransitions[stateId].end()) {
-        throw std::runtime_error("Transition " + name + " already exists");
+        throw sol::error("Transition " + name + " already exists");
     }
 }
 

@@ -26,6 +26,7 @@ public:
 
 private:
     void initializeLua();
+    static std::vector<float> parseColor(sol::object obj);
     StateID getStateID(const std::string& name);
     TransitionID getTransitionID(StateID stateId, const std::string& name);
     void assertStateDoesntExist(const std::string& name);
