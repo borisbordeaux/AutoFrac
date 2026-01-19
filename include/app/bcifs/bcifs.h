@@ -142,7 +142,7 @@ private:
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
     mss::MassSpringSystem m_MSSControlPoints;
     float m_damping = 0.3f;
-    float m_k = 0.05f;
+    float m_k = 0.005f;
     float m_dampingControlPoints = 0.3f;
     float m_kControlPoints = 0.02f;
     float m_lengthControlPoints = 1.0f;

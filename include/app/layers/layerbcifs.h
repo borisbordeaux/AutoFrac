@@ -63,7 +63,7 @@ private:
     int m_iterationLevel = 0;
     bool m_updateMSS = false;
     bool m_updateMSSControlPoints = false;
-    int m_nbIterationsMSS = 500;
+    int m_nbIterationsMSS = 1000;
     int m_currentIterationMSS = m_nbIterationsMSS;
     bool m_bcifsChanged = false;
     bool m_displayGrid = false;
