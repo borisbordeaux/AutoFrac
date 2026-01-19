@@ -606,6 +606,7 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
     }
     if (m_bcifsChanged) {
         // update data from BCIFS
+        m_bcifs.setColorDepth(static_cast<std::size_t>(m_colorDepth));
         m_batchFace.setBcifs(m_bcifs, m_iterationLevel);
 
         if (m_displayGrid) {
@@ -616,11 +617,16 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
 
         m_bcifsChanged = false;
     }
+    if (m_clearColorChanged) {
+        m_clearColorChanged = false;
+        Core::Renderer::setClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
+    }
 }
 
 void LayerBcifs::onRender() {
     if (m_uniformsDirty) {
         m_batchFace.setMVP(m_camera, m_proj);
+        m_batchFace.setIlluminationMode(m_illuminationMode);
         m_batchGrid.setMVP(m_camera, m_proj);
         m_batchControlPoint.setMVP(m_camera, m_proj);
         m_batchSubdivisionPoint.setMVP(m_camera, m_proj);
@@ -667,7 +673,8 @@ void LayerBcifs::onImGuiRender() {
         ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Lua script file", ".lua", config);
     }
     if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(700, 350))) {
-        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            // action if OK
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             this->loadLuaFile(filePathName);
         }
@@ -686,6 +693,26 @@ void LayerBcifs::onImGuiRender() {
             m_iterationLevel = 0;
         m_bcifsChanged = true;
         m_bcifs.invalidate();
+    }
+    ImGui::InputInt("Color level", &m_colorDepth);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        if (m_colorDepth < 0)
+            m_colorDepth = 0;
+        m_bcifsChanged = true;
+    }
+    if (ImGui::ColorEdit3("Front color", m_bcifs.defaultFrontColor())) {
+        m_bcifsChanged = true;
+    }
+    if (ImGui::ColorEdit3("Back color", m_bcifs.defaultBackColor())) {
+        m_bcifsChanged = true;
+    }
+    const char* items[] = { "PHONG", "FLAT" };
+    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, items, IM_ARRAYSIZE(items))) {
+        m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
+        m_uniformsDirty = true;
+    }
+    if (ImGui::ColorEdit4("Clear Color", &m_clearColor[0])) {
+        m_clearColorChanged = true;
     }
 
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);

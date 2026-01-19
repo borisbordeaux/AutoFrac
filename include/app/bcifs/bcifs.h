@@ -23,6 +23,19 @@ private:
     FormalMatrix m_posBary;
 };
 
+class BcifsPoint {
+public:
+    BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor);
+    const glm::vec3& pos() const { return m_pos; }
+    const glm::vec3& frontColor() const { return m_frontColor; }
+    const glm::vec3& backColor() const { return m_backColor; }
+
+private:
+    glm::vec3 m_pos;
+    glm::vec3 m_frontColor;
+    glm::vec3 m_backColor;
+};
+
 class Bcifs {
 public:
     Bcifs() = default;
@@ -40,6 +53,8 @@ public:
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     void setPrimitive(StateID id, std::vector<Figure> primitive);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
+    TransitionID addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor);
+    TransitionID addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor, glm::vec3 backColor);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
     void setInitMat(TransitionID id, const FormalMatrix& matrix);
@@ -49,7 +64,7 @@ public:
     void finalize();
 
     void reset();
-    std::vector<std::vector<glm::vec3>> faces(int iterationLevel);
+    std::vector<std::vector<BcifsPoint>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints() const;
     /**
      * Getter for all subdivision points.
@@ -69,6 +84,10 @@ public:
 
     const Automaton& automaton() const { return m_automaton; }
 
+    void setColorDepth(std::size_t colorDepth);
+    float* defaultFrontColor() { return &m_defaultFrontColor[0]; }
+    float* defaultBackColor() { return &m_defaultBackColor[0]; }
+
 private:
     using Constraint = std::pair<Path, Path>;
 
@@ -80,32 +99,24 @@ private:
 
     ConstraintType constraintType(const Constraint& constraint) const;
     bool isSubdivisionConstraint(const Constraint& constraint) const;
-
     TransitionID addInternal(std::string name, StateID stateID);
     TransitionID addTransition(std::string name, StateID from, StateID to, TransitionType type);
-
     std::string printConstraint(const Constraint& constraint) const;
-
     void checkAutomaton() const;
     void checkSpaces() const;
     void checkConstraints() const;
     void initializeMatrices();
     void initializeMatrices(StateID id);
-
     void resolvePermutationConstraints(StateID id);
     void resolveConstraints();
     void initSubdivisionOperators();
     const FormalMatrix& getOrInitOperator(TransitionID id);
     const FormalMatrix& getOperator(TransitionID id) const;
     const arma::mat& getOperatorMat(TransitionID id) const;
-
     void printConstraintMatrices(const Constraint& constraint);
-
     void completeSubdivisionMatrices();
-
     void buildMassSpringSystems();
     void buildMSSForControlPoints();
-
     arma::mat getOperatorOfPath(const Path& path) const;
     arma::mat getOperatorOfPathForPrimitive(const Path& path) const;
     FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
@@ -113,6 +124,8 @@ private:
     FormalMatrix globalMatrixOf(StateID id) const;
     const std::vector<arma::mat>& getPrimitiveMat(StateID id) const;
     void initPrimitives();
+    const glm::vec3& getFrontColor(const Path& path) const;
+    const glm::vec3& getBackColor(const Path& path) const;
 
 private:
     Automaton m_automaton;
@@ -139,6 +152,11 @@ private:
     std::unordered_map<StateID, std::vector<Figure>> m_mapPrimitives;
     std::unordered_map<StateID, std::vector<arma::mat>> m_mapPrimitivesMat;
     bool m_needUpdatePrimitivesWhenChangingMatrices = true;
+    glm::vec3 m_defaultFrontColor = glm::vec3(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f);
+    glm::vec3 m_defaultBackColor = glm::vec3(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f);
+    std::unordered_map<TransitionID, glm::vec3> m_frontColors;
+    std::unordered_map<TransitionID, glm::vec3> m_backColors;
+    std::size_t m_colorDepth = 0;
 };
 
 } // BCIFS

@@ -87,7 +87,12 @@ private:
     bool m_xKeyPressed = false;
     bool m_yKeyPressed = false;
     bool m_zKeyPressed = false;
-};
 
+    int m_colorDepth = 0;
+    int m_currentIlluminationItem = 0;
+    IlluminationMode m_illuminationMode = IlluminationMode::PHONG;
+    glm::vec4 m_clearColor = glm::vec4(180.0f / 255.0f, 180.0f / 255.0f, 1.0f, 1.0f);
+    bool m_clearColorChanged = true;
+};
 
 #endif //AUTOFRAC_LAYERBCIFS_H

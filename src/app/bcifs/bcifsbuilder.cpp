@@ -55,6 +55,29 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
     m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId));
 }
 
+void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor) {
+    StateID fromId = this->getStateID(from);
+    this->assertTransitionDoesntExist(fromId, name);
+    StateID toId = this->getStateID(to);
+    if (frontColor.size() != 3) {
+        throw std::runtime_error("Color on transition " + name + " must contain 3 component");
+    }
+    glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId, std::move(frontColorVec)));
+}
+
+void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor, const std::vector<float>& backColor) {
+    StateID fromId = this->getStateID(from);
+    this->assertTransitionDoesntExist(fromId, name);
+    StateID toId = this->getStateID(to);
+    if (frontColor.size() != 3 || backColor.size() != 3) {
+        throw std::runtime_error("Each color on transition " + name + " must contain 3 component");
+    }
+    glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
+    glm::vec3 backColorVec(backColor[0], backColor[1], backColor[2]);
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId, std::move(frontColorVec), std::move(backColorVec)));
+}
+
 void BcifsBuilder::permutation(const std::string& name, const std::string& from, const std::string& to) {
     StateID fromId = this->getStateID(from);
     this->assertTransitionDoesntExist(fromId, name);
@@ -135,9 +158,26 @@ void BcifsBuilder::initializeLua() {
     m_lua.set_function("grid", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
         this->grid(state, figures.value());
     });
-    m_lua.set_function("subdivision", [&](const std::string& name, const std::string& from, const std::string& to) {
-        this->subdivision(name, from, to);
+    m_lua.set_function("subdivision", [&](const sol::variadic_args& args) {
+        if (args.size() != 3 && args.size() != 4 && args.size() != 5) {
+            throw std::runtime_error("subdivision(): expected (name, from, to [, frontColor[, backColor]])");
+        }
+        std::string name = args[0].as<std::string>();
+        std::string from = args[1].as<std::string>();
+        std::string to = args[2].as<std::string>();
+        if (args.size() == 3) {
+            this->subdivision(name, from, to);
+            return;
+        }
+        std::vector<float> frontColor = args[3].as<sol::as_table_t<std::vector<float>>>();
+        if (args.size() == 4) {
+            this->subdivision(name, from, to, frontColor);
+            return;
+        }
+        std::vector<float> backColor = args[4].as<sol::as_table_t<std::vector<float>>>();
+        this->subdivision(name, from, to, frontColor, backColor);
     });
+
     m_lua.set_function("permutation", [&](const std::string& name, const std::string& from, const std::string& to) {
         this->permutation(name, from, to);
     });

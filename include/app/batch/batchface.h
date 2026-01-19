@@ -11,13 +11,20 @@ class Camera;
 }
 
 namespace BCIFS {
+class BcifsPoint;
 class Bcifs;
 }
+
+enum class IlluminationMode {
+    PHONG,
+    FLAT
+};
 
 class BatchFace {
 public:
     BatchFace();
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
+    void setIlluminationMode(IlluminationMode mode);
     void setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel);
 
     void render() const;
@@ -26,9 +33,9 @@ public:
     std::size_t nbTriangles() const { return m_nbTriangles; }
 
 private:
-    void addFace(const std::vector<glm::vec3>& vertices);
-    void addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3);
-    void addVertexFace(const glm::vec3& v, const glm::vec3& n);
+    void addFace(const std::vector<BCIFS::BcifsPoint>& vertices);
+    void addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor);
+    void addVertexFace(const glm::vec3& v, const glm::vec3& n, const glm::vec3& frontColor, const glm::vec3& backColor);
 
 private:
     Core::VertexArray m_vao;
@@ -37,7 +44,7 @@ private:
     Core::ShaderProgram m_program;
     std::vector<float> m_data;
     int m_count = 0;
-    int m_floatsPerVertex = 6;
+    int m_floatsPerVertex = 12;
 
     std::size_t m_nbFaces = 0;
     std::size_t m_nbTriangles = 0;

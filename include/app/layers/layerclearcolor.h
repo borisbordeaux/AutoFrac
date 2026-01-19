@@ -1,7 +1,7 @@
 #ifndef AUTOFRAC_LAYERCLEARCOLOR_H
 #define AUTOFRAC_LAYERCLEARCOLOR_H
 
-#include <glm/detail/type_vec4.hpp>
+#include <glm/vec4.hpp>
 #include "core/layer.h"
 
 class LayerClearColor : public Core::Layer {
@@ -11,7 +11,7 @@ public:
     void onImGuiRender() override;
 
 private:
-    glm::tvec4<float> m_clearColor;
+    glm::vec4 m_clearColor;
 };
 
 

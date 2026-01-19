@@ -20,6 +20,9 @@ glm::vec3 SubdivisionPoint::posR3() const {
     return res;
 }
 
+BcifsPoint::BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor) : m_pos(std::move(pos)), m_frontColor(std::move(frontColor)), m_backColor(std::move(backColor)) {
+}
+
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
     State s(m_automaton.states().size(), std::move(name));
     m_automaton.addState(s);
@@ -54,6 +57,19 @@ void Bcifs::setPrimitive(StateID id, std::vector<Figure> primitive) {
 
 TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::SUBDIVISION);
+}
+
+TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor) {
+    TransitionID transitionId = this->addTransition(std::move(name), from, to, TransitionType::SUBDIVISION);
+    m_frontColors[transitionId] = std::move(frontColor);
+    return transitionId;
+}
+
+TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor, glm::vec3 backColor) {
+    TransitionID transitionId = this->addTransition(std::move(name), from, to, TransitionType::SUBDIVISION);
+    m_frontColors[transitionId] = std::move(frontColor);
+    m_backColors[transitionId] = std::move(backColor);
+    return transitionId;
 }
 
 TransitionID Bcifs::addPermutation(std::string name, StateID from, StateID to) {
@@ -169,9 +185,12 @@ void Bcifs::reset() {
     m_mapPrimitives.clear();
     m_mapPrimitivesMat.clear();
     m_needUpdatePrimitivesWhenChangingMatrices = true;
+    m_frontColors.clear();
+    m_backColors.clear();
+    m_colorDepth = 0;
 }
 
-std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
+std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
     if (!m_initStateID.has_value()) { return {}; }
     if (m_invalidatedMatrices) {
         m_invalidatedMatrices = false;
@@ -215,19 +234,22 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
         }
     }
 
-    std::vector<std::vector<glm::vec3>> res;
+    std::vector<std::vector<BcifsPoint>> res;
     for (const std::pair<Path, arma::mat>& keyval : m_facesPaths) {
         if (iterationLevel != 0) {
             TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
             const Transition& lastTransition = m_automaton.findTransitionByID(lastTransitionId);
             const std::vector<arma::mat>& primitiveMatrices = this->getPrimitiveMat(lastTransition.to());
+            glm::vec3 frontColor = this->getFrontColor(keyval.first);
+            glm::vec3 backColor = this->getBackColor(keyval.first);
             // each primitive mat is a face
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<glm::vec3> vertices;
+                std::vector<BcifsPoint> vertices;
                 arma::mat mat = this->getOperatorMat(keyval.first[0]) * keyval.second * primitive;
                 vertices.reserve(mat.n_cols);
                 for (std::size_t i = 0; i < mat.n_cols; i++) {
-                    vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                    glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                    vertices.emplace_back(pos, frontColor, backColor);
                 }
                 res.push_back(vertices);
             }
@@ -235,12 +257,16 @@ std::vector<std::vector<glm::vec3>> Bcifs::faces(int iterationLevel) {
             TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
             const Transition& lastTransition = m_automaton.findTransitionByID(lastTransitionId);
             const std::vector<arma::mat>& primitiveMatrices = this->getPrimitiveMat(lastTransition.to());
+            glm::vec3 frontColor = this->getFrontColor(keyval.first);
+            glm::vec3 backColor = this->getBackColor(keyval.first);
+            // each primitive mat is a face
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<glm::vec3> vertices;
+                std::vector<BcifsPoint> vertices;
                 arma::mat mat = keyval.second * primitive;
                 vertices.reserve(mat.n_cols);
                 for (std::size_t i = 0; i < mat.n_cols; i++) {
-                    vertices.emplace_back(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                    glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                    vertices.emplace_back(pos, frontColor, backColor);
                 }
                 res.push_back(vertices);
             }
@@ -361,6 +387,10 @@ void Bcifs::invalidate(bool controlPointsOnly) {
         m_invalidatedMatrices = true;
     }
     m_invalidatedMatricesControlPoints = true;
+}
+
+void Bcifs::setColorDepth(std::size_t colorDepth) {
+    m_colorDepth = colorDepth;
 }
 
 Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const {
@@ -507,7 +537,7 @@ void Bcifs::initializeMatrices(StateID id) {
     // initialize equivalence relation matrix with identity
     BooleanMatrix M(dim, dim);
     M.setIdentity();
-    Core::LOG_DEBUG("Init M matrix of state " + m_automaton.findStateByID(id).name() + " is:" );
+    Core::LOG_DEBUG("Init M matrix of state " + m_automaton.findStateByID(id).name() + " is:");
     M.print();
     for (const Constraint& constraint : m_adjacencyConstraintsOnIncidenceOperators) {
         if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
@@ -903,6 +933,28 @@ void Bcifs::initPrimitives() {
             m_mapPrimitivesMat[state.id()] = { identity };
         }
     }
+}
+
+const glm::vec3& Bcifs::getFrontColor(const Path& path) const {
+    if (m_colorDepth < path.size()) {
+        auto it = m_frontColors.find(path[m_colorDepth]);
+        if (it != m_frontColors.end()) {
+            return it->second;
+        }
+        return m_defaultFrontColor;
+    }
+    return m_defaultFrontColor;
+}
+
+const glm::vec3& Bcifs::getBackColor(const Path& path) const {
+    if (m_colorDepth < path.size()) {
+        auto it = m_backColors.find(path[m_colorDepth]);
+        if (it != m_backColors.end()) {
+            return it->second;
+        }
+        return m_defaultBackColor;
+    }
+    return m_defaultBackColor;
 }
 
 } // BCIFS

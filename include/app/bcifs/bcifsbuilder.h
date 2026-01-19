@@ -16,6 +16,8 @@ public:
     void boundary(const std::string& name, const std::string& from, const std::string& to);
     void grid(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures);
     void subdivision(const std::string& name, const std::string& from, const std::string& to);
+    void subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor);
+    void subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor, const std::vector<float>& backColor);
     void permutation(const std::string& name, const std::string& from, const std::string& to);
     void space(const std::string& state, const std::vector<std::string>& boundaries);
     void primitive(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures);
