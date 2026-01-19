@@ -16,7 +16,7 @@ void Automaton::addTransition(const Transition& transition) {
     m_transitions.push_back(transition);
 }
 
-bool Automaton::containsSubdvision(const Path& path) const {
+bool Automaton::containsSubdivision(const Path& path) const {
     return std::any_of(path.begin(), path.end(), [this](TransitionID id) {
         const Transition& transition = this->findTransitionByID(id);
         return transition.type() == TransitionType::SUBDIVISION;

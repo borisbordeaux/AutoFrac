@@ -21,7 +21,7 @@ public:
 
     inline const std::vector<Transition>& transitions() const { return m_transitions; }
 
-    bool containsSubdvision(const Path& path) const;
+    bool containsSubdivision(const Path& path) const;
 
     const Transition& findTransitionByID(TransitionID id) const;
     const State& findStateByID(StateID id) const;

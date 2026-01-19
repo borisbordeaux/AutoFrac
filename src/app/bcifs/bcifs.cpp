@@ -410,7 +410,7 @@ Bcifs::ConstraintType Bcifs::constraintType(const Constraint& constraint) const 
 }
 
 bool Bcifs::isSubdivisionConstraint(const Constraint& constraint) const {
-    return m_automaton.containsSubdvision(constraint.first) || m_automaton.containsSubdvision(constraint.second);
+    return m_automaton.containsSubdivision(constraint.first) || m_automaton.containsSubdivision(constraint.second);
 }
 
 TransitionID Bcifs::addInternal(std::string name, StateID stateID) {
@@ -918,7 +918,7 @@ void Bcifs::initPrimitives() {
                 arma::mat primitive(m_mapDimensions[state.id()], figure.size());
                 std::size_t currentCol = 0;
                 for (const Path& path : figure) {
-                    if (m_automaton.containsSubdvision(path)) {
+                    if (m_automaton.containsSubdivision(path)) {
                         m_needUpdatePrimitivesWhenChangingMatrices = true;
                     }
                     arma::mat mat = this->getOperatorOfPathForPrimitive(path);
