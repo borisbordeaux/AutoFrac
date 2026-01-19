@@ -604,6 +604,18 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
             m_currentIterationMSS -= 10;
         }
     }
+    if (m_updateMSSControlPoints) {
+        if (m_currentIterationMSS <= 0) {
+            m_updateMSSControlPoints = false;
+            m_currentIterationMSS = m_nbIterationsMSS;
+        } else {
+            for (int i = 0; i < 10; i++) {
+                m_bcifs.updateMSSControlPoints();
+            }
+            m_bcifsChanged = true;
+            m_currentIterationMSS -= 10;
+        }
+    }
     if (m_bcifsChanged) {
         // update data from BCIFS
         m_bcifs.setColorDepth(static_cast<std::size_t>(m_colorDepth));
@@ -724,6 +736,9 @@ void LayerBcifs::onImGuiRender() {
     ImGui::InputInt("MSS Iterations", &m_currentIterationMSS);
     if (ImGui::Button("Update mss")) {
         m_updateMSS = true;
+    }
+    if (ImGui::Button("Update mss control points")) {
+        m_updateMSSControlPoints = true;
     }
 
     if (ImGui::Button("Print mss")) {

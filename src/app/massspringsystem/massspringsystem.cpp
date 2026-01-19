@@ -1,4 +1,3 @@
-#include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include "app/massspringsystem/massspringsystem.h"
@@ -21,9 +20,34 @@ void MassSpringSystem::addSpring(std::size_t indexMass1, std::size_t indexMass2,
     }
 }
 
+void MassSpringSystem::createAngularSprings(float k) {
+    std::unordered_map<std::size_t, std::vector<std::size_t>> neighborsMap;
+    for (const std::pair<std::size_t, std::size_t>& springIndices : m_springIndices) {
+        neighborsMap[springIndices.first].push_back(springIndices.second);
+        neighborsMap[springIndices.second].push_back(springIndices.first);
+    }
+    for (auto& [center, neighbors] : neighborsMap) {
+        const size_t n = neighbors.size();
+        if (n < 2) continue;
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = i + 1; j < n; ++j) {
+                Mass& m1 = m_masses[neighbors[i]];
+                Mass& m2 = m_masses[center];
+                Mass& m3 = m_masses[neighbors[j]];
+                m_angularSprings.emplace_back(m1, m2, m3, k);
+                m_angularSpringIndices.emplace_back(neighbors[i], center, neighbors[j]);
+            }
+        }
+    }
+}
+
 void MassSpringSystem::update() {
     for (Spring& s: m_springs)
         s.applyForces();
+
+    for (AngularSpring& s: m_angularSprings) {
+        s.applyForces();
+    }
 
     for (Mass& m: m_masses)
         m.update();
@@ -32,6 +56,8 @@ void MassSpringSystem::update() {
 void MassSpringSystem::clearSprings() {
     m_springs.clear();
     m_springIndices.clear();
+    m_angularSprings.clear();
+    m_angularSpringIndices.clear();
 }
 
 void MassSpringSystem::clearMasses() {
@@ -45,8 +71,7 @@ void MassSpringSystem::clear(std::size_t newDim) {
 }
 
 std::string MassSpringSystem::toString() const {
-    std::string res;
-    res = "d " + std::to_string(m_dim);
+    std::string res = "d " + std::to_string(m_dim);
     for (mss::Mass const& m: m_masses) {
         res += "\nm";
         for (std::size_t i = 0; i < m_dim; i++) {
@@ -59,6 +84,13 @@ std::string MassSpringSystem::toString() const {
         res += " " + std::to_string(m_springIndices[i].second);
         res += " " + MassSpringSystem::toString(m_springs[i].k());
         res += " " + MassSpringSystem::toString(m_springs[i].length());
+    }
+    for (std::size_t i = 0; i < m_angularSprings.size(); i++) {
+        res += "\nas ";
+        res += " " + std::to_string(std::get<0>(m_angularSpringIndices[i]));
+        res += " " + std::to_string(std::get<1>(m_angularSpringIndices[i]));
+        res += " " + std::to_string(std::get<2>(m_angularSpringIndices[i]));
+        res += " " + MassSpringSystem::toString(m_angularSprings[i].k());
     }
     return res;
 }

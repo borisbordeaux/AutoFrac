@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
 
+#include "angularspring.h"
 #include "mass.h"
 #include "spring.h"
 
@@ -18,6 +18,7 @@ public:
 
     void addMass(const BCIFS::FormalMatrix& pos, float damping);
     void addSpring(std::size_t indexMass1, std::size_t indexMass2, float k, float length);
+    void createAngularSprings(float k);
     void update();
     void clearSprings();
     void clearMasses();
@@ -41,7 +42,9 @@ private:
 private:
     std::vector<Mass> m_masses;
     std::vector<Spring> m_springs;
+    std::vector<AngularSpring> m_angularSprings;
     std::vector<std::pair<std::size_t, std::size_t>> m_springIndices;
+    std::vector<std::tuple<std::size_t, std::size_t, std::size_t>> m_angularSpringIndices;
     std::size_t m_dim;
 };
 

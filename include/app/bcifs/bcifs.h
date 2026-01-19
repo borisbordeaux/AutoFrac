@@ -74,6 +74,7 @@ public:
     std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
     std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings() const;
     void updateMSS();
+    void updateMSSControlPoints();
     void printMSS() const;
 
     inline float* k() { return &m_k; }
@@ -143,7 +144,7 @@ private:
     float m_damping = 0.3f;
     float m_k = 0.05f;
     float m_dampingControlPoints = 0.3f;
-    float m_kControlPoints = 0.01f;
+    float m_kControlPoints = 0.02f;
     float m_lengthControlPoints = 1.0f;
     std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
     bool m_invalidatedMatrices = true;

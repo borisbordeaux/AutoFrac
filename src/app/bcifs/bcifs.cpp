@@ -178,6 +178,7 @@ void Bcifs::reset() {
     m_mapOperators.clear();
     m_mapGrids.clear();
     m_mapMSS.clear();
+    m_MSSControlPoints.clear();
     m_mapInitMat.clear();
     m_invalidatedMatrices = true;
     m_invalidatedMatricesControlPoints = false;
@@ -373,6 +374,11 @@ void Bcifs::updateMSS() {
         }
     }
     this->invalidate();
+}
+
+void Bcifs::updateMSSControlPoints() {
+    m_MSSControlPoints.update();
+    this->invalidate(true);
 }
 
 void Bcifs::printMSS() const {
@@ -742,7 +748,7 @@ void Bcifs::completeSubdivisionMatrices() {
     for (const Transition& transition : m_automaton.transitions()) {
         if (transition.type() == TransitionType::SUBDIVISION) {
             if (m_mapInitMat.find(transition.id()) == m_mapInitMat.end()) {
-                m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
+                m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
             } else {
                 if (m_mapOperators[transition.id()].rows() == m_mapInitMat[transition.id()].rows() && m_mapOperators[transition.id()].cols() == m_mapInitMat[transition.id()].cols()) {
                     for (std::size_t row = 0; row < m_mapOperators[transition.id()].rows(); row++) {
@@ -755,7 +761,7 @@ void Bcifs::completeSubdivisionMatrices() {
                         }
                     }
                 } else {
-                    m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs();
+                    m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
                 }
             }
         }
@@ -855,6 +861,7 @@ void Bcifs::buildMSSForControlPoints() {
             }
         }
     }
+    m_MSSControlPoints.createAngularSprings(m_kControlPoints / 2.0f);
 }
 
 arma::mat Bcifs::getOperatorOfPath(const Path& path) const {

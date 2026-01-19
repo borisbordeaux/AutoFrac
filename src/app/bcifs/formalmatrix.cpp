@@ -124,7 +124,7 @@ BooleanMatrix FormalMatrix::toBooleanMatrix() const {
     return res;
 }
 
-void FormalMatrix::setRandomValuesOnFreeCoefs() {
+void FormalMatrix::setRandomValuesOnFreeCoefs(bool setInBarycentricSpace) {
     std::random_device rd;
     std::mt19937 generator(rd());
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
@@ -137,7 +137,9 @@ void FormalMatrix::setRandomValuesOnFreeCoefs() {
             }
         }
     }
-    this->setSumToOne();
+    if (setInBarycentricSpace) {
+        this->setSumToOne();
+    }
 }
 
 void FormalMatrix::setSumToOne() {
