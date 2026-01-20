@@ -77,23 +77,6 @@ FormalMatrix FormalMatrix::operator*(const FormalMatrix& other) const {
     return result;
 }
 
-FormalMatrix FormalMatrix::multiplyValues(const FormalMatrix& other) const {
-    if (m_cols != other.m_rows)
-        throw std::runtime_error("Dimensions not compatible for multiplication");
-    FormalMatrix result(m_rows, other.m_cols);
-    for (std::size_t i = 0; i < m_rows; i++) {
-        for (std::size_t j = 0; j < other.m_cols; j++) {
-            FormalCoefRef sum = FormalCoef::zero();
-            for (std::size_t k = 0; k < m_cols; k++) {
-                FormalCoefRef prod = FormalCoef::multiplyValues(this->get(i, k), other.get(k, j));
-                sum = FormalCoef::addValues(sum, prod);
-            }
-            result.set(i, j, sum);
-        }
-    }
-    return result;
-}
-
 std::string FormalMatrix::toString(bool showAddress) const {
     std::string res;
     for (std::size_t i = 0; i < m_rows; i++) {

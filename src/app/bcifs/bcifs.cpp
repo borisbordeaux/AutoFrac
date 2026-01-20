@@ -8,15 +8,15 @@
 
 namespace BCIFS {
 
-SubdivisionPoint::SubdivisionPoint(FormalMatrix T, FormalMatrix posBary) : m_T(std::move(T)), m_posBary(std::move(posBary)) {
+SubdivisionPoint::SubdivisionPoint(arma::mat T, FormalMatrix posBary) : m_T(std::move(T)), m_posBary(std::move(posBary)) {
 }
 
 glm::vec3 SubdivisionPoint::posR3() const {
     glm::vec3 res;
-    FormalMatrix posR3 = m_T.multiplyValues(m_posBary);
-    res.x = posR3.get(0, 0)->value();
-    res.y = posR3.get(1, 0)->value();
-    res.z = posR3.get(2, 0)->value();
+    arma::mat posR3 = m_T * m_posBary.toMat();
+    res.x = posR3.at(0, 0);
+    res.y = posR3.at(1, 0);
+    res.z = posR3.at(2, 0);
     return res;
 }
 
@@ -310,7 +310,7 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
                                 fixed = false;
                             }
                         }
-                        FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
+                        arma::mat op = this->getOperatorOfPathForMSS(paths[keyval.first]);
                         if (fixed) {
                             resConst.emplace_back(std::move(op), posBarycentricSpace);
                         } else {
@@ -333,15 +333,15 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
         if (paths.find(keyval.first) != paths.end()) {
             std::vector<mss::Spring> springs = keyval.second.springs();
             for (mss::Spring& spring : springs) {
-                FormalMatrix op = this->getOperatorOfPathForMSS(paths[keyval.first]);
-                FormalMatrix pos1BarycentricSpace = spring.m1().position();
-                FormalMatrix pos13D = op.multiplyValues(pos1BarycentricSpace);
+                arma::mat op = this->getOperatorOfPathForMSS(paths[keyval.first]);
+                arma::mat pos1BarycentricSpace = spring.m1().position().toMat();
+                arma::mat pos13D = op * pos1BarycentricSpace;
 
-                FormalMatrix pos2BarycentricSpace = spring.m2().position();
-                FormalMatrix pos23D = op.multiplyValues(pos2BarycentricSpace);
+                arma::mat pos2BarycentricSpace = spring.m2().position().toMat();
+                arma::mat pos23D = op * pos2BarycentricSpace;
                 res.emplace_back(
-                    glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
-                    glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+                    glm::vec3(pos13D.at(0, 0), pos13D.at(1, 0), pos13D.at(2, 0)),
+                    glm::vec3(pos23D.at(0, 0), pos23D.at(1, 0), pos23D.at(2, 0)));
             }
         }
     }
@@ -880,10 +880,10 @@ arma::mat Bcifs::getOperatorOfPathForPrimitive(const Path& path) const {
     return res;
 }
 
-FormalMatrix Bcifs::getOperatorOfPathForMSS(const Path& path) const {
-    FormalMatrix res = this->getOperator(path[0]);
+arma::mat Bcifs::getOperatorOfPathForMSS(const Path& path) const {
+    arma::mat res = this->getOperator(path[0]).toMat();
     for (std::size_t i = 1; i < path.size(); i++) {
-        res = res.multiplyValues(this->getOperator(path[i]));
+        res = res * this->getOperator(path[i]).toMat();
     }
     return res;
 }

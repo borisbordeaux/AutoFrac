@@ -12,14 +12,14 @@ namespace BCIFS {
 
 class SubdivisionPoint {
 public:
-    SubdivisionPoint(FormalMatrix T, FormalMatrix posBary);
-    const FormalMatrix& T() const { return m_T; }
+    SubdivisionPoint(arma::mat T, FormalMatrix posBary);
+    const arma::mat& T() const { return m_T; }
     const FormalMatrix& posBary() const { return m_posBary; }
     FormalMatrix& posBary() { return m_posBary; }
     glm::vec3 posR3() const;
 
 private:
-    FormalMatrix m_T;
+    arma::mat m_T;
     FormalMatrix m_posBary;
 };
 
@@ -120,7 +120,7 @@ private:
     void buildMSSForControlPoints();
     arma::mat getOperatorOfPath(const Path& path) const;
     arma::mat getOperatorOfPathForPrimitive(const Path& path) const;
-    FormalMatrix getOperatorOfPathForMSS(const Path& path) const;
+    arma::mat getOperatorOfPathForMSS(const Path& path) const;
     FormalMatrix getOperatorOfPathNoSubdivision(const Path& path) const;
     FormalMatrix globalMatrixOf(StateID id) const;
     const std::vector<arma::mat>& getPrimitiveMat(StateID id) const;

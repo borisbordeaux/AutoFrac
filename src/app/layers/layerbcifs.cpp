@@ -1047,7 +1047,7 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
         std::cout << "q  : " << std::endl << q << std::endl;
         arma::mat pv = Uv.toMat();
         std::cout << "pv  : " << std::endl << pv << std::endl;
-        arma::mat matTrue = m_currentSubdivisionPoint->T().toMat();
+        arma::mat matTrue = m_currentSubdivisionPoint->T();
         std::cout << "mat True  : " << std::endl << matTrue << std::endl;
         arma::mat mat(matTrue.n_rows + 1, matTrue.n_cols);
         mat.ones();
