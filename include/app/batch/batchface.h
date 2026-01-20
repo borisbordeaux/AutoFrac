@@ -31,11 +31,14 @@ public:
 
     std::size_t nbFaces() const { return m_nbFaces; }
     std::size_t nbTriangles() const { return m_nbTriangles; }
+    std::size_t nbVertices() const { return m_count / m_floatsPerVertex; }
+    std::size_t nbFloats() const { return m_count; }
+    std::size_t nbData() const { return m_data.size(); }
 
 private:
     void addFace(const std::vector<BCIFS::BcifsPoint>& vertices);
     void addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor);
-    void addVertexFace(const glm::vec3& v, const glm::vec3& n, const glm::vec3& frontColor, const glm::vec3& backColor);
+    void addVertexFace(const glm::vec3& v, const glm::vec3& frontColor, const glm::vec3& backColor);
 
 private:
     Core::VertexArray m_vao;
@@ -43,8 +46,8 @@ private:
     Core::VertexBufferLayout m_layout;
     Core::ShaderProgram m_program;
     std::vector<float> m_data;
-    int m_count = 0;
-    int m_floatsPerVertex = 12;
+    std::size_t m_count = 0;
+    std::size_t m_floatsPerVertex = 9;
 
     std::size_t m_nbFaces = 0;
     std::size_t m_nbTriangles = 0;

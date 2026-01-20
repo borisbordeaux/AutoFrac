@@ -20,9 +20,10 @@ public:
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
     void setBcifs(const BCIFS::Bcifs& bcifs);
     void render() const;
+    bool* displayHidden() { return &m_displayHidden; }
 
 private:
-    void addLine(const std::pair<glm::vec3,glm::vec3>& line, const glm::vec3& color);
+    void addLine(const std::pair<glm::vec3, glm::vec3>& line, const glm::vec3& color);
     void addVertexLine(const glm::vec3& v, const glm::vec3& color);
 
 private:
@@ -33,6 +34,7 @@ private:
     std::vector<float> m_data;
     int m_count = 0;
     int m_floatsPerVertex = 6;
+    bool m_displayHidden = true;
 };
 
 #endif //AUTOFRAC_BATCHGRID_H

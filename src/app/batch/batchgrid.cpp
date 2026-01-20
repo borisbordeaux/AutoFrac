@@ -53,7 +53,9 @@ void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs) {
 }
 
 void BatchGrid::render() const {
-    Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
+    if (m_displayHidden) {
+        Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
+    }
     m_program.bind();
     m_vao.bind();
     Core::GLCall(glDrawArrays(GL_LINES, 0, m_count / m_floatsPerVertex));

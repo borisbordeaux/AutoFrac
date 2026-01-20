@@ -12,15 +12,20 @@
 #include "core/application.h"
 
 LayerTexture::LayerTexture() :
-        m_vbo({ -0.5f, -0.5f, 0.0f, 0.0f,
-                +0.5f, -0.5f, 1.0f, 0.0f,
-                +0.5f, +0.5f, 1.0f, 1.0f,
-                -0.5f, +0.5f, 0.0f, 1.0f }),
-        m_ibo({ 0, 1, 2,
-                0, 2, 3 }, 6),
-        m_texture("../res/textures/items.png"), m_mousePos(0.0f, 0.0f),
-        m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
-        m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)) {
+    m_vbo({
+        -0.5f, -0.5f, 0.0f, 0.0f,
+        +0.5f, -0.5f, 1.0f, 0.0f,
+        +0.5f, +0.5f, 1.0f, 1.0f,
+        -0.5f, +0.5f, 0.0f, 1.0f
+    }),
+    m_texture("../res/textures/items.png"), m_mousePos(0.0f, 0.0f),
+    m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
+    m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)) {
+
+    m_ibo.bufferData({
+        0, 1, 2,
+        0, 2, 3
+    });
 
     m_vao.bind();
     m_vbo.bind();

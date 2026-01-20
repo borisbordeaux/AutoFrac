@@ -61,6 +61,7 @@ Application::~Application() {
 
 void Application::run() {
     float lastTime = time();
+    ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
     while (m_running) {
         m_window->pollEvents();

@@ -699,6 +699,8 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
         m_bcifsChanged = true;
     }
+    ImGui::SameLine();
+    ImGui::Checkbox("Display hidden", m_batchGrid.displayHidden());
     ImGui::InputInt("Iteration level", &m_iterationLevel);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_iterationLevel < 0)
@@ -747,6 +749,9 @@ void LayerBcifs::onImGuiRender() {
 
     ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
     ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
+    ImGui::Text("Vertices: %zu", m_batchFace.nbVertices());
+    ImGui::Text("Floats: %zu", m_batchFace.nbFloats());
+    ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbFloats() * sizeof(float), m_batchFace.nbFloats() * sizeof(float) / 1000, m_batchFace.nbFloats() * sizeof(float) / 1000000, m_batchFace.nbFloats() * sizeof(float) / 1000000000);
 
     static bool editControlPoints = false;
     ImGui::Checkbox("Edit control points", &editControlPoints);

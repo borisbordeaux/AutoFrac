@@ -3,7 +3,6 @@
 layout (location = 0) out vec4 fragColor;
 
 in vec3 vertexPos;
-in vec3 vertexNormal;
 in vec3 vertexFrontColor;
 in vec3 vertexBackColor;
 
@@ -23,7 +22,12 @@ void main()
         vec3 ambientColor = 0.3 * color;
         vec3 diffuseColor = color;
         vec3 specularColor = vec3(0.5);
-        vec3 N = normalize(vertexNormal);
+
+        vec3 dx = dFdx(vertexPos);
+        vec3 dy = dFdy(vertexPos);
+        vec3 normal = normalize(cross(dx, dy));
+
+        vec3 N = normalize(normal);
         vec3 L = normalize(lightPos - vertexPos);
 
         // Lambert's cosine law

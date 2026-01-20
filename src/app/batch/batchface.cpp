@@ -8,7 +8,6 @@ BatchFace::BatchFace() {
     m_vbo.bind();
 
     m_layout.pushFloats(3); // position
-    m_layout.pushFloats(3); // normal
     m_layout.pushFloats(3); // front color
     m_layout.pushFloats(3); // back color
 
@@ -59,7 +58,6 @@ void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
         this->addFace(face);
     }
 
-    m_vbo.bind();
     m_vbo.bufferData(m_data);
     m_vbo.unbind();
 }
@@ -80,26 +78,19 @@ void BatchFace::addFace(const std::vector<BCIFS::BcifsPoint>& vertices) {
 }
 
 void BatchFace::addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor) {
-    //compute the normal of the triangleSphere
-    glm::vec3 n = glm::normalize(glm::cross(pos2 - pos1, pos3 - pos2));
-
     //add the vertices to the data
-    this->addVertexFace(pos1, n, frontColor, backColor);
-    this->addVertexFace(pos2, n, frontColor, backColor);
-    this->addVertexFace(pos3, n, frontColor, backColor);
+    this->addVertexFace(pos1, frontColor, backColor);
+    this->addVertexFace(pos2, frontColor, backColor);
+    this->addVertexFace(pos3, frontColor, backColor);
 }
 
-void BatchFace::addVertexFace(const glm::vec3& v, const glm::vec3& n, const glm::vec3& frontColor, const glm::vec3& backColor) {
+void BatchFace::addVertexFace(const glm::vec3& v, const glm::vec3& frontColor, const glm::vec3& backColor) {
     // add to the end of the data already added
     float* p = m_data.data() + m_count;
     // the coordinates of the vertex
     *p++ = v.x;
     *p++ = v.y;
     *p++ = v.z;
-    // the normal of the vertex
-    *p++ = n.x;
-    *p++ = n.y;
-    *p++ = n.z;
     // front color of the vertex
     *p++ = frontColor.x;
     *p++ = frontColor.y;
@@ -107,7 +98,7 @@ void BatchFace::addVertexFace(const glm::vec3& v, const glm::vec3& n, const glm:
     // back color of the vertex
     *p++ = backColor.x;
     *p++ = backColor.y;
-    *p++ = backColor.z;
+    *p = backColor.z;
     // we update the amount of data
     m_count += m_floatsPerVertex;
 }
