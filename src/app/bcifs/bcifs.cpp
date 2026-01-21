@@ -94,7 +94,7 @@ void Bcifs::addConstraint(const Path& lhs, const Path& rhs) {
 }
 
 void Bcifs::setInitMat(TransitionID id, const FormalMatrix& matrix) {
-    m_mapInitMat[id] = matrix;
+    m_mapInitMat.emplace(id, matrix);
 }
 
 std::string Bcifs::toString() const {
@@ -189,6 +189,7 @@ void Bcifs::reset() {
     m_frontColors.clear();
     m_backColors.clear();
     m_colorDepth = 0;
+    m_pool.reset();
 }
 
 std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
@@ -225,7 +226,7 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
     } else if (m_invalidatedMatricesControlPoints) {
         m_invalidatedMatricesControlPoints = false;
         for (TransitionID transitionId : m_automaton.subdivisionTransitionsOf(m_initStateID.value())) {
-            m_mapOperatorsMat[transitionId] = m_mapOperators[transitionId].toMat();
+            m_mapOperatorsMat.at(transitionId) = m_mapOperators.at(transitionId).toMat();
         }
         if (iterationLevel == 0) {
             m_facesPaths.clear();
@@ -306,7 +307,7 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
                         FormalMatrix& posBarycentricSpace = mass.position();
                         bool fixed = true;
                         for (std::size_t i = 0; i < posBarycentricSpace.rows(); i++) {
-                            if (posBarycentricSpace.get(i, 0)->type() == CoefType::VAR) {
+                            if (posBarycentricSpace.isVar(i, 0)) {
                                 fixed = false;
                             }
                         }
@@ -358,8 +359,8 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings() const
         FormalMatrix pos13D = spring.m1().position();
         FormalMatrix pos23D = spring.m2().position();
         res.emplace_back(
-            glm::vec3(pos13D.get(0, 0)->value(), pos13D.get(1, 0)->value(), pos13D.get(2, 0)->value()),
-            glm::vec3(pos23D.get(0, 0)->value(), pos23D.get(1, 0)->value(), pos23D.get(2, 0)->value()));
+            glm::vec3(pos13D.value(0, 0), pos13D.value(1, 0), pos13D.value(2, 0)),
+            glm::vec3(pos23D.value(0, 0), pos23D.value(1, 0), pos23D.value(2, 0)));
     }
 
     return res;
@@ -370,7 +371,7 @@ void Bcifs::updateMSS() {
         keyval.second.update();
         std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(keyval.first);
         for (TransitionID id : transitions) {
-            m_mapOperators[id].setSumToOne();
+            m_mapOperators.at(id).setSumToOne();
         }
     }
     this->invalidate();
@@ -549,11 +550,11 @@ void Bcifs::initializeMatrices(StateID id) {
         if (m_automaton.findTransitionByID(constraint.first[0]).from() == id && m_automaton.findTransitionByID(constraint.second[0]).from() == id) {
             BooleanMatrix lhs = tempOperators[constraint.first[0]];
             for (std::size_t i = 1; i < constraint.first.size(); i++) {
-                lhs = lhs * m_mapOperators[constraint.first[i]].toBooleanMatrix();
+                lhs = lhs * m_mapOperators.at(constraint.first[i]).toBooleanMatrix();
             }
             BooleanMatrix rhs = tempOperators[constraint.second[0]];
             for (std::size_t i = 1; i < constraint.second.size(); i++) {
-                rhs = rhs * m_mapOperators[constraint.second[i]].toBooleanMatrix();
+                rhs = rhs * m_mapOperators.at(constraint.second[i]).toBooleanMatrix();
             }
             // at this stage, lhs and rhs must be the same,
             // so we initialize column by column the link in the graph matrix M
@@ -583,7 +584,7 @@ void Bcifs::initializeMatrices(StateID id) {
     // set final boundary and internal operators
     for (TransitionID transitionId : m_automaton.boundaryAndInternalTransitionsOf(id)) {
         BooleanMatrix boundaryOperatorBool = proj * tempOperators[transitionId];
-        FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix();
+        FormalMatrix boundaryOperator = boundaryOperatorBool.toFormalMatrix(this->pool());
         m_mapOperators.insert({ transitionId, boundaryOperator });
         Core::LOG_DEBUG("Operator of " + m_automaton.findTransitionByID(transitionId).toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
         boundaryOperatorBool.print();
@@ -593,20 +594,20 @@ void Bcifs::initializeMatrices(StateID id) {
     if (m_mapSpaces.find(id) != m_mapSpaces.end()) {
         // find number of column for the permutation space matrix
         std::size_t nbCols = 0;
-        for (TransitionID transitionID : m_mapSpaces[id]) {
-            nbCols += m_mapOperators[transitionID].cols();
+        for (TransitionID transitionId : m_mapSpaces[id]) {
+            nbCols += m_mapOperators.at(transitionId).cols();
         }
 
         // init the permutation space matrix by concatenating the values of boundary transitions specified in the space
         BooleanMatrix permutationSpace(proj.rows(), nbCols);
         std::size_t lastColumnIndex = 0;
-        for (TransitionID transitionID : m_mapSpaces[id]) {
-            for (std::size_t col = 0; col < m_mapOperators[transitionID].cols(); col++) {
-                for (std::size_t row = 0; row < m_mapOperators[transitionID].rows(); row++) {
-                    permutationSpace.set(row, col + lastColumnIndex, m_mapOperators[transitionID].get(row, col)->type() == CoefType::ONE);
+        for (TransitionID transitionId : m_mapSpaces[id]) {
+            for (std::size_t col = 0; col < m_mapOperators.at(transitionId).cols(); col++) {
+                for (std::size_t row = 0; row < m_mapOperators.at(transitionId).rows(); row++) {
+                    permutationSpace.set(row, col + lastColumnIndex, m_mapOperators.at(transitionId).isOne(row, col));
                 }
             }
-            lastColumnIndex += m_mapOperators[transitionID].cols();
+            lastColumnIndex += m_mapOperators.at(transitionId).cols();
         }
         Core::LOG_DEBUG("For state " + m_automaton.findStateByID(id).name() + ", the permutation space matrix is:");
         permutationSpace.print();
@@ -629,9 +630,9 @@ void Bcifs::initializeMatrices(StateID id) {
         // apply this matrix to all boundary and internal operators to update them
         Core::LOG_DEBUG("Apply this matrix to all boundary and internal operators to update them");
         for (TransitionID transitionId : m_automaton.boundaryAndInternalTransitionsOf(id)) {
-            m_mapOperators[transitionId] = permutationSpace.toFormalMatrix() * m_mapOperators[transitionId];
+            m_mapOperators.at(transitionId) = permutationSpace.toFormalMatrix(this->pool()) * m_mapOperators.at(transitionId);
             Core::LOG_DEBUG("Operator of " + m_automaton.findTransitionByID(transitionId).toString() + " for state " + m_automaton.findStateByID(id).name() + " is:");
-            m_mapOperators[transitionId].printDebug();
+            m_mapOperators.at(transitionId).printDebug();
         }
     }
 
@@ -665,7 +666,7 @@ void Bcifs::resolvePermutationConstraints(StateID id) {
                 Core::LOG_DEBUG("new rhs is:");
                 rhs.printDebug(true);
             }
-            ConstraintSolver::solve(lhs, rhs);
+            ConstraintSolver::solve(lhs, rhs, m_pool);
         }
     }
     Core::LOG_DEBUG("Resolved all permutation constraints.");
@@ -691,7 +692,7 @@ void Bcifs::resolveConstraints() {
         Core::LOG_DEBUG("rhs is:");
         rhs.printDebug(true);
 
-        ConstraintSolver::solve(lhs, rhs);
+        ConstraintSolver::solve(lhs, rhs, m_pool);
 
         Core::LOG_DEBUG("Constraint after solve:");
         this->printConstraintMatrices(constraint);
@@ -705,7 +706,7 @@ void Bcifs::initSubdivisionOperators() {
         if (itOperator == m_mapOperators.end()) {
             // if the matrix does not exist, then it is an undefined matrix, so we can initialize it with a random value
             // 2.0f is chosen for debug info
-            m_mapOperators.insert({ transition.id(), FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f) });
+            m_mapOperators.insert({ transition.id(), FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f, this->pool()) });
         }
     }
 }
@@ -716,9 +717,9 @@ const FormalMatrix& Bcifs::getOrInitOperator(TransitionID id) {
         // if the matrix does not exist, then it is an undefined matrix, so we can initialize it with a random value
         // 2.0f is chosen for debug info
         const Transition& transition = m_automaton.findTransitionByID(id);
-        m_mapOperators.insert({ id, FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f) });
+        m_mapOperators.insert({ id, FormalMatrix(m_mapDimensions[transition.from()], m_mapDimensions[transition.to()], 2.f, this->pool()) });
     }
-    return m_mapOperators[id];
+    return m_mapOperators.at(id);
 }
 
 const FormalMatrix& Bcifs::getOperator(TransitionID id) const {
@@ -748,20 +749,22 @@ void Bcifs::completeSubdivisionMatrices() {
     for (const Transition& transition : m_automaton.transitions()) {
         if (transition.type() == TransitionType::SUBDIVISION) {
             if (m_mapInitMat.find(transition.id()) == m_mapInitMat.end()) {
-                m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
+                m_mapOperators.at(transition.id()).setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
             } else {
-                if (m_mapOperators[transition.id()].rows() == m_mapInitMat[transition.id()].rows() && m_mapOperators[transition.id()].cols() == m_mapInitMat[transition.id()].cols()) {
-                    for (std::size_t row = 0; row < m_mapOperators[transition.id()].rows(); row++) {
-                        for (std::size_t col = 0; col < m_mapOperators[transition.id()].cols(); col++) {
-                            if (m_mapOperators[transition.id()].get(row, col)->type() == CoefType::VAR) {
-                                m_mapOperators[transition.id()].get(row, col)->setValue(m_mapInitMat[transition.id()].get(row, col)->value());
-                                m_mapOperators[transition.id()].get(row, col)->setType(m_mapInitMat[transition.id()].get(row, col)->type());
-                                m_mapOperators[transition.id()].get(row, col)->setInitialized();
+                FormalMatrix& operatorMat = m_mapOperators.at(transition.id());
+                FormalMatrix& initMat = m_mapInitMat.at(transition.id());
+                if (operatorMat.rows() == initMat.rows() && operatorMat.cols() == initMat.cols()) {
+                    for (std::size_t row = 0; row < operatorMat.rows(); row++) {
+                        for (std::size_t col = 0; col < operatorMat.cols(); col++) {
+                            if (operatorMat.isVar(row, col)) {
+                                m_pool.setValue(operatorMat.get(row, col).index(), initMat.value(row, col));
+                                m_pool.setKind(operatorMat.get(row, col).index(), m_pool.getKind(initMat.get(row, col).index()));
+                                m_pool.setInitialized(operatorMat.get(row, col).index());
                             }
                         }
                     }
                 } else {
-                    m_mapOperators[transition.id()].setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
+                    m_mapOperators.at(transition.id()).setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
                 }
             }
         }
@@ -810,7 +813,7 @@ void Bcifs::buildMassSpringSystems() {
                             // add a spring between the 2 masses at the found indices
                             FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
                             // always assume it is a one column matrix
-                            FormalMatrix finalColumn = m_mapOperators[transitionId] * matrix;
+                            FormalMatrix finalColumn = m_mapOperators.at(transitionId) * matrix;
                             std::size_t index = globalMatrix.indexOf(finalColumn);
                             if (!firstMass) {
                                 m_mapMSS[state.id()].addSpring(lastMassIndex, index, m_k, 0.0f);
@@ -850,7 +853,7 @@ void Bcifs::buildMSSForControlPoints() {
                     // add a spring between the 2 masses at the found indices
                     FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
                     // always assume it is a one column matrix
-                    FormalMatrix finalColumn = m_mapOperators[transitionId] * matrix;
+                    FormalMatrix finalColumn = m_mapOperators.at(transitionId) * matrix;
                     std::size_t index = globalMatrix.indexOf(finalColumn);
                     if (!firstMass) {
                         m_MSSControlPoints.addSpring(lastMassIndex, index, m_kControlPoints, m_lengthControlPoints);

@@ -47,11 +47,11 @@ void BatchControlPoint::setBcifs(const BCIFS::Bcifs& bcifs) {
         for (std::size_t col = 0; col < matrix.cols(); ++col) {
             bool isVar = false;
             for (std::size_t row = 0; row < matrix.rows(); ++row) {
-                if (matrix.get(row, col)->type() == BCIFS::CoefType::VAR) {
+                if (matrix.isVar(row, col)) {
                     isVar = true;
                 }
             }
-            this->addVertex(glm::vec3{ matrix.get(0, col)->value(), matrix.get(1, col)->value(), matrix.get(2, col)->value() }, isVar);
+            this->addVertex(glm::vec3{ matrix.value(0, col), matrix.value(1, col), matrix.value(2, col) }, isVar);
         }
     }
 

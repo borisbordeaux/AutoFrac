@@ -27,32 +27,33 @@ LayerBcifs::LayerBcifs() :
 }
 
 void LayerBcifs::testConstraints() {
-    BCIFS::FormalCoefRef a = BCIFS::FormalCoef::var(0.1f);
-    BCIFS::FormalCoefRef b = BCIFS::FormalCoef::var(0.2f);
-    BCIFS::FormalCoefRef c = BCIFS::FormalCoef::var(0.3f);
-    BCIFS::FormalCoefRef d = BCIFS::FormalCoef::var(0.4f);
-    BCIFS::FormalCoefRef e = BCIFS::FormalCoef::var(0.5f);
-    BCIFS::FormalCoefRef f = BCIFS::FormalCoef::var(0.6f);
-    BCIFS::FormalCoefRef g = BCIFS::FormalCoef::var(0.7f);
-    BCIFS::FormalCoefRef h = BCIFS::FormalCoef::var(0.8f);
-    BCIFS::FormalCoefRef i = BCIFS::FormalCoef::var(0.9f);
+    BCIFS::CoefPool pool;
+    BCIFS::FormalCoef a(pool.makeVar(0.1f));
+    BCIFS::FormalCoef b(pool.makeVar(0.2f));
+    BCIFS::FormalCoef c(pool.makeVar(0.3f));
+    BCIFS::FormalCoef d(pool.makeVar(0.4f));
+    BCIFS::FormalCoef e(pool.makeVar(0.5f));
+    BCIFS::FormalCoef f(pool.makeVar(0.6f));
+    BCIFS::FormalCoef g(pool.makeVar(0.7f));
+    BCIFS::FormalCoef h(pool.makeVar(0.8f));
+    BCIFS::FormalCoef i(pool.makeVar(0.9f));
 
-    BCIFS::FormalCoefRef j = BCIFS::FormalCoef::var(1.1f);
-    BCIFS::FormalCoefRef k = BCIFS::FormalCoef::var(1.2f);
-    BCIFS::FormalCoefRef l = BCIFS::FormalCoef::var(1.3f);
-    BCIFS::FormalCoefRef m = BCIFS::FormalCoef::var(1.4f);
-    BCIFS::FormalCoefRef n = BCIFS::FormalCoef::var(1.5f);
-    BCIFS::FormalCoefRef o = BCIFS::FormalCoef::var(1.6f);
-    BCIFS::FormalCoefRef p = BCIFS::FormalCoef::var(1.7f);
-    BCIFS::FormalCoefRef q = BCIFS::FormalCoef::var(1.8f);
-    BCIFS::FormalCoefRef r = BCIFS::FormalCoef::var(1.9f);
+    BCIFS::FormalCoef j(pool.makeVar(1.1f));
+    BCIFS::FormalCoef k(pool.makeVar(1.2f));
+    BCIFS::FormalCoef l(pool.makeVar(1.3f));
+    BCIFS::FormalCoef m(pool.makeVar(1.4f));
+    BCIFS::FormalCoef n(pool.makeVar(1.5f));
+    BCIFS::FormalCoef o(pool.makeVar(1.6f));
+    BCIFS::FormalCoef p(pool.makeVar(1.7f));
+    BCIFS::FormalCoef q(pool.makeVar(1.8f));
+    BCIFS::FormalCoef r(pool.makeVar(1.9f));
 
-    BCIFS::FormalMatrix T0(3, 3);
-    BCIFS::FormalMatrix T1(3, 3);
-    BCIFS::FormalMatrix BL(3, 1);
-    BCIFS::FormalMatrix BR(3, 1);
-    BCIFS::FormalMatrix TS(1, 1);
-    BCIFS::FormalMatrix P0(3, 3);
+    BCIFS::FormalMatrix T0(3, 3, &pool);
+    BCIFS::FormalMatrix T1(3, 3, &pool);
+    BCIFS::FormalMatrix BL(3, 1, &pool);
+    BCIFS::FormalMatrix BR(3, 1, &pool);
+    BCIFS::FormalMatrix TS(1, 1, &pool);
+    BCIFS::FormalMatrix P0(3, 3, &pool);
 
     T0.set(0, 0, a);
     T0.set(1, 0, b);
@@ -101,39 +102,42 @@ void LayerBcifs::testConstraints() {
     T0.print();
     T1.print();
 
-    BCIFS::ConstraintSolver::solve(leftIncLeft, rightIncLeft);
+    BCIFS::ConstraintSolver::solve(leftIncLeft, rightIncLeft, pool);
 
     T0.print();
     T1.print();
 
-    BCIFS::ConstraintSolver::solve(leftIncRight, rightIncRight);
+    BCIFS::ConstraintSolver::solve(leftIncRight, rightIncRight, pool);
 
     T0.print();
     T1.print();
 
-    BCIFS::ConstraintSolver::solve(leftAdj, rightAdj);
+    BCIFS::ConstraintSolver::solve(leftAdj, rightAdj, pool);
 
     T0.print();
     T1.print();
 
-    BCIFS::ConstraintSolver::solve(leftPermutLeft, rightPermutLeft);
+    BCIFS::ConstraintSolver::solve(leftPermutLeft, rightPermutLeft, pool);
 
     T0.print();
     T1.print();
 
-    BCIFS::ConstraintSolver::solve(leftPermutRight, rightPermutRight);
+    BCIFS::ConstraintSolver::solve(leftPermutRight, rightPermutRight, pool);
 
     T0.print();
     T1.print();
 
-    f->setValue(0.1f);
-    g->setValue(0.1f);
+    pool.setValue(f.index(), 0.1f);
+    pool.setValue(g.index(), 0.1f);
 
     T0.print();
     T1.print();
 
     T0.print(true);
     T1.print(true);
+
+    T0.concatenateColumns(T1);
+    T0.print(true);
 }
 
 void LayerBcifs::testSubdQuad() {
@@ -212,7 +216,7 @@ void LayerBcifs::testSubdQuad() {
         { -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, -1.0f, -1.0f },
         { -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
 
     // define all matrices
     m_bcifs.finalize();
@@ -281,13 +285,13 @@ void LayerBcifs::testSierpinski() {
         { -1.0f, 1.0f, 0.0f },
         { 0.0f, 0.0f, 1.7f },
         { 1.0f, 0.0f, 0.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
 
     m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
         { 1.0f, -1.0f, 0.0f },
         { 0.0f, 0.0f, -1.0f },
         { 0.0f, 1.0f, 2.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
 
     // define all matrices
     m_bcifs.finalize();
@@ -421,23 +425,23 @@ void LayerBcifs::testG2(int rows, int cols) {
     m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
         { 1.0f, 2.0f / 3.0f },
         { 0.0f, 1.0f / 3.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
     m_bcifs.setInitMat(s1cantor, BCIFS::FormalMatrix({
         { 1.0f / 3.0f, 0.0f },
         { 2.0f / 3.0f, 1.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     m_bcifs.setInitMat(s0bezier, BCIFS::FormalMatrix({
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     m_bcifs.setInitMat(s1bezier, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     // init control points
     for (int row = 0; row < rows; row++) {
@@ -466,7 +470,7 @@ void LayerBcifs::testG2(int rows, int cols) {
                     7.0f * row + 3.0f * 0.7f * std::sin(11.0f * M_PIf * 2.0f / 12.0f)
                 },
                 { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-            }, BCIFS::CoefType::VAR));
+            }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
         }
     }
 
@@ -572,20 +576,20 @@ void LayerBcifs::testSquareSierpinski() {
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     m_bcifs.setInitMat(s1edge, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
-    }, BCIFS::CoefType::CONST));
+    }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     // // init control points
     m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
         { -1.0f, 0.0f, 1.0f, 0.6f, 1.0f, 0.0f, -1.0f, -1.6f },
         { -1.0f, -0.6f, -1.0f, 0.0f, 1.0f, 1.6f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f }
-    }, BCIFS::CoefType::VAR));
+    }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
 
     // define all matrices
     m_bcifs.finalize();
@@ -761,15 +765,15 @@ void LayerBcifs::onImGuiRender() {
         for (std::size_t j = 0; j < controlPoints.size(); j++) {
             for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
                 ImGui::Text("Control point %zu", i);
-                if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(0, i)->valueRef(), 0.01f)) {
+                if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(0, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
                 }
-                if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(1, i)->valueRef(), 0.01f)) {
+                if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(1, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
                 }
-                if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].get(2, i)->valueRef(), 0.01f)) {
+                if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(2, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
                 }
@@ -930,7 +934,7 @@ void LayerBcifs::handleSelection() {
             // be sure it is a selectable control points
             bool selectable = false;
             for (std::size_t row = 0; row < points.rows(); row++) {
-                if (points.get(row, col)->type() == BCIFS::CoefType::VAR) {
+                if (points.isVar(row, col)) {
                     selectable = true;
                 }
             }
@@ -938,7 +942,7 @@ void LayerBcifs::handleSelection() {
                 continue;
             }
             BCIFS::FormalMatrix point = points.getCol(col);
-            glm::vec3 pointPos(point.get(0, 0)->value(), point.get(1, 0)->value(), point.get(2, 0)->value());
+            glm::vec3 pointPos(point.value(0, 0), point.value(1, 0), point.value(2, 0));
             glm::vec3 toV = pointPos - rayOrigin;
             float t = glm::dot(toV, rayDirection);
             if (t <= 0.0f) {
@@ -955,9 +959,9 @@ void LayerBcifs::handleSelection() {
             if (dist2 <= radius2 && t < bestT) {
                 bestT = t;
                 m_currentControlPoint = point;
-                m_initialControlPointPosition.x = m_currentControlPoint->get(0, 0)->value();
-                m_initialControlPointPosition.y = m_currentControlPoint->get(1, 0)->value();
-                m_initialControlPointPosition.z = m_currentControlPoint->get(2, 0)->value();
+                m_initialControlPointPosition.x = m_currentControlPoint->value(0, 0);
+                m_initialControlPointPosition.y = m_currentControlPoint->value(1, 0);
+                m_initialControlPointPosition.z = m_currentControlPoint->value(2, 0);
             }
         }
     }
@@ -988,7 +992,7 @@ void LayerBcifs::handleSelection() {
 void LayerBcifs::handleMoveControlPoint() {
     // move the control point
     float t;
-    glm::vec3 planePoint(m_currentControlPoint->get(0, 0)->value(), m_currentControlPoint->get(1, 0)->value(), m_currentControlPoint->get(2, 0)->value());
+    glm::vec3 planePoint(m_currentControlPoint->value(0, 0), m_currentControlPoint->value(1, 0), m_currentControlPoint->value(2, 0));
     glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
     if (m_xKeyPressed) {
         planeNormal = glm::vec3(1, 0, 0);
@@ -1015,9 +1019,9 @@ void LayerBcifs::handleMoveControlPoint() {
 
     if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
         glm::vec3 newPos = rayOrigin + t * rayDirection;
-        m_currentControlPoint->get(0, 0)->setValue(newPos.x);
-        m_currentControlPoint->get(1, 0)->setValue(newPos.y);
-        m_currentControlPoint->get(2, 0)->setValue(newPos.z);
+        m_currentControlPoint->setValue(0, 0, newPos.x);
+        m_currentControlPoint->setValue(1, 0, newPos.y);
+        m_currentControlPoint->setValue(2, 0, newPos.z);
     }
     m_bcifs.invalidate(true);
     m_bcifsChanged = true;
@@ -1077,14 +1081,14 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
         arma::mat m6 = m4 * m2;
         std::cout << "m6 : " << std::endl << m6 << std::endl;
         for (std::size_t row = 0; row < mv.rows(); row++) {
-            mv.get(row, 0)->setValue(m6.at(row, 0));
+            mv.setValue(row, 0, m6.at(row, 0));
         }
         arma::mat coord = mat * m_currentSubdivisionPoint->posBary().toMat();
         float r = 1.0f / coord.at(3, 0);
         arma::mat m7 = m6 * r;
         std::cout << "m7 : " << std::endl << m7 << std::endl;
         for (std::size_t row = 0; row < mv.rows(); row++) {
-            mv.get(row, 0)->setValue(m7.at(row, 0));
+            mv.setValue(row, 0, m7.at(row, 0));
         }
     }
 

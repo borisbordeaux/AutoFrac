@@ -1,59 +1,21 @@
 #ifndef AUTOFRAC_FORMALCOEF_H
 #define AUTOFRAC_FORMALCOEF_H
 
-#include <memory>
+#include <cstddef>
 
 namespace BCIFS {
 
-enum class CoefType {
-    ZERO, ONE, VAR, CONST
-};
-
-class FormalCoef;
-
-using FormalCoefRef = std::shared_ptr<FormalCoef>;
-
-class FormalCoef : public std::enable_shared_from_this<FormalCoef> {
+class FormalCoef {
 public:
-    explicit FormalCoef(float value);
-    FormalCoef(CoefType coefType, float value);
+    explicit FormalCoef(std::size_t index) : m_id(index) {}
 
-    static FormalCoefRef zero();
-    static FormalCoefRef one();
-    static FormalCoefRef var(float v);
-    static FormalCoefRef constant(float v);
+    std::size_t inline index() const { return m_id; };
 
-    static FormalCoefRef multiply(const FormalCoefRef& v1, const FormalCoefRef& v2);
-
-    static FormalCoefRef add(const FormalCoefRef& v1, const FormalCoefRef& v2);
-
-    inline float value() const { return const_cast<FormalCoef*>(this)->findRoot()->m_value; }
-
-    inline float* valueRef() { return &this->findRoot()->m_value; }
-
-    inline CoefType type() const { return const_cast<FormalCoef*>(this)->findRoot()->m_type; }
-
-    void setValue(float value) { this->findRoot()->m_value = value; }
-    void setType(CoefType type) { this->findRoot()->m_type = type; }
-
-    void setInitialized() { this->findRoot()->m_initialized = true; }
-
-    inline bool initialized() const { return const_cast<FormalCoef*>(this)->findRoot()->m_initialized; }
-
-    FormalCoefRef findRoot();
-    static void unify(const FormalCoefRef& c1, const FormalCoefRef& c2);
-
-    std::string toString(bool showAddress = false) const;
+    static inline FormalCoef zero() { return FormalCoef(0); }
+    static inline FormalCoef one() { return FormalCoef(1); };
 
 private:
-    static inline std::string toString(float value);
-
-private:
-    CoefType m_type;
-    float m_value;
-    bool m_initialized;
-
-    std::weak_ptr<FormalCoef> m_parent;
+    std::size_t m_id;
 };
 
 } // BCIFS

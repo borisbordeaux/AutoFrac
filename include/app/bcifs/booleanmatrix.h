@@ -4,6 +4,7 @@
 #include <vector>
 
 namespace BCIFS {
+class CoefPool;
 
 class FormalMatrix;
 
@@ -37,7 +38,7 @@ public:
     void print() const;
     std::string toString() const;
 
-    FormalMatrix toFormalMatrix() const;
+    FormalMatrix toFormalMatrix(CoefPool* pool) const;
 
     void squareAndFillByTrue();
     BooleanMatrix transposed() const;

@@ -1,21 +1,21 @@
 #include <stdexcept>
+#include "app/bcifs/coefpool.h"
 #include "app/bcifs/constraintsolver.h"
 #include "app/bcifs/formalmatrix.h"
 #include "app/bcifs/formalcoef.h"
 
 namespace BCIFS {
 
-void ConstraintSolver::solve(FormalMatrix& lhs, FormalMatrix& rhs) {
+void ConstraintSolver::solve(const FormalMatrix& lhs, const FormalMatrix& rhs, CoefPool& pool) {
     if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols()) {
         throw std::runtime_error("Matrices have not the same size");
     }
 
     for (std::size_t i = 0; i < lhs.rows(); i++) {
         for (std::size_t j = 0; j < lhs.cols(); j++) {
-            FormalCoefRef& varL = lhs.get(i, j);
-            FormalCoefRef& varR = rhs.get(i, j);
-
-            FormalCoef::unify(varL, varR);
+            const FormalCoef& varL = lhs.get(i, j);
+            const FormalCoef& varR = rhs.get(i, j);
+            pool.unify(varL.index(), varR.index());
         }
     }
 }

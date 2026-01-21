@@ -75,7 +75,7 @@ std::string MassSpringSystem::toString() const {
     for (mss::Mass const& m: m_masses) {
         res += "\nm";
         for (std::size_t i = 0; i < m_dim; i++) {
-            res += " " + MassSpringSystem::toString(m.position().get(i,0)->value());
+            res += " " + MassSpringSystem::toString(m.position().value(i,0));
         }
     }
     for (std::size_t i = 0; i < m_springs.size(); i++) {

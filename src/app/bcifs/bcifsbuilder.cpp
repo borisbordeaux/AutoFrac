@@ -139,13 +139,13 @@ void BcifsBuilder::constraint(const std::string& state, const std::vector<std::s
 void BcifsBuilder::initMat(const std::string& state, const std::string& transition, const std::vector<std::vector<float>>& matrix, const std::string& constness) {
     StateID stateId = this->getStateID(state);
     TransitionID transitionId = this->getTransitionID(stateId, transition);
-    CoefType coefType = CoefType::CONST;
+    CoefKind coefType = CoefKind::CONST;
     if (constness == "VAR") {
-        coefType = CoefType::VAR;
+        coefType = CoefKind::VAR;
     } else if (constness != "CONST") {
         throw sol::error("Constness must be \"VAR\" or \"CONST\"");
     }
-    m_bcifs.setInitMat(transitionId, FormalMatrix(matrix, coefType));
+    m_bcifs.setInitMat(transitionId, FormalMatrix(matrix, coefType, m_bcifs.pool()));
 }
 
 void BcifsBuilder::initializeLua() {

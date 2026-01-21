@@ -136,8 +136,8 @@ std::string BooleanMatrix::toString() const {
     return res;
 }
 
-FormalMatrix BooleanMatrix::toFormalMatrix() const {
-    FormalMatrix res(m_rows, m_cols);
+FormalMatrix BooleanMatrix::toFormalMatrix(CoefPool* pool) const {
+    FormalMatrix res(m_rows, m_cols, pool);
     for (std::size_t row = 0; row < m_rows; row++) {
         for (std::size_t col = 0; col < m_cols; col++) {
             res.set(row, col, this->get(row, col) ? FormalCoef::one() : FormalCoef::zero());

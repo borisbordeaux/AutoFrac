@@ -89,6 +89,8 @@ public:
     float* defaultFrontColor() { return &m_defaultFrontColor[0]; }
     float* defaultBackColor() { return &m_defaultBackColor[0]; }
 
+    CoefPool* pool() { return &m_pool; }
+
 private:
     using Constraint = std::pair<Path, Path>;
 
@@ -158,6 +160,8 @@ private:
     std::unordered_map<TransitionID, glm::vec3> m_frontColors;
     std::unordered_map<TransitionID, glm::vec3> m_backColors;
     std::size_t m_colorDepth = 0;
+
+    CoefPool m_pool;
 };
 
 } // BCIFS

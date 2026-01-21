@@ -4,6 +4,7 @@
 #include <memory>
 
 namespace BCIFS {
+class CoefPool;
 
 class FormalMatrix;
 
@@ -11,7 +12,7 @@ class FormalCoef;
 
 class ConstraintSolver {
 public:
-    static void solve(FormalMatrix& lhs, FormalMatrix& rhs);
+    static void solve(const FormalMatrix& lhs, const FormalMatrix& rhs, CoefPool& pool);
 };
 
 } // BCIFS

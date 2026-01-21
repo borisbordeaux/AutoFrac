@@ -9,7 +9,7 @@ Spring::Spring(Mass& m1, Mass& m2, float k, float length) : m_m1(m1), m_m2(m2), 
 void Spring::applyForces() {
     arma::Col<float> direction(m_m1.position().rows());
     for (std::size_t i = 0; i < m_m1.position().rows(); i++) {
-        direction[i] = m_m2.position().get(i, 0)->value() - m_m1.position().get(i, 0)->value();
+        direction[i] = m_m2.position().value(i, 0) - m_m1.position().value(i, 0);
     }
     float x = arma::norm(direction) - m_length;
     direction = arma::normalise(direction);
