@@ -275,6 +275,11 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
         }
     }
 
+    if (!m_cacheTransforms) {
+        m_mapOperatorsMat.clear();
+        m_facesPaths.clear();
+        m_invalidatedMatrices = true;
+    }
     return res;
 }
 

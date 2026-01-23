@@ -724,6 +724,16 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::ColorEdit3("Back color", m_bcifs.defaultBackColor())) {
         m_bcifsChanged = true;
     }
+    static bool cullFaces = false;
+    if (ImGui::Checkbox("Cull faces", &cullFaces)) {
+        if (cullFaces) {
+            Core::GLCall(glEnable(GL_CULL_FACE));
+        } else {
+            Core::GLCall(glDisable(GL_CULL_FACE));
+        }
+    }
+    ImGui::Checkbox("Cache transforms", m_bcifs.cacheTransforms());
+
     const char* items[] = { "PHONG", "FLAT" };
     if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, items, IM_ARRAYSIZE(items))) {
         m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
@@ -754,8 +764,9 @@ void LayerBcifs::onImGuiRender() {
     ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
     ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
     ImGui::Text("Vertices: %zu", m_batchFace.nbVertices());
+    ImGui::Text("Indices: %zu", m_batchFace.nbIndices());
     ImGui::Text("Floats: %zu", m_batchFace.nbFloats());
-    ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbFloats() * sizeof(float), m_batchFace.nbFloats() * sizeof(float) / 1000, m_batchFace.nbFloats() * sizeof(float) / 1000000, m_batchFace.nbFloats() * sizeof(float) / 1000000000);
+    ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbData(), m_batchFace.nbData() / 1000, m_batchFace.nbData() / 1000000, m_batchFace.nbData() / 1000000000);
 
     static bool editControlPoints = false;
     ImGui::Checkbox("Edit control points", &editControlPoints);

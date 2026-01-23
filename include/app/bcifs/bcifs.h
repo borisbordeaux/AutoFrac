@@ -91,6 +91,8 @@ public:
 
     CoefPool* pool() { return &m_pool; }
 
+    bool* cacheTransforms() { return &m_cacheTransforms; }
+
 private:
     using Constraint = std::pair<Path, Path>;
 
@@ -162,6 +164,7 @@ private:
     std::size_t m_colorDepth = 0;
 
     CoefPool m_pool;
+    bool m_cacheTransforms = true;
 };
 
 } // BCIFS

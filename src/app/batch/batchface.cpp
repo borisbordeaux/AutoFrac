@@ -13,12 +13,15 @@ BatchFace::BatchFace() {
 
     m_vao.addBuffer(m_vbo, m_layout);
 
+    m_ibo.bind();
+
     m_program.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/bcifs/vertexShader.glsl");
     m_program.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/bcifs/fragmentShader.glsl");
     m_program.link();
 
     // unbind the vao *before* the vbo
     m_vao.unbind();
+    m_ibo.unbind();
     m_vbo.unbind();
     m_program.unbind();
 }
@@ -42,28 +45,39 @@ void BatchFace::setIlluminationMode(IlluminationMode mode) {
 void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
     m_count = 0;
     m_data.clear();
+    m_countIndices = 0;
+    m_dataIndices.clear();
     // get all faces for the current iteration level
     // and add them to the buffer
     std::vector<std::vector<BCIFS::BcifsPoint>> faces = bcifs.faces(iterationLevel);
     m_nbFaces = faces.size();
 
     m_nbTriangles = 0;
+    std::size_t nbVertices = 0;
+    std::size_t nbIndices = 0;
     for (const std::vector<BCIFS::BcifsPoint>& face : faces) {
         m_nbTriangles += face.size();
+        nbVertices += face.size() + 1;
+        nbIndices += face.size() * 3;
+
     }
-    std::size_t nbAdds = 3 * m_nbTriangles;
-    m_data.resize(nbAdds * m_floatsPerVertex);
+    m_dataIndices.resize(nbIndices);
+    m_data.resize(nbVertices * m_floatsPerVertex);
 
     for (const std::vector<BCIFS::BcifsPoint>& face : faces) {
         this->addFace(face);
     }
 
     m_vbo.bufferData(m_data);
-    m_vbo.unbind();
+    m_ibo.bufferData(m_dataIndices);
+
+    m_data.clear();
+    m_dataIndices.clear();
 }
 
 void BatchFace::render() const {
-    Core::Renderer::draw(m_vao, m_count / m_floatsPerVertex, m_program);
+    //Core::Renderer::draw(m_vao, m_count / m_floatsPerVertex, m_program);
+    Core::Renderer::draw(m_vao, m_ibo, m_program);
 }
 
 void BatchFace::addFace(const std::vector<BCIFS::BcifsPoint>& vertices) {
@@ -72,9 +86,29 @@ void BatchFace::addFace(const std::vector<BCIFS::BcifsPoint>& vertices) {
         barycenter += vertex.pos();
     }
     barycenter /= static_cast<float>(vertices.size());
+
+    // fill indices
+    unsigned int indexCenter = static_cast<unsigned int>(this->nbVertices());
+    unsigned int* p = m_dataIndices.data() + m_countIndices;
+
     for (std::size_t i = 0; i < vertices.size(); i++) {
-        this->addTriangle(barycenter, vertices[i].pos(), vertices[(i + 1) % vertices.size()].pos(), vertices[0].frontColor(), vertices[0].backColor());
+        *p++ = indexCenter;
+        *p++ = indexCenter + i + 1;
+        *p++ = indexCenter + 1 + (i + 1) % vertices.size();
+        m_countIndices += 3;
     }
+
+    // fill vertices data
+    // barycenter
+    this->addVertexFace(barycenter, vertices[0].frontColor(), vertices[0].backColor());
+    // other points of the face
+    for (std::size_t i = 0; i < vertices.size(); i++) {
+        this->addVertexFace(vertices[i].pos(), vertices[i].frontColor(), vertices[i].backColor());
+    }
+
+    // for (std::size_t i = 0; i < vertices.size(); i++) {
+    //     this->addTriangle(barycenter, vertices[i].pos(), vertices[(i + 1) % vertices.size()].pos(), vertices[0].frontColor(), vertices[0].backColor());
+    // }
 }
 
 void BatchFace::addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor) {
