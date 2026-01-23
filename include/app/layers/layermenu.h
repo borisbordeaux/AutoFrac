@@ -1,9 +1,6 @@
 #ifndef AUTOFRAC_LAYERMENU_H
 #define AUTOFRAC_LAYERMENU_H
 
-#include <vector>
-#include <string>
-#include <functional>
 #include "core/layer.h"
 
 class LayerMenu : public Core::Layer {

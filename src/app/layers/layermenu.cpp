@@ -1,6 +1,5 @@
 #include "app/layers/layermenu.h"
 #include "imgui/imgui.h"
-#include "app/layers/layerclearcolor.h"
 #include "app/layers/layertexture.h"
 #include "app/layers/layerbcifs.h"
 #include "core/application.h"
@@ -16,9 +15,6 @@ void LayerMenu::onImGuiRender() {
     ImGui::Checkbox("Show Demo Window", &m_showDemo);
     if (ImGui::Button("Void Layer")) {
         Core::Application::get().getLayer(0)->transitionTo<VoidLayer>();
-    }
-    if (ImGui::Button("Clear Color")) {
-        Core::Application::get().getLayer(0)->transitionTo<LayerClearColor>();
     }
     if (ImGui::Button("Texture")) {
         Core::Application::get().getLayer(0)->transitionTo<LayerTexture>();
