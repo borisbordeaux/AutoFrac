@@ -6,15 +6,20 @@ state("F", 0)
 state("Vol", 0)
 state("WB", 0)
 state("WC", 0)
+state("L", 0)
 
 -- permutations
 permutation("permut", "C", "C")
 permutation("permut", "B", "B")
+permutation("permut", "L", "L")
 permutation("permut", "WC", "WC")
+permutation("permut", "WB", "WB")
 
 -- boundary of states
 boundary("b0", "B", "V")
 boundary("b1", "B", "V")
+boundary("b0", "L", "V")
+boundary("b1", "L", "V")
 boundary("b0", "C", "V")
 boundary("b1", "C", "V")
 boundary("b0", "F", "C")
@@ -24,13 +29,13 @@ boundary("b3", "F", "B")
 boundary("b4", "F", "C")
 boundary("b5", "F", "B")
 boundary("b0", "WB", "B")
-boundary("b1", "WB", "B")
+boundary("b1", "WB", "L")
 boundary("b2", "WB", "B")
-boundary("b3", "WB", "B")
+boundary("b3", "WB", "L")
 boundary("b0", "WC", "C")
-boundary("b1", "WC", "B")
+boundary("b1", "WC", "L")
 boundary("b2", "WC", "C")
-boundary("b3", "WC", "B")
+boundary("b3", "WC", "L")
 boundary("b0", "Vol", "F")
 boundary("b1", "Vol", "F")
 boundary("b2", "Vol", "WC")
@@ -52,16 +57,16 @@ grid("F", {
 
 grid("WB", {
     { { "b0", "b0" }, { "b0", "intern_0" }, { "b0", "b1" } },
-    { { "b1", "b0" }, { "b1", "intern_0" }, { "b1", "b1" } },
+    { { "b1", "b0" }, { "b1", "b1" } },
     { { "b2", "b0" }, { "b2", "intern_0" }, { "b2", "b1" } },
-    { { "b3", "b0" }, { "b3", "intern_0" }, { "b3", "b1" } }
+    { { "b3", "b0" }, { "b3", "b1" } }
 })
 
 grid("WC", {
     { { "b0", "b0" }, { "b0", "b1" } },
-    { { "b1", "b0" }, { "b1", "intern_0" }, { "b1", "b1" } },
+    { { "b1", "b0" }, { "b1", "b1" } },
     { { "b2", "b0" }, { "b2", "b1" } },
-    { { "b3", "b0" }, { "b3", "intern_0" }, { "b3", "b1" } }
+    { { "b3", "b0" }, { "b3", "b1" } }
 })
 
 grid("Vol", {
@@ -80,39 +85,40 @@ grid("Vol", {
     { { "b1", "b5", "b0" }, { "b1", "b5", "intern_0" }, { "b1", "b5", "b1" } },
 
     { { "b2", "b0", "b0" }, { "b2", "b0", "b1" } },
-    { { "b2", "b1", "b0" }, { "b2", "b1", "intern_0" }, { "b2", "b1", "b1" } },
+    { { "b2", "b1", "b0" }, { "b2", "b1", "b1" } },
     { { "b2", "b2", "b0" }, { "b2", "b2", "b1" } },
-    { { "b2", "b3", "b0" }, { "b2", "b3", "intern_0" }, { "b2", "b3", "b1" } },
+    { { "b2", "b3", "b0" }, { "b2", "b3", "b1" } },
 
     { { "b3", "b0", "b0" }, { "b3", "b0", "intern_0" }, { "b3", "b0", "b1" } },
-    { { "b3", "b1", "b0" }, { "b3", "b1", "intern_0" }, { "b3", "b1", "b1" } },
+    { { "b3", "b1", "b0" }, { "b3", "b1", "b1" } },
     { { "b3", "b2", "b0" }, { "b3", "b2", "intern_0" }, { "b3", "b2", "b1" } },
-    { { "b3", "b3", "b0" }, { "b3", "b3", "intern_0" }, { "b3", "b3", "b1" } },
+    { { "b3", "b3", "b0" }, { "b3", "b3", "b1" } },
 
     { { "b4", "b0", "b0" }, { "b4", "b0", "b1" } },
-    { { "b4", "b1", "b0" }, { "b4", "b1", "intern_0" }, { "b4", "b1", "b1" } },
+    { { "b4", "b1", "b0" }, { "b4", "b1", "b1" } },
     { { "b4", "b2", "b0" }, { "b4", "b2", "b1" } },
-    { { "b4", "b3", "b0" }, { "b4", "b3", "intern_0" }, { "b4", "b3", "b1" } },
+    { { "b4", "b3", "b0" }, { "b4", "b3", "b1" } },
 
     { { "b5", "b0", "b0" }, { "b5", "b0", "intern_0" }, { "b5", "b0", "b1" } },
-    { { "b5", "b1", "b0" }, { "b5", "b1", "intern_0" }, { "b5", "b1", "b1" } },
+    { { "b5", "b1", "b0" }, { "b5", "b1", "b1" } },
     { { "b5", "b2", "b0" }, { "b5", "b2", "intern_0" }, { "b5", "b2", "b1" } },
-    { { "b5", "b3", "b0" }, { "b5", "b3", "intern_0" }, { "b5", "b3", "b1" } },
+    { { "b5", "b3", "b0" }, { "b5", "b3", "b1" } },
 
     { { "b6", "b0", "b0" }, { "b6", "b0", "b1" } },
-    { { "b6", "b1", "b0" }, { "b6", "b1", "intern_0" }, { "b6", "b1", "b1" } },
+    { { "b6", "b1", "b0" }, { "b6", "b1", "b1" } },
     { { "b6", "b2", "b0" }, { "b6", "b2", "b1" } },
-    { { "b6", "b3", "b0" }, { "b6", "b3", "intern_0" }, { "b6", "b3", "b1" } },
+    { { "b6", "b3", "b0" }, { "b6", "b3", "b1" } },
 
     { { "b7", "b0", "b0" }, { "b7", "b0", "intern_0" }, { "b7", "b0", "b1" } },
-    { { "b7", "b1", "b0" }, { "b7", "b1", "intern_0" }, { "b7", "b1", "b1" } },
+    { { "b7", "b1", "b0" }, { "b7", "b1", "b1" } },
     { { "b7", "b2", "b0" }, { "b7", "b2", "intern_0" }, { "b7", "b2", "b1" } },
-    { { "b7", "b3", "b0" }, { "b7", "b3", "intern_0" }, { "b7", "b3", "b1" } }
+    { { "b7", "b3", "b0" }, { "b7", "b3", "b1" } }
 })
 
 -- space of states
 space("B", { "b0", "intern_0", "b1" })
 space("C", { "b0", "b1" })
+space("L", { "b0", "b1" })
 space("F", { "b0", "b1", "b2", "b3", "b4", "b5" })
 space("Vol", { "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7" })
 
@@ -120,14 +126,16 @@ space("Vol", { "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7" })
 subdivision("s0", "V", "V")
 subdivision("s0", "B", "B")
 subdivision("s1", "B", "B")
+subdivision("s0", "L", "L")
+subdivision("s1", "L", "L")
 subdivision("s0", "C", "C")
 subdivision("s1", "C", "C")
-subdivision("s0", "F", "F", { 252/255, 127/255, 0 })
-subdivision("s1", "F", "F", { 0, 71/255, 232/255 })
-subdivision("s2", "F", "F", { 205/255, 207/255, 0 })
-subdivision("s3", "F", "F", { 206/255, 0, 0 })
-subdivision("s4", "F", "F", { 0, 183/255, 0 })
-subdivision("s5", "F", "F", { 129/255, 50/255, 1 })
+subdivision("s0", "F", "F")
+subdivision("s1", "F", "F")
+subdivision("s2", "F", "F")
+subdivision("s3", "F", "F")
+subdivision("s4", "F", "F")
+subdivision("s5", "F", "F")
 subdivision("s0", "WB", "WB")
 subdivision("s1", "WB", "WB")
 subdivision("s2", "WB", "WB")
@@ -151,26 +159,6 @@ subdivision("s11", "Vol", "Vol", { 129/255, 50/255, 1 })
 subdivision("s0", "init", "Vol")
 
 -- primitive of states
-primitive("F", {
-    {
-        { "b0", "b0" },
-        { "b1", "b0" },
-        { "b1", "s0", "s1", "b0" },
-        { "b1", "s1", "b0" },
-        { "b1", "s1", "s1", "b0" },
-        { "b2", "b0" },
-        { "b3", "b0" },
-        { "b3", "s0", "s1", "b0" },
-        { "b3", "s1", "b0" },
-        { "b3", "s1", "s1", "b0" },
-        { "b4", "b0" },
-        { "b5", "b0" },
-        { "b5", "s0", "s1", "b0" },
-        { "b5", "s1", "b0" },
-        { "b5", "s1", "s1", "b0" },
-    }
-})
-
 primitive("Vol", {
     {
         { "b0", "b0", "b0" },
@@ -197,56 +185,56 @@ primitive("Vol", {
     {
         { "b2", "b0", "b0" },
         { "b2", "b1", "b0" },
-        { "b2", "b1", "intern_0" },
         { "b2", "b2", "b0" },
         { "b2", "b3", "b0" },
-        { "b2", "b3", "intern_0" },
     },
     {
         { "b3", "b0", "b0" },
         { "b3", "b0", "intern_0" },
-        { "b3", "b1", "b0" },
-        { "b3", "b1", "intern_0" },
-        { "b3", "b2", "b0" },
         { "b3", "b2", "intern_0" },
         { "b3", "b3", "b0" },
-        { "b3", "b3", "intern_0" },
+    },
+    {
+        { "b3", "b0", "intern_0" },
+        { "b3", "b1", "b0" },
+        { "b3", "b2", "b0" },
+        { "b3", "b2", "intern_0" },
     },
     {
         { "b4", "b0", "b0" },
         { "b4", "b1", "b0" },
-        { "b4", "b1", "intern_0" },
         { "b4", "b2", "b0" },
         { "b4", "b3", "b0" },
-        { "b4", "b3", "intern_0" },
     },
     {
         { "b5", "b0", "b0" },
         { "b5", "b0", "intern_0" },
-        { "b5", "b1", "b0" },
-        { "b5", "b1", "intern_0" },
-        { "b5", "b2", "b0" },
         { "b5", "b2", "intern_0" },
         { "b5", "b3", "b0" },
-        { "b5", "b3", "intern_0" },
+    },
+    {
+        { "b5", "b0", "intern_0" },
+        { "b5", "b1", "b0" },
+        { "b5", "b2", "b0" },
+        { "b5", "b2", "intern_0" },
     },
     {
         { "b6", "b0", "b0" },
         { "b6", "b1", "b0" },
-        { "b6", "b1", "intern_0" },
         { "b6", "b2", "b0" },
         { "b6", "b3", "b0" },
-        { "b6", "b3", "intern_0" },
     },
     {
         { "b7", "b0", "b0" },
         { "b7", "b0", "intern_0" },
-        { "b7", "b1", "b0" },
-        { "b7", "b1", "intern_0" },
-        { "b7", "b2", "b0" },
         { "b7", "b2", "intern_0" },
         { "b7", "b3", "b0" },
-        { "b7", "b3", "intern_0" },
+    },
+    {
+        { "b7", "b0", "intern_0" },
+        { "b7", "b1", "b0" },
+        { "b7", "b2", "b0" },
+        { "b7", "b2", "intern_0" },
     }
 })
 
@@ -254,6 +242,8 @@ primitive("Vol", {
 -- to define permutation operators
 constraint("C", { "permut", "b0" }, { "b1" })
 constraint("C", { "permut", "b1" }, { "b0" })
+constraint("L", { "permut", "b0" }, { "b1" })
+constraint("L", { "permut", "b1" }, { "b0" })
 constraint("B", { "permut", "b0" }, { "b1" })
 constraint("B", { "permut", "intern_0" }, { "intern_0" })
 constraint("B", { "permut", "b1" }, { "b0" })
@@ -261,15 +251,25 @@ constraint("WC", { "permut", "b0" }, { "b0", "permut" })
 constraint("WC", { "permut", "b1" }, { "b3", "permut" })
 constraint("WC", { "permut", "b2" }, { "b2", "permut" })
 constraint("WC", { "permut", "b3" }, { "b1", "permut" })
+constraint("WB", { "permut", "b0" }, { "b0", "permut" })
+constraint("WB", { "permut", "b1" }, { "b3", "permut" })
+constraint("WB", { "permut", "b2" }, { "b2", "permut" })
+constraint("WB", { "permut", "b3" }, { "b1", "permut" })
 -- to constrain subdivision operators using permutation operators
 constraint("C", { "permut", "s0" }, { "s1", "permut" })
 constraint("C", { "permut", "s1" }, { "s0", "permut" })
 constraint("B", { "permut", "s0" }, { "s1", "permut" })
 constraint("B", { "permut", "s1" }, { "s0", "permut" })
+constraint("L", { "permut", "s0" }, { "s1", "permut" })
+constraint("L", { "permut", "s1" }, { "s0", "permut" })
 constraint("WC", { "permut", "s0" }, { "s1", "permut" })
 constraint("WC", { "permut", "s1" }, { "s0", "permut" })
 constraint("WC", { "permut", "s2" }, { "s3", "permut" })
 constraint("WC", { "permut", "s3" }, { "s2", "permut" })
+constraint("WB", { "permut", "s0" }, { "s1", "permut" })
+constraint("WB", { "permut", "s1" }, { "s0", "permut" })
+constraint("WB", { "permut", "s2" }, { "s3", "permut" })
+constraint("WB", { "permut", "s3" }, { "s2", "permut" })
 
 -- incidence constraints
 -- on edge
@@ -448,6 +448,28 @@ initMat("B", "s1", {
     { 0.50, 0.5, 0.0 },
     { 0.25, 0.5, 1.0 }
 }, "CONST")
+initMat("WC", "s0", {
+    { 1, 2.0 / 3.0, 1.0 / 3.0, 0.5 },
+    { 0, 1.0 / 3.0, 1.0 / 6.0, 0.0 },
+    { 0,       0.0, 1.0 / 6.0, 0.0 },
+    { 0,       0.0, 1.0 / 3.0, 0.5 }
+}, "CONST")
+
+initMat("WC", "s1", {
+    { 1.0 / 3.0, 0.0, 0.0, 1.0 / 6.0 },
+    { 2.0 / 3.0, 1.0, 0.5, 1.0 / 3.0 },
+    {         0, 0.0, 0.5, 1.0 / 3.0 },
+    {         0, 0.0, 0.0, 1.0 / 6.0 }
+}, "CONST")
+
+initMat("WB", "s0", {
+    { 1, 0.5, 0.25, 0.125, 0.25, 0.5 },
+    { 0, 0.5, 0.50, 0.250, 0.25, 0.0 },
+    { 0, 0.0, 0.25, 0.125, 0.00, 0.0 },
+    { 0, 0.0, 0.00, 0.125, 0.00, 0.0 },
+    { 0, 0.0, 0.00, 0.250, 0.25, 0.0 },
+    { 0, 0.0, 0.00, 0.125, 0.25, 0.5 }
+}, "CONST")
 
 -- init control points
 initMat("init", "s0", {
@@ -469,13 +491,7 @@ initMat("init", "s0", {
         3.0 * 0.7 * math.cos(7.0 * math.pi * 2.0 / 12.0),
         3.0 * math.cos(4.0 * math.pi * 2.0 / 6.0),
         3.0 * math.cos(5.0 * math.pi * 2.0 / 6.0),
-        3.0 * 0.7 * math.cos(11.0 * math.pi * 2.0 / 12.0),
-        3.0 * math.cos(0.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.cos(1.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.cos(2.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.cos(3.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.cos(4.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.cos(5.0 * math.pi * 2.0 / 6.0),
+        3.0 * 0.7 * math.cos(11.0 * math.pi * 2.0 / 12.0)
     },
     {
         3.0 * math.sin(0.0 * math.pi * 2.0 / 6.0),
@@ -495,15 +511,8 @@ initMat("init", "s0", {
         3.0 * 0.7 * math.sin(7.0 * math.pi * 2.0 / 12.0),
         3.0 * math.sin(4.0 * math.pi * 2.0 / 6.0),
         3.0 * math.sin(5.0 * math.pi * 2.0 / 6.0),
-        3.0 * 0.7 * math.sin(11.0 * math.pi * 2.0 / 12.0),
-        3.0 * math.sin(0.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.sin(1.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.sin(2.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.sin(3.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.sin(4.0 * math.pi * 2.0 / 6.0),
-        3.0 * math.sin(5.0 * math.pi * 2.0 / 6.0),
+        3.0 * 0.7 * math.sin(11.0 * math.pi * 2.0 / 12.0)
     },
     { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-      -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-      -0.5, -0.5, -0.5, -0.5, -0.5, -0.5 }
+      -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 }
 }, "VAR")
