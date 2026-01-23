@@ -5,7 +5,7 @@
 int main() {
 
     Core::ApplicationSpecification appSpec;
-    appSpec.name = "Architecture";
+    appSpec.name = "AutoFrac";
     appSpec.windowSpec.width = 1920;
     appSpec.windowSpec.height = 1080;
 
