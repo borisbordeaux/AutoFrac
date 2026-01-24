@@ -10,6 +10,9 @@
 #include <GLFW/glfw3.h>
 
 #include "app/bcifs/bcifsbuilder.h"
+#include "app/fractal/face.h"
+#include "app/fractal/structure.h"
+#include "app/fractal/structureprinter.h"
 #include "imgui/imgui.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
 #include "core/event.h"
@@ -595,6 +598,23 @@ void LayerBcifs::testSquareSierpinski() {
     m_bcifs.finalize();
 }
 
+void LayerBcifs::testBCIFSFromDescription() {
+    frac::Face::reset();
+
+    std::vector<frac::Face> faces;
+    faces.push_back(frac::Face::fromStr("C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
+
+    frac::Structure s { faces, frac::BezierType::Linear_Bezier, frac::CantorType::Linear_Cantor };
+
+    try {
+        frac::StructurePrinter printer(s, false, "result.lua");
+        printer.exportStruct();
+    } catch (std::runtime_error const& error) {
+        Core::LOG_ERROR(error.what());
+    }
+    Core::LOG_INFO("[Finished] Result in result.lua");
+}
+
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
     if (m_updateMSS) {
         if (m_currentIterationMSS <= 0) {
@@ -663,6 +683,10 @@ void LayerBcifs::onImGuiRender() {
     ImGui::Text("The BC-IFS Window");
     if (ImGui::Button("Test constraints")) {
         this->testConstraints();
+    }
+    if (ImGui::Button("Create BC-IFS automatically")) {
+        this->testBCIFSFromDescription();
+        m_bcifsChanged = true;
     }
     if (ImGui::Button("Create BC-IFS subd quad")) {
         this->testSubdQuad();

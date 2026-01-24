@@ -36,6 +36,7 @@ public:
     void testSierpinski();
     void testG2(int rows, int cols);
     void testSquareSierpinski();
+    void testBCIFSFromDescription();
 
     void onUpdate(float deltaTime) override;
     void onRender() override;
