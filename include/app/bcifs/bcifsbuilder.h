@@ -15,6 +15,7 @@ public:
     void state(const std::string& name, std::size_t internalDimension);
     void boundary(const std::string& name, const std::string& from, const std::string& to);
     void grid(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures);
+    void gridFromBoundary(const std::string& state);
     void subdivision(const std::string& name, const std::string& from, const std::string& to);
     void subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor);
     void subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor, const std::vector<float>& backColor);

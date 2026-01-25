@@ -56,7 +56,7 @@ void frac::StructurePrinter::exportStruct() {
     m_filePrinter.append_nl("------------------------------");
     m_filePrinter.append_nl("-- grid of all states");
     for (auto const& c : cells.data()) {
-        m_filePrinter.append_nl("    " + c.name() + ".addGrid(Bord)");
+        m_filePrinter.append_nl("gridFromBoundary('" + c.name() + "')");
     }
 
     m_filePrinter.append_nl("------------------------------");

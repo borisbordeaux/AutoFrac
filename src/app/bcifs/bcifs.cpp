@@ -47,6 +47,10 @@ void Bcifs::addGrid(StateID id, std::vector<Figure> grid) {
     m_mapGrids[id] = std::move(grid);
 }
 
+void Bcifs::addGridFromBoundary(StateID id) {
+    m_createGridFromBoundary.push_back(id);
+}
+
 void Bcifs::setSpace(StateID id, std::vector<TransitionID> transitions) {
     m_mapSpaces[id] = std::move(transitions);
 }
@@ -163,6 +167,7 @@ void Bcifs::finalize() {
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
+    this->buildGridsFromBoundary();
     this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
     this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
 }
@@ -177,6 +182,7 @@ void Bcifs::reset() {
     m_mapDimensions.clear();
     m_mapOperators.clear();
     m_mapGrids.clear();
+    m_createGridFromBoundary.clear();
     m_mapMSS.clear();
     m_MSSControlPoints.clear();
     m_mapInitMat.clear();
@@ -773,6 +779,26 @@ void Bcifs::completeSubdivisionMatrices() {
                 }
             }
         }
+    }
+}
+
+void Bcifs::buildGridsFromBoundary() {
+    for (StateID id : m_createGridFromBoundary) {
+        std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionsOf(id);
+        std::vector<Figure> grid;
+        grid.reserve(boundaries.size());
+        for (TransitionID transitionId : boundaries) {
+            // create as many figures for each figure of each boundary
+            Transition transition = m_automaton.findTransitionByID(transitionId);
+            for (Figure figureBoundary : m_mapGrids.at(transition.to())) {
+                Figure figure = figureBoundary; // copy
+                for (Path& path : figure) {
+                    path.insert(path.begin(), transitionId);
+                }
+                grid.push_back(figure);
+            }
+        }
+        m_mapGrids.emplace(id, grid);
     }
 }
 

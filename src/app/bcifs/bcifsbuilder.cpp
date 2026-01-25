@@ -48,6 +48,11 @@ void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<
     m_bcifs.addGrid(stateId, trueFigures);
 }
 
+void BcifsBuilder::gridFromBoundary(const std::string& state) {
+    StateID stateId = this->getStateID(state);
+    m_bcifs.addGridFromBoundary(stateId);
+}
+
 void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to) {
     StateID fromId = this->getStateID(from);
     this->assertTransitionDoesntExist(fromId, name);
@@ -157,6 +162,9 @@ void BcifsBuilder::initializeLua() {
     });
     m_lua.set_function("grid", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
         this->grid(state, figures.value());
+    });
+    m_lua.set_function("gridFromBoundary", [&](const std::string& state) {
+        this->gridFromBoundary(state);
     });
     m_lua.set_function("subdivision", [&](const sol::variadic_args& args) {
         if (args.size() != 3 && args.size() != 4 && args.size() != 5) {

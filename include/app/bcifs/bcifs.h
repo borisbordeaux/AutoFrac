@@ -50,6 +50,7 @@ public:
     StateID addInitState();
     TransitionID addBoundary(std::string name, StateID from, StateID to);
     void addGrid(StateID id, std::vector<Figure> grid);
+    void addGridFromBoundary(StateID id);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     void setPrimitive(StateID id, std::vector<Figure> primitive);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
@@ -120,6 +121,7 @@ private:
     const arma::mat& getOperatorMat(TransitionID id) const;
     void printConstraintMatrices(const Constraint& constraint);
     void completeSubdivisionMatrices();
+    void buildGridsFromBoundary();
     void buildMassSpringSystems();
     void buildMSSForControlPoints();
     arma::mat getOperatorOfPath(const Path& path) const;
@@ -143,6 +145,7 @@ private:
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
     std::unordered_map<TransitionID, arma::mat> m_mapOperatorsMat;
     std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
+    std::vector<StateID> m_createGridFromBoundary;
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
     mss::MassSpringSystem m_MSSControlPoints;
     float m_damping = 0.3f;
