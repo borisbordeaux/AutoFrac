@@ -53,9 +53,6 @@ void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs) {
 }
 
 void BatchGrid::render() const {
-    if (m_displayHidden) {
-        Core::GLCall(glClear(GL_DEPTH_BUFFER_BIT));
-    }
     m_program.bind();
     m_vao.bind();
     Core::GLCall(glDrawArrays(GL_LINES, 0, m_count / m_floatsPerVertex));
@@ -77,7 +74,7 @@ void BatchGrid::addVertexLine(const glm::vec3& v, const glm::vec3& color) {
     *p++ = v.z;
     *p++ = color.x;
     *p++ = color.y;
-    *p++ = color.z;
+    *p = color.z;
     // we update the amount of data
     m_count += m_floatsPerVertex;
 }

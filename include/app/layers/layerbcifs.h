@@ -68,6 +68,7 @@ private:
     int m_currentIterationMSS = m_nbIterationsMSS;
     bool m_bcifsChanged = false;
     bool m_displayGrid = false;
+    bool m_displayHidden = true;
 
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;

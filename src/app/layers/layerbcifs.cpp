@@ -602,9 +602,9 @@ void LayerBcifs::testBCIFSFromDescription() {
     frac::Face::reset();
 
     std::vector<frac::Face> faces;
-    faces.push_back(frac::Face::fromStr("C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
+    faces.push_back(frac::Face::fromStr("B_2_0 - B_2_0 - B_2_0 - B_2_0 - B_2_0 / B_2_0 - B_2_0 - B_2_0 / 0 / 1"));
 
-    frac::Structure s { faces, frac::BezierType::Linear_Bezier, frac::CantorType::Linear_Cantor };
+    frac::Structure s{ faces, frac::BezierType::Cubic_Bezier, frac::CantorType::Linear_Cantor };
 
     try {
         frac::StructurePrinter printer(s, false, "result.lua");
@@ -672,9 +672,15 @@ void LayerBcifs::onRender() {
     m_batchFace.render();
 
     if (m_displayGrid) {
+        if (m_displayHidden) {
+            Core::GLCall(glDisable(GL_DEPTH_TEST));
+        }
         m_batchGrid.render();
-        m_batchControlPoint.render();
         m_batchSubdivisionPoint.render();
+        m_batchControlPoint.render();
+        if (m_displayHidden) {
+            Core::GLCall(glEnable(GL_DEPTH_TEST));
+        }
     }
 }
 
@@ -728,7 +734,7 @@ void LayerBcifs::onImGuiRender() {
         m_bcifsChanged = true;
     }
     ImGui::SameLine();
-    ImGui::Checkbox("Display hidden", m_batchGrid.displayHidden());
+    ImGui::Checkbox("Display hidden", &m_displayHidden);
     ImGui::InputInt("Iteration level", &m_iterationLevel);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_iterationLevel < 0)
@@ -948,6 +954,14 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
 void LayerBcifs::handleSelection() {
     if (!m_displayGrid) { return; }
     glm::vec2 size = Core::Application::get().framebufferSize();
+
+    float depth;
+    glReadPixels(static_cast<int>(m_mousePos.x), static_cast<int>(size.y - m_mousePos.y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    
+    if (depth == 1.0f) {
+        return;
+    }
+
     float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
     float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
     glm::vec4 rayClip(x, y, -1.0f, 1.0f);
@@ -991,7 +1005,18 @@ void LayerBcifs::handleSelection() {
             float radius = pixelRadius * worldPerPixel;
             float radius2 = radius * radius;
 
-            if (dist2 <= radius2 && t < bestT) {
+            if (dist2 > radius2) {
+                continue;
+            }
+
+            glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+            clip /= clip.w;
+            float pointDepth = clip.z * 0.5f + 0.5f;
+            if (pointDepth > depth + 1e-4f) {
+                continue;
+            }
+
+            if (t < bestT) {
                 bestT = t;
                 m_currentControlPoint = point;
                 m_initialControlPointPosition.x = m_currentControlPoint->value(0, 0);
@@ -1017,7 +1042,18 @@ void LayerBcifs::handleSelection() {
         float radius = pixelRadius * worldPerPixel;
         float radius2 = radius * radius;
 
-        if (dist2 <= radius2 && t < bestT) {
+        if (dist2 > radius2) {
+            continue;
+        }
+
+        glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+        clip /= clip.w;
+        float pointDepth = clip.z * 0.5f + 0.5f;
+        if (pointDepth > depth) {
+            continue;
+        }
+
+        if (t < bestT) {
             bestT = t;
             m_currentSubdivisionPoint = point;
         }
