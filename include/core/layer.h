@@ -24,6 +24,8 @@ public:
         this->queueTransition(std::move(std::make_unique<TLayer>(std::forward<Args>(args)...)));
     }
 
+    void swapLayer();
+
 private:
     void queueTransition(std::unique_ptr<Layer> toLayer);
 };

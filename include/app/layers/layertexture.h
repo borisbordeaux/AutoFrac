@@ -10,7 +10,6 @@
 #include "core/indexbuffer.h"
 #include "core/shader.h"
 #include "core/texture.h"
-#include "core/renderer.h"
 #include "core/camera.h"
 
 namespace Core {
@@ -57,7 +56,7 @@ private:
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;
     bool m_uniformsDirty = true;
-    glm::vec<2,double,glm::defaultp> m_mousePos;
+    glm::vec<2, double> m_mousePos;
 
     Core::Camera m_camera;
     glm::mat4 m_proj;

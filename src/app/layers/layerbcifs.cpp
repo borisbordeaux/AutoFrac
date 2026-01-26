@@ -688,6 +688,9 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     ImGui::Begin("BC-IFS");
+    if (ImGui::Button("Edit mode")) {
+        this->swapLayer();
+    }
     ImGui::Text("The BC-IFS Window");
     if (ImGui::Button("Test constraints")) {
         this->testConstraints();

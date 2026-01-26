@@ -5,7 +5,6 @@
 #include <memory>
 #include "core/window.h"
 #include "core/layer.h"
-#include "core/event.h"
 
 namespace Core {
 
@@ -24,14 +23,19 @@ public:
 
     void raiseEvent(Event& event);
 
-    template<typename TLayer>
+    template <typename TLayer>
     void pushLayer() {
         m_layerStack.push_back(std::make_unique<TLayer>());
     }
 
-    template<typename TLayer>
+    template <typename TLayer>
+    void pushCacheLayer() {
+        m_cacheLayer = std::make_unique<TLayer>();
+    }
+
+    template <typename TLayer>
     TLayer* getLayer() {
-        for (const auto& layer: m_layerStack) {
+        for (const auto& layer : m_layerStack) {
             if (auto casted = dynamic_cast<TLayer*>(layer.get()))
                 return casted;
         }
@@ -42,6 +46,12 @@ public:
         if (index < m_layerStack.size())
             return m_layerStack[index].get();
         return nullptr;
+    }
+
+    void swapWithCacheLayer(std::size_t index) {
+        if (index < m_layerStack.size() && m_cacheLayer) {
+            std::swap(m_layerStack[index], m_cacheLayer);
+        }
     }
 
     glm::vec2 framebufferSize() const;
@@ -56,6 +66,7 @@ private:
     std::shared_ptr<Window> m_window;
     bool m_running = true;
     std::vector<std::unique_ptr<Layer>> m_layerStack;
+    std::unique_ptr<Layer> m_cacheLayer;
 
     friend class Layer;
 };

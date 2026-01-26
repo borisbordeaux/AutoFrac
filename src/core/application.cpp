@@ -1,9 +1,10 @@
 #include "core/application.h"
+#include "core/event.h"
 #include "core/log.h"
+#include "core/renderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
-#include "core/renderer.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -18,8 +19,7 @@ static void GLFWErrorCallback(int error, const char* description) {
     LOG_ERROR("[GLFW Error {}]: {}", error, description);
 }
 
-Application::Application(ApplicationSpecification specification)
-        : m_specification(std::move(specification)) {
+Application::Application(ApplicationSpecification specification) : m_specification(std::move(specification)) {
     s_Application = this;
 
     Log::init();
@@ -75,11 +75,11 @@ void Application::run() {
         float timestep = glm::clamp(currentTime - lastTime, 0.001f, 0.1f);
         lastTime = currentTime;
 
-        for (const std::unique_ptr<Layer>& layer: m_layerStack)
+        for (const std::unique_ptr<Layer>& layer : m_layerStack)
             layer->onUpdate(timestep);
 
         Renderer::clear();
-        for (const std::unique_ptr<Layer>& layer: m_layerStack)
+        for (const std::unique_ptr<Layer>& layer : m_layerStack)
             layer->onRender();
 
         // ImGui rendering
@@ -88,7 +88,7 @@ void Application::run() {
         ImGui::NewFrame();
 
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar);
-        for (const std::unique_ptr<Layer>& layer: m_layerStack)
+        for (const std::unique_ptr<Layer>& layer : m_layerStack)
             layer->onImGuiRender();
 
         ImGui::Render();
@@ -121,7 +121,7 @@ Application& Application::get() {
 }
 
 float Application::time() {
-    return (float) glfwGetTime();
+    return static_cast<float>(glfwGetTime());
 }
 
 } // Core
