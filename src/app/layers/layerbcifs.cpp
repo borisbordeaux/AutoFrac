@@ -674,12 +674,14 @@ void LayerBcifs::onRender() {
     if (m_displayGrid) {
         if (m_displayHidden) {
             Core::GLCall(glDisable(GL_DEPTH_TEST));
-        }
-        m_batchGrid.render();
-        m_batchSubdivisionPoint.render();
-        m_batchControlPoint.render();
-        if (m_displayHidden) {
+            m_batchGrid.render();
+            m_batchSubdivisionPoint.render();
+            m_batchControlPoint.render();
             Core::GLCall(glEnable(GL_DEPTH_TEST));
+        } else {
+            m_batchGrid.render();
+            m_batchControlPoint.render();
+            m_batchSubdivisionPoint.render();
         }
     }
 }
@@ -1009,11 +1011,13 @@ void LayerBcifs::handleSelection() {
                 continue;
             }
 
-            glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
-            clip /= clip.w;
-            float pointDepth = clip.z * 0.5f + 0.5f;
-            if (pointDepth > depth + 1e-4f) {
-                continue;
+            if (!m_displayHidden) {
+                glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+                clip /= clip.w;
+                float pointDepth = clip.z * 0.5f + 0.5f;
+                if (pointDepth > depth + 1e-4f) {
+                    continue;
+                }
             }
 
             if (t < bestT) {
@@ -1046,11 +1050,13 @@ void LayerBcifs::handleSelection() {
             continue;
         }
 
-        glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
-        clip /= clip.w;
-        float pointDepth = clip.z * 0.5f + 0.5f;
-        if (pointDepth > depth) {
-            continue;
+        if (!m_displayHidden) {
+            glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+            clip /= clip.w;
+            float pointDepth = clip.z * 0.5f + 0.5f;
+            if (pointDepth > depth) {
+                continue;
+            }
         }
 
         if (t < bestT) {
