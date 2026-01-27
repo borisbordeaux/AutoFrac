@@ -9,6 +9,8 @@
 #include "app/bcifs/bcifs.h"
 #include "core/camera.h"
 
+class LayerEditFractal;
+
 namespace Core {
 class MouseButtonPressedEvent;
 
@@ -29,7 +31,7 @@ class Event;
 
 class LayerBcifs : public Core::Layer {
 public:
-    LayerBcifs();
+    LayerBcifs(const LayerEditFractal* layerEditFractal);
 
     static void testConstraints();
     void testSubdQuad();
@@ -96,6 +98,8 @@ private:
     IlluminationMode m_illuminationMode = IlluminationMode::PHONG;
     glm::vec4 m_clearColor = glm::vec4(180.0f / 255.0f, 180.0f / 255.0f, 1.0f, 1.0f);
     bool m_clearColorChanged = true;
+
+    const LayerEditFractal* m_layerEditFractal;
 };
 
 #endif //AUTOFRAC_LAYERBCIFS_H

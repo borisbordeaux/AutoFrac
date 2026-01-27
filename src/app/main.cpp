@@ -1,6 +1,6 @@
 #include "app/layers/layerbcifs.h"
+#include "app/layers/layereditfractal.h"
 #include "app/layers/layermenu.h"
-#include "app/layers/layertexture.h"
 #include "core/application.h"
 
 int main() {
@@ -10,8 +10,8 @@ int main() {
     appSpec.windowSpec.height = 1080;
 
     Core::Application application(appSpec);
-    application.pushLayer<LayerBcifs>();
+    application.pushCacheLayer<LayerEditFractal>();
+    application.pushLayer<LayerBcifs>(dynamic_cast<LayerEditFractal*>(application.cacheLayer()));
     application.pushLayer<LayerMenu>();
-    application.pushCacheLayer<LayerTexture>();
     application.run();
 }

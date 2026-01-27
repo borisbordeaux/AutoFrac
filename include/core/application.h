@@ -23,15 +23,17 @@ public:
 
     void raiseEvent(Event& event);
 
-    template <typename TLayer>
-    void pushLayer() {
-        m_layerStack.push_back(std::make_unique<TLayer>());
+    template <typename TLayer, typename... Args>
+    void pushLayer(Args... args) {
+        m_layerStack.push_back(std::make_unique<TLayer>(std::forward<Args>(args)...));
     }
 
     template <typename TLayer>
     void pushCacheLayer() {
         m_cacheLayer = std::make_unique<TLayer>();
     }
+
+    Layer* cacheLayer() const { return m_cacheLayer.get(); }
 
     template <typename TLayer>
     TLayer* getLayer() {

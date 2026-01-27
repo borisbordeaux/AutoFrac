@@ -15,9 +15,6 @@ void LayerMenu::onImGuiRender() {
     if (ImGui::Button("Texture")) {
         Core::Application::get().getLayer(0)->transitionTo<LayerTexture>();
     }
-    if (ImGui::Button("BC-IFS")) {
-        Core::Application::get().getLayer(0)->transitionTo<LayerBcifs>();
-    }
     ImGui::End();
 }
 

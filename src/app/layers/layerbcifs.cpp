@@ -13,6 +13,7 @@
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
 #include "app/fractal/structureprinter.h"
+#include "app/layers/layereditfractal.h"
 #include "imgui/imgui.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
 #include "core/event.h"
@@ -23,11 +24,11 @@
 #include "core/log.h"
 #include "core/renderer.h"
 
-LayerBcifs::LayerBcifs() :
+LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
     m_mousePos(0.0f, 0.0f),
     m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
-    m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)) {
-}
+    m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)),
+    m_layerEditFractal(layerEditFractal) {}
 
 void LayerBcifs::testConstraints() {
     BCIFS::CoefPool pool;
@@ -699,6 +700,21 @@ void LayerBcifs::onImGuiRender() {
         this->testBCIFSFromDescription();
         m_bcifsChanged = true;
     }
+    if (ImGui::Button("Update BC-IFS from edit")) {
+        std::string face = m_layerEditFractal->face();
+        frac::Face::reset();
+        std::vector<frac::Face> faces;
+        faces.push_back(frac::Face::fromStr(face));
+        frac::Structure s{ faces, frac::BezierType::Cubic_Bezier, frac::CantorType::Linear_Cantor };
+        try {
+            frac::StructurePrinter printer(s, false, "result.lua");
+            printer.exportStruct();
+        } catch (std::runtime_error const& error) {
+            Core::LOG_ERROR(error.what());
+        }
+        Core::LOG_INFO("[Finished] Result in result.lua");
+        m_bcifsChanged = true;
+    }
     if (ImGui::Button("Create BC-IFS subd quad")) {
         this->testSubdQuad();
         m_bcifsChanged = true;
@@ -962,7 +978,7 @@ void LayerBcifs::handleSelection() {
 
     float depth;
     glReadPixels(static_cast<int>(m_mousePos.x), static_cast<int>(size.y - m_mousePos.y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    
+
     if (depth == 1.0f) {
         return;
     }
