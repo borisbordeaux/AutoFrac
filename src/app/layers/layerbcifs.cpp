@@ -979,10 +979,6 @@ void LayerBcifs::handleSelection() {
     float depth;
     glReadPixels(static_cast<int>(m_mousePos.x), static_cast<int>(size.y - m_mousePos.y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
-    if (depth == 1.0f) {
-        return;
-    }
-
     float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
     float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
     glm::vec4 rayClip(x, y, -1.0f, 1.0f);
