@@ -9,7 +9,7 @@ BcifsBuilder::BcifsBuilder(Bcifs& bcifs, const std::string& filePath) : m_bcifs(
     this->initializeLua();
 
     // open some common libraries
-    m_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
+    m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::table);
     m_lua.safe_script_file(filePath);
 }
 
