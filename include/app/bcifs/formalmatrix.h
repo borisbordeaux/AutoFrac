@@ -38,6 +38,7 @@ public:
     BooleanMatrix toBooleanMatrix() const;
 
     void setRandomValuesOnFreeCoefs(bool setInBarycentricSpace = true);
+    void setRandomValues();
     void setSumToOne();
 
     arma::mat toMat() const;

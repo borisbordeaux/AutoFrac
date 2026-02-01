@@ -30,10 +30,10 @@ void BatchControlPoint::setMVP(const Core::Camera& camera, const glm::mat4& proj
     m_program.unbind();
 }
 
-void BatchControlPoint::setBcifs(const BCIFS::Bcifs& bcifs) {
+void BatchControlPoint::setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel) {
     m_count = 0;
     m_data.clear();
-    std::vector<BCIFS::FormalMatrix> controlPoints = bcifs.controlPoints();
+    std::vector<BCIFS::FormalMatrix> controlPoints = bcifs.controlPoints(gridLevel);
 
     std::size_t nbAdds = 0;
 

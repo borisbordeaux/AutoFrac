@@ -66,14 +66,14 @@ public:
 
     void reset();
     std::vector<std::vector<BcifsPoint>> faces(int iterationLevel);
-    std::vector<FormalMatrix> controlPoints() const;
+    std::vector<FormalMatrix> controlPoints(std::size_t gridLevel) const;
     /**
      * Getter for all subdivision points.
      * @return a pair of vectors, the first one contains variable subdivision points and the second one contains constant subdivision points.
      */
-    std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> subdivisionPoints() const;
-    std::vector<std::pair<glm::vec3, glm::vec3>> springs() const;
-    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings() const;
+    std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> subdivisionPoints(std::size_t gridLevel) const;
+    std::vector<std::pair<glm::vec3, glm::vec3>> springs(std::size_t gridLevel) const;
+    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings(std::size_t gridLevel) const;
     void updateMSS();
     void updateMSSControlPoints();
     void printMSS() const;

@@ -30,11 +30,11 @@ void BatchGrid::setMVP(const Core::Camera& camera, const glm::mat4& proj) {
     m_program.unbind();
 }
 
-void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs) {
+void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel) {
     m_count = 0;
     m_data.clear();
-    std::vector<std::pair<glm::vec3, glm::vec3>> springs = bcifs.springs();
-    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings = bcifs.controlPointsSprings();
+    std::vector<std::pair<glm::vec3, glm::vec3>> springs = bcifs.springs(gridLevel);
+    std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings = bcifs.controlPointsSprings(gridLevel);
 
     std::size_t nbLines = springs.size() + controlPointsSprings.size();
     std::size_t nbAddsLine = 2 * nbLines;

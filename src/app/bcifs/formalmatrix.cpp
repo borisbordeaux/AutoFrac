@@ -120,6 +120,30 @@ void FormalMatrix::setRandomValuesOnFreeCoefs(bool setInBarycentricSpace) {
     }
 }
 
+void FormalMatrix::setRandomValues() {
+    std::vector<float> averages(m_rows);
+    for (std::size_t row = 0; row < m_rows; row++) {
+        averages[row] = 0.0f;
+        for (std::size_t col = 0; col < m_cols; col++) {
+            averages[row] += this->value(row, col);
+        }
+        averages[row] /= static_cast<float>(m_cols);
+    }
+
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<float> distribution(-2.0f, 2.0f);
+
+    for (std::size_t col = 0; col < m_cols; col++) {
+        for (std::size_t row = 0; row < m_rows; row++) {
+            if (m_pool->getKind(this->get(row, col).index()) == CoefKind::VAR) {
+                float val = distribution(generator);
+                m_pool->setValue(this->get(row, col).index(), val + averages[row]);
+            }
+        }
+    }
+}
+
 void FormalMatrix::setSumToOne() {
     for (std::size_t col = 0; col < m_cols; col++) {
         float sum = 0.0f;

@@ -603,9 +603,9 @@ void LayerBcifs::testBCIFSFromDescription() {
     frac::Face::reset();
 
     std::vector<frac::Face> faces;
-    faces.push_back(frac::Face::fromStr("B_2_0 - B_2_0 - B_2_0 - B_2_0 - B_2_0 / B_2_0 - B_2_0 - B_2_0 / 0 / 1"));
+    faces.push_back(frac::Face::fromStr("C_2_0 - B_3_0 - C_2_0 - B_2_1 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
 
-    frac::Structure s{ faces, frac::BezierType::Cubic_Bezier, frac::CantorType::Linear_Cantor };
+    frac::Structure s{ faces, frac::BezierType::Quadratic_Bezier, frac::CantorType::Quadratic_Cantor };
 
     try {
         frac::StructurePrinter printer(s, false, "result.lua");
@@ -617,25 +617,19 @@ void LayerBcifs::testBCIFSFromDescription() {
 }
 
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
-    if (m_updateMSS) {
+    if (m_updateMSSSubdivisionPoints || m_updateMSSControlPoints) {
         if (m_currentIterationMSS <= 0) {
-            m_updateMSS = false;
-            m_currentIterationMSS = m_nbIterationsMSS;
-        } else {
-            for (int i = 0; i < 10; i++) {
-                m_bcifs.updateMSS();
-            }
-            m_bcifsChanged = true;
-            m_currentIterationMSS -= 10;
-        }
-    }
-    if (m_updateMSSControlPoints) {
-        if (m_currentIterationMSS <= 0) {
+            m_updateMSSSubdivisionPoints = false;
             m_updateMSSControlPoints = false;
             m_currentIterationMSS = m_nbIterationsMSS;
         } else {
             for (int i = 0; i < 10; i++) {
-                m_bcifs.updateMSSControlPoints();
+                if (m_updateMSSSubdivisionPoints) {
+                    m_bcifs.updateMSS();
+                }
+                if (m_updateMSSControlPoints) {
+                    m_bcifs.updateMSSControlPoints();
+                }
             }
             m_bcifsChanged = true;
             m_currentIterationMSS -= 10;
@@ -647,9 +641,9 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         m_batchFace.setBcifs(m_bcifs, m_iterationLevel);
 
         if (m_displayGrid) {
-            m_batchGrid.setBcifs(m_bcifs);
-            m_batchControlPoint.setBcifs(m_bcifs);
-            m_batchSubdivisionPoint.setBcifs(m_bcifs);
+            m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+            m_batchControlPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+            m_batchSubdivisionPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         }
 
         m_bcifsChanged = false;
@@ -689,10 +683,10 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     ImGui::Begin("BC-IFS");
+    ImGui::SeparatorText("Test");
     if (ImGui::Button("Edit mode")) {
         this->swapLayer();
     }
-    ImGui::Text("The BC-IFS Window");
     if (ImGui::Button("Test constraints")) {
         this->testConstraints();
     }
@@ -715,24 +709,26 @@ void LayerBcifs::onImGuiRender() {
         Core::LOG_INFO("[Finished] Result in result.lua");
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Create BC-IFS subd quad")) {
+    ImGui::SeparatorText("Default fractals");
+    if (ImGui::Button("Quad")) {
         this->testSubdQuad();
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Create BC-IFS Sierpinski")) {
+    if (ImGui::Button("Sierpinski")) {
         this->testSierpinski();
         m_bcifsChanged = true;
     }
     static int dim[2] = { 1, 1 };
     ImGui::SliderInt2("Grid size", dim, 1, 20);
-    if (ImGui::Button("Create BC-IFS G2")) {
+    if (ImGui::Button("Hexagon in a grid")) {
         this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Create BC-IFS Square Sierpinski")) {
+    if (ImGui::Button("Square Sierpinski")) {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
     }
+    ImGui::SeparatorText("Interface BC-IFS");
     if (ImGui::Button("Load Lua File...")) {
         IGFD::FileDialogConfig config;
         config.path = "../res/scripts";
@@ -747,15 +743,6 @@ void LayerBcifs::onImGuiRender() {
         }
         ImGuiFileDialog::Instance()->Close();
     }
-
-    if (ImGui::Button("Print BC-IFS")) {
-        m_bcifs.print();
-    }
-    if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
-        m_bcifsChanged = true;
-    }
-    ImGui::SameLine();
-    ImGui::Checkbox("Display hidden", &m_displayHidden);
     ImGui::InputInt("Iteration level", &m_iterationLevel);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_iterationLevel < 0)
@@ -769,61 +756,44 @@ void LayerBcifs::onImGuiRender() {
             m_colorDepth = 0;
         m_bcifsChanged = true;
     }
-    if (ImGui::ColorEdit3("Front color", m_bcifs.defaultFrontColor())) {
+    if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
         m_bcifsChanged = true;
     }
-    if (ImGui::ColorEdit3("Back color", m_bcifs.defaultBackColor())) {
+    ImGui::SameLine();
+    ImGui::Checkbox("Display hidden", &m_displayHidden);
+    ImGui::InputInt("Grid level", &m_gridLevel);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        if (m_gridLevel < 0)
+            m_gridLevel = 0;
         m_bcifsChanged = true;
     }
-    static bool cullFaces = false;
-    if (ImGui::Checkbox("Cull faces", &cullFaces)) {
-        if (cullFaces) {
-            Core::GLCall(glEnable(GL_CULL_FACE));
-        } else {
-            Core::GLCall(glDisable(GL_CULL_FACE));
-        }
-    }
-    ImGui::Checkbox("Cache transforms", m_bcifs.cacheTransforms());
-
-    const char* items[] = { "PHONG", "FLAT" };
-    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, items, IM_ARRAYSIZE(items))) {
-        m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
-        m_uniformsDirty = true;
-    }
-    if (ImGui::ColorEdit4("Clear Color", &m_clearColor[0])) {
-        m_clearColorChanged = true;
-    }
-
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);
     ImGui::DragFloat("Damping", m_bcifs.damping(), 0.01f);
-
     if (ImGui::InputInt("MSS Max Iterations", &m_nbIterationsMSS)) {
         m_currentIterationMSS = m_nbIterationsMSS;
     }
     ImGui::InputInt("MSS Iterations", &m_currentIterationMSS);
-    if (ImGui::Button("Update mss")) {
-        m_updateMSS = true;
+    if (ImGui::Button("Auto subdivision points")) {
+        m_updateMSSSubdivisionPoints = true;
     }
-    if (ImGui::Button("Update mss control points")) {
+    if (ImGui::Button("Auto control points")) {
         m_updateMSSControlPoints = true;
     }
-
-    if (ImGui::Button("Print mss")) {
-        m_bcifs.printMSS();
+    if (ImGui::Button("Auto all points")) {
+        m_updateMSSSubdivisionPoints = true;
+        m_updateMSSControlPoints = true;
     }
-
-    ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
-    ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
-    ImGui::Text("Vertices: %zu", m_batchFace.nbVertices());
-    ImGui::Text("Indices: %zu", m_batchFace.nbIndices());
-    ImGui::Text("Floats: %zu", m_batchFace.nbFloats());
-    ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbData(), m_batchFace.nbData() / 1000, m_batchFace.nbData() / 1000000, m_batchFace.nbData() / 1000000000);
-
+    if (ImGui::Button("Random control points")) {
+        for (BCIFS::FormalMatrix& matrix : m_bcifs.controlPoints(0)) {
+            matrix.setRandomValues();
+        }
+        m_bcifs.invalidate(true);
+        m_bcifsChanged = true;
+    }
     static bool editControlPoints = false;
     ImGui::Checkbox("Edit control points", &editControlPoints);
     if (editControlPoints) {
-        ImGui::Text("Control points");
-        std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints();
+        std::vector<BCIFS::FormalMatrix> controlPoints = m_bcifs.controlPoints(m_gridLevel);
         for (std::size_t j = 0; j < controlPoints.size(); j++) {
             for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
                 ImGui::Text("Control point %zu", i);
@@ -842,6 +812,43 @@ void LayerBcifs::onImGuiRender() {
             }
         }
     }
+    ImGui::SeparatorText("Settings");
+    if (ImGui::ColorEdit4("Clear Color", &m_clearColor[0])) {
+        m_clearColorChanged = true;
+    }
+    if (ImGui::ColorEdit3("Front color", m_bcifs.defaultFrontColor())) {
+        m_bcifsChanged = true;
+    }
+    if (ImGui::ColorEdit3("Back color", m_bcifs.defaultBackColor())) {
+        m_bcifsChanged = true;
+    }
+    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, "PHONG\0FLAT")) {
+        m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
+        m_uniformsDirty = true;
+    }
+    ImGui::Checkbox("Cache transforms", m_bcifs.cacheTransforms());
+    static bool cullFaces = false;
+    if (ImGui::Checkbox("Cull faces", &cullFaces)) {
+        if (cullFaces) {
+            Core::GLCall(glEnable(GL_CULL_FACE));
+        } else {
+            Core::GLCall(glDisable(GL_CULL_FACE));
+        }
+    }
+    ImGui::SeparatorText("Debug / Info");
+    if (ImGui::Button("Print BC-IFS")) {
+        m_bcifs.print();
+    }
+    if (ImGui::Button("Print Mass Spring Systems")) {
+        m_bcifs.printMSS();
+    }
+    ImGui::Text("Faces: %zu", m_batchFace.nbFaces());
+    ImGui::Text("Triangles: %zu", m_batchFace.nbTriangles());
+    ImGui::Text("Vertices: %zu", m_batchFace.nbVertices());
+    ImGui::Text("Indices: %zu", m_batchFace.nbIndices());
+    ImGui::Text("Floats: %zu", m_batchFace.nbFloats());
+    ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbData(), m_batchFace.nbData() / 1000, m_batchFace.nbData() / 1000000, m_batchFace.nbData() / 1000000000);
+
     ImGui::End();
 }
 
@@ -995,7 +1002,7 @@ void LayerBcifs::handleSelection() {
     float pixelRadius = 8.0f;
 
     // test control points
-    for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints()) {
+    for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints(m_gridLevel)) {
         for (std::size_t col = 0; col < points.cols(); col++) {
             // be sure it is a selectable control points
             bool selectable = false;
@@ -1046,7 +1053,7 @@ void LayerBcifs::handleSelection() {
     }
 
     // also test subdivision points
-    for (const BCIFS::SubdivisionPoint& point : m_bcifs.subdivisionPoints().first) {
+    for (const BCIFS::SubdivisionPoint& point : m_bcifs.subdivisionPoints(m_gridLevel).first) {
         glm::vec3 pointPos = point.posR3();
         glm::vec3 toV = pointPos - rayOrigin;
         float t = glm::dot(toV, rayDirection);

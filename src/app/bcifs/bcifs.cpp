@@ -289,8 +289,8 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
     return res;
 }
 
-std::vector<FormalMatrix> Bcifs::controlPoints() const {
-    if (!m_initStateID.has_value()) { return {}; }
+std::vector<FormalMatrix> Bcifs::controlPoints(std::size_t gridLevel) const {
+    if (!m_initStateID.has_value() || gridLevel > 1) { return {}; }
     std::vector<FormalMatrix> res;
     std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(m_initStateID.value());
     res.reserve(transitions.size());
@@ -300,8 +300,8 @@ std::vector<FormalMatrix> Bcifs::controlPoints() const {
     return res;
 }
 
-std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::subdivisionPoints() const {
-    if (!m_initStateID.has_value()) { return {}; }
+std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::subdivisionPoints(std::size_t gridLevel) const {
+    if (!m_initStateID.has_value() || gridLevel == 1) { return {}; }
 
     std::vector<SubdivisionPoint> resVar;
     std::vector<SubdivisionPoint> resConst;
@@ -312,7 +312,8 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
         // if the state has a mass spring system
         if (hasMSS && state.id() != m_initStateID.value()) {
             for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
-                if (paths.find(keyval.first) != paths.end()) {
+                auto it = paths.find(keyval.first);
+                if (it != paths.end() && (gridLevel == 0 || gridLevel == it->second.size() + 1)) {
                     std::vector<mss::Mass> masses = keyval.second.masses();
                     for (mss::Mass& mass : masses) {
                         FormalMatrix& posBarycentricSpace = mass.position();
@@ -336,13 +337,14 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
     return { resVar, resConst };
 }
 
-std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
-    if (!m_initStateID.has_value()) { return {}; }
+std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs(std::size_t gridLevel) const {
+    if (!m_initStateID.has_value() || gridLevel == 1) { return {}; }
 
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
     for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
-        if (paths.find(keyval.first) != paths.end()) {
+        auto it = paths.find(keyval.first);
+        if (it != paths.end() && (gridLevel == 0 || gridLevel == it->second.size() + 1)) {
             std::vector<mss::Spring> springs = keyval.second.springs();
             for (mss::Spring& spring : springs) {
                 arma::mat op = this->getOperatorOfPathForMSS(paths[keyval.first]);
@@ -361,8 +363,8 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs() const {
     return res;
 }
 
-std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings() const {
-    if (!m_initStateID.has_value()) { return {}; }
+std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings(std::size_t gridLevel) const {
+    if (!m_initStateID.has_value() || gridLevel > 1) { return {}; }
 
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
     std::vector<mss::Spring> springs = m_MSSControlPoints.springs();

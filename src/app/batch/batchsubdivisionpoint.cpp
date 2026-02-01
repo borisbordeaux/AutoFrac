@@ -30,11 +30,11 @@ void BatchSubdivisionPoint::setMVP(const Core::Camera& camera, const glm::mat4& 
     m_program.unbind();
 }
 
-void BatchSubdivisionPoint::setBcifs(const BCIFS::Bcifs& bcifs) {
+void BatchSubdivisionPoint::setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel) {
     m_count = 0;
     m_data.clear();
 
-    std::pair<std::vector<BCIFS::SubdivisionPoint>, std::vector<BCIFS::SubdivisionPoint>> subdivisionPoints = bcifs.subdivisionPoints();
+    std::pair<std::vector<BCIFS::SubdivisionPoint>, std::vector<BCIFS::SubdivisionPoint>> subdivisionPoints = bcifs.subdivisionPoints(gridLevel);
     std::vector<BCIFS::SubdivisionPoint> varSubdivisionPoints = subdivisionPoints.first;
     std::vector<BCIFS::SubdivisionPoint> constSubdivisionPoints = subdivisionPoints.second;
 

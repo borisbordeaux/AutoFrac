@@ -18,7 +18,7 @@ class BatchControlPoint {
 public:
     BatchControlPoint();
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
-    void setBcifs(const BCIFS::Bcifs& bcifs);
+    void setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel);
     void render() const;
 
 private:

@@ -64,13 +64,14 @@ private:
 private:
     BCIFS::Bcifs m_bcifs;
     int m_iterationLevel = 0;
-    bool m_updateMSS = false;
+    bool m_updateMSSSubdivisionPoints = false;
     bool m_updateMSSControlPoints = false;
     int m_nbIterationsMSS = 1000;
     int m_currentIterationMSS = m_nbIterationsMSS;
     bool m_bcifsChanged = false;
     bool m_displayGrid = false;
     bool m_displayHidden = true;
+    int m_gridLevel = 0;
 
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;
