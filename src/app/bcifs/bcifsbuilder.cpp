@@ -2,6 +2,9 @@
 
 namespace BCIFS {
 
+GridFigureName::GridFigureName(FigureName paths, float k, float length) :
+    m_paths(std::move(paths)), m_k(k), m_length(length) {}
+
 BcifsBuilder::BcifsBuilder(Bcifs& bcifs, const std::string& filePath) : m_bcifs(bcifs) {
     m_bcifs.reset();
     m_mapStates.emplace("init", m_bcifs.addInitState());
@@ -29,12 +32,12 @@ void BcifsBuilder::boundary(const std::string& name, const std::string& from, co
     m_mapTransitions[fromId].emplace(name, m_bcifs.addBoundary(std::move(name), fromId, toId));
 }
 
-void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures) {
+void BcifsBuilder::grid(const std::string& state, const GridName& grid) {
     StateID stateId = this->getStateID(state);
-    std::vector<Figure> trueFigures;
-    for (const std::vector<std::vector<std::string>>& figure : figures) {
-        Figure& currentFigure = trueFigures.emplace_back();
-        for (const std::vector<std::string>& path : figure) {
+    std::vector<GridFigure> trueFigures;
+    for (const GridFigureName& figure : grid) {
+        Figure currentFigure;
+        for (const std::vector<std::string>& path : figure.paths()) {
             Path& currentPath = currentFigure.emplace_back();
             StateID currentStateId = stateId;
             for (const std::string& transitionName : path) {
@@ -44,6 +47,7 @@ void BcifsBuilder::grid(const std::string& state, const std::vector<std::vector<
                 currentPath.push_back(transitionId);
             }
         }
+        trueFigures.emplace_back(currentFigure, figure.k(), figure.length());
     }
     m_bcifs.addGrid(stateId, trueFigures);
 }
@@ -160,8 +164,21 @@ void BcifsBuilder::initializeLua() {
     m_lua.set_function("boundary", [&](const std::string& name, const std::string& from, const std::string& to) {
         this->boundary(name, from, to);
     });
-    m_lua.set_function("grid", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
-        this->grid(state, figures.value());
+    m_lua.set_function("grid", [&](const std::string& state, const sol::table& grid) {
+        GridName gridName;
+
+        for (auto& kv : grid) {
+            if (kv.first.get_type() != sol::type::number)
+                continue;
+
+            sol::table figTbl = kv.second.as<sol::table>();
+            gridName.push_back(BcifsBuilder::parseFigureName(figTbl));
+        }
+
+        if (gridName.empty()) {
+            throw sol::error("grid(): at least one figure is required");
+        }
+        this->grid(state, gridName);
     });
     m_lua.set_function("gridFromBoundary", [&](const std::string& state) {
         this->gridFromBoundary(state);
@@ -219,6 +236,49 @@ std::vector<float> BcifsBuilder::parseColor(sol::object obj) {
     }
 
     return color;
+}
+
+GridFigureName BcifsBuilder::parseFigureName(const sol::table& figTable) {
+    FigureName fig;
+
+    for (auto& kv : figTable) {
+        if (kv.first.get_type() != sol::type::number || kv.second.get_type() != sol::type::table)
+            continue;
+
+        sol::table pathTable = kv.second.as<sol::table>();
+
+        PathName path;
+        for (auto& pkv : pathTable) {
+            if (!pkv.second.is<std::string>()) {
+                throw sol::error("path elements must be transition names");
+            }
+            path.push_back(pkv.second.as<std::string>());
+        }
+
+        fig.push_back(path);
+    }
+
+    if (fig.empty()) {
+        throw sol::error("figure must contain at least one path");
+    }
+
+    float k = -1.0f;
+    float length = -1.0f;
+
+    if (figTable["k"].valid()) {
+        if (!figTable["k"].is<float>()) {
+            throw sol::error("figure.k must be a number");
+        }
+        k = figTable["k"];
+    }
+    if (figTable["length"].valid()) {
+        if (!figTable["length"].is<float>()) {
+            throw sol::error("figure.length must be a number");
+        }
+        length = figTable["length"];
+    }
+
+    return GridFigureName(fig, k, length);
 }
 
 StateID BcifsBuilder::getStateID(const std::string& name) {

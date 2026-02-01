@@ -4,12 +4,13 @@
 #include <algorithm>
 
 #include "app/bcifs/booleanmatrix.h"
+#include "app/bcifs/utils.h"
 #include "core/log.h"
 
 namespace BCIFS {
 
-SubdivisionPoint::SubdivisionPoint(arma::mat T, FormalMatrix posBary) : m_T(std::move(T)), m_posBary(std::move(posBary)) {
-}
+SubdivisionPoint::SubdivisionPoint(arma::mat T, FormalMatrix posBary) :
+    m_T(std::move(T)), m_posBary(std::move(posBary)) {}
 
 glm::vec3 SubdivisionPoint::posR3() const {
     glm::vec3 res;
@@ -20,8 +21,14 @@ glm::vec3 SubdivisionPoint::posR3() const {
     return res;
 }
 
-BcifsPoint::BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor) : m_pos(std::move(pos)), m_frontColor(std::move(frontColor)), m_backColor(std::move(backColor)) {
-}
+BcifsPoint::BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor) :
+    m_pos(std::move(pos)), m_frontColor(std::move(frontColor)), m_backColor(std::move(backColor)) {}
+
+GridFigure::GridFigure(Figure paths, float k, float length) :
+    m_paths(std::move(paths)), m_k(k), m_length(length) {}
+
+GridFigure::GridFigure(std::initializer_list<Path> paths, float k, float length) :
+    m_paths(std::move(paths)), m_k(k), m_length(length) {}
 
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
     State s(m_automaton.states().size(), std::move(name));
@@ -43,8 +50,8 @@ TransitionID Bcifs::addBoundary(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::BOUNDARY);
 }
 
-void Bcifs::addGrid(StateID id, std::vector<Figure> grid) {
-    m_mapGrids[id] = std::move(grid);
+void Bcifs::addGrid(StateID id, Grid grid) {
+    m_mapGrids.emplace(id, std::move(grid));
 }
 
 void Bcifs::addGridFromBoundary(StateID id) {
@@ -131,11 +138,11 @@ std::string Bcifs::toString() const {
         res += keyval.second.toString();
     }
     res += "\nAll grids:\n";
-    for (const std::pair<const BCIFS::StateID, std::vector<Figure>>& keyval : m_mapGrids) {
+    for (const std::pair<const StateID, Grid>& keyval : m_mapGrids) {
         res += "For state " + std::to_string(keyval.first) + ", grid is:\n";
-        for (const Figure& figure : keyval.second) {
+        for (const GridFigure& gridFigure : keyval.second) {
             res += "Figure [";
-            for (const Path& path : figure) {
+            for (const Path& path : gridFigure.paths()) {
                 res += " [";
                 for (const TransitionID& transitionId : path) {
                     res += " ";
@@ -144,7 +151,7 @@ std::string Bcifs::toString() const {
                 }
                 res += " ] ";
             }
-            res += "]\n";
+            res += ", k=" + utils::toString(gridFigure.k()) + ", length=" + utils::toString(gridFigure.length()) + "]\n";
         }
         res += "\n";
     }
@@ -156,7 +163,6 @@ void Bcifs::print() const {
 }
 
 void Bcifs::check() const {
-    // TODO: add other checks (on paths for instance)
     this->checkAutomaton();   // all states used in transitions exist
     this->checkSpaces();      // all states have a valid space
     this->checkConstraints(); // same arrival (existing) state for each path
@@ -168,8 +174,8 @@ void Bcifs::finalize() {
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
     this->buildGridsFromBoundary();
-    this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
-    this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
+    this->buildMassSpringSystems();   // initialize all mass spring systems for each state with a user defined grid
+    this->buildMSSForControlPoints(); // initialize all mass spring systems for the control points
 }
 
 void Bcifs::reset() {
@@ -503,10 +509,10 @@ void Bcifs::checkSpaces() const {
 void Bcifs::checkConstraints() const {
     for (const Constraint& constraint : m_constraints) {
         for (TransitionID id : constraint.first) {
-            m_automaton.findTransitionByID(id);
+            [[maybe_unused]] const Transition& _ = m_automaton.findTransitionByID(id);
         }
         for (TransitionID id : constraint.second) {
-            m_automaton.findTransitionByID(id);
+            [[maybe_unused]] const Transition& _ = m_automaton.findTransitionByID(id);
         }
     }
     Core::LOG_DEBUG("Constraints checked");
@@ -787,20 +793,21 @@ void Bcifs::completeSubdivisionMatrices() {
 void Bcifs::buildGridsFromBoundary() {
     for (StateID id : m_createGridFromBoundary) {
         std::vector<TransitionID> boundaries = m_automaton.boundaryTransitionsOf(id);
-        std::vector<Figure> grid;
-        grid.reserve(boundaries.size());
+        std::vector<GridFigure> gridFigures;
+        gridFigures.reserve(boundaries.size());
         for (TransitionID transitionId : boundaries) {
             // create as many figures for each figure of each boundary
             Transition transition = m_automaton.findTransitionByID(transitionId);
-            for (Figure figureBoundary : m_mapGrids.at(transition.to())) {
-                Figure figure = figureBoundary; // copy
+            const Grid& gridBoundary = m_mapGrids.at(transition.to());
+            for (const GridFigure& gridFigureBoundary : gridBoundary) {
+                Figure figure = gridFigureBoundary.paths(); // copy
                 for (Path& path : figure) {
                     path.insert(path.begin(), transitionId);
                 }
-                grid.push_back(figure);
+                gridFigures.emplace_back(std::move(figure), gridFigureBoundary.k(), gridFigureBoundary.length());
             }
         }
-        m_mapGrids.emplace(id, grid);
+        m_mapGrids.emplace(id, gridFigures);
     }
 }
 
@@ -820,7 +827,6 @@ void Bcifs::buildMassSpringSystems() {
             }
         }
         // if at least one of the arrival state has a grid
-        // TODO: all states should have a default grid
         if (needMSS && state.id() != m_initStateID.value()) {
             // then build a mss for the current state (so, in the dimension of the current state and not the arrival state)
             m_mapMSS[state.id()].clear(m_mapDimensions[state.id()]);
@@ -838,10 +844,10 @@ void Bcifs::buildMassSpringSystems() {
                 const Transition& transition = m_automaton.findTransitionByID(transitionId);
                 if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
                     // for each Figure of the grid of the arrival state
-                    for (const Figure& figure : m_mapGrids[transition.to()]) {
+                    for (const GridFigure& gridFigure : m_mapGrids[transition.to()]) {
                         bool firstMass = true;
                         // for each consecutive Path of the Figure
-                        for (const Path& path : figure) {
+                        for (const Path& path : gridFigure.paths()) {
                             // identify the column index of the Paths in the global matrix
                             // add a spring between the 2 masses at the found indices
                             FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
@@ -849,7 +855,8 @@ void Bcifs::buildMassSpringSystems() {
                             FormalMatrix finalColumn = m_mapOperators.at(transitionId) * matrix;
                             std::size_t index = globalMatrix.indexOf(finalColumn);
                             if (!firstMass) {
-                                m_mapMSS[state.id()].addSpring(lastMassIndex, index, m_k, 0.0f);
+                                float k = gridFigure.k() < 0.0f ? m_k : gridFigure.k();
+                                m_mapMSS[state.id()].addSpring(lastMassIndex, index, k, 0.0f);
                             }
                             firstMass = false;
                             lastMassIndex = index;
@@ -878,10 +885,10 @@ void Bcifs::buildMSSForControlPoints() {
         const Transition& transition = m_automaton.findTransitionByID(transitionId);
         if (m_mapGrids.find(transition.to()) != m_mapGrids.end()) {
             // for each Figure of the grid of the arrival state
-            for (const Figure& figure : m_mapGrids[transition.to()]) {
+            for (const GridFigure& gridFigure : m_mapGrids[transition.to()]) {
                 bool firstMass = true;
                 // for each consecutive Path of the Figure
-                for (const Path& path : figure) {
+                for (const Path& path : gridFigure.paths()) {
                     // identify the column index of the Paths in the global matrix
                     // add a spring between the 2 masses at the found indices
                     FormalMatrix matrix = this->getOperatorOfPathNoSubdivision(path);
@@ -889,7 +896,9 @@ void Bcifs::buildMSSForControlPoints() {
                     FormalMatrix finalColumn = m_mapOperators.at(transitionId) * matrix;
                     std::size_t index = globalMatrix.indexOf(finalColumn);
                     if (!firstMass) {
-                        m_MSSControlPoints.addSpring(lastMassIndex, index, m_kControlPoints, m_lengthControlPoints);
+                        float k = gridFigure.k() < 0.0f ? m_k : gridFigure.k();
+                        float length = gridFigure.length() < 0.0f ? m_lengthControlPoints : gridFigure.length();
+                        m_MSSControlPoints.addSpring(lastMassIndex, index, k, length);
                     }
                     firstMass = false;
                     lastMassIndex = index;
@@ -952,7 +961,6 @@ void Bcifs::initPrimitives() {
     for (const State& state : m_automaton.states()) {
         auto it = m_mapPrimitives.find(state.id());
         if (it != m_mapPrimitives.end()) {
-            // TODO: use given primitive
             m_mapPrimitivesMat[state.id()] = {};
             for (const Figure& figure : it->second) {
                 // each figure is a face, each face is a path, that has a matrix associated,

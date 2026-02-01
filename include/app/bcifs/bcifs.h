@@ -36,6 +36,22 @@ private:
     glm::vec3 m_backColor;
 };
 
+class GridFigure {
+public:
+    explicit GridFigure(Figure paths, float k = -1.0f, float length = -1.0f);
+    GridFigure(std::initializer_list<Path> paths, float k = -1.0f, float length = -1.0f);
+    const Figure& paths() const { return m_paths; }
+    float k() const { return m_k; }
+    float length() const { return m_length; }
+
+private:
+    Figure m_paths;
+    float m_k;
+    float m_length;
+};
+
+using Grid = std::vector<GridFigure>;
+
 class Bcifs {
 public:
     Bcifs() = default;
@@ -49,7 +65,7 @@ public:
     std::pair<StateID, std::vector<TransitionID>> addState(std::string name, std::size_t internalDimensions);
     StateID addInitState();
     TransitionID addBoundary(std::string name, StateID from, StateID to);
-    void addGrid(StateID id, std::vector<Figure> grid);
+    void addGrid(StateID id, Grid grid);
     void addGridFromBoundary(StateID id);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     void setPrimitive(StateID id, std::vector<Figure> primitive);
@@ -144,7 +160,7 @@ private:
     std::unordered_map<StateID, std::size_t> m_mapDimensions;
     std::unordered_map<TransitionID, FormalMatrix> m_mapOperators;
     std::unordered_map<TransitionID, arma::mat> m_mapOperatorsMat;
-    std::unordered_map<StateID, std::vector<Figure>> m_mapGrids;
+    std::unordered_map<StateID, Grid> m_mapGrids;
     std::vector<StateID> m_createGridFromBoundary;
     std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
     mss::MassSpringSystem m_MSSControlPoints;
