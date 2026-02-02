@@ -51,7 +51,7 @@ permutation(permutationName, fromStateName, toStateName)
 ```
 ```Lua
 -- create a grid for a state with an array of figures
--- a figure is an array of paths
+-- a figure is an array of paths with eventually a stifness value k and a length (see the examples)
 -- a path is an array of transitions
 -- each array of paths is considered as a polyline where:
 --  - each line gives a spring
