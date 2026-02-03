@@ -12,9 +12,11 @@ public:
     void append_nl(std::string const& text);
     void printToFile(std::string const& filename) const;
     void reset();
+
 private:
     std::string m_output;
 };
-}
+
+} // frac
 
 #endif //AUTOFRAC_FILEPRINTER_H

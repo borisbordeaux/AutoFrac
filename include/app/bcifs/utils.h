@@ -9,7 +9,7 @@
 
 namespace BCIFS::utils {
 
-static inline std::string toString(float value) {
+static std::string toString(float value) {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(4) << value;
     std::string res = stream.str();

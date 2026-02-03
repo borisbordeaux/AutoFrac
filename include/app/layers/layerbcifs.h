@@ -7,39 +7,31 @@
 #include "app/batch/batchsubdivisionpoint.h"
 #include "core/layer.h"
 #include "app/bcifs/bcifs.h"
+#include "app/bcifs/subdivisionpoint.h"
 #include "core/camera.h"
 
 class LayerEditFractal;
 
 namespace Core {
-class MouseButtonPressedEvent;
-
-class MouseMovedEvent;
-
-class MouseButtonReleasedEvent;
-
-class MouseScrolledEvent;
-
-class WindowResizedEvent;
-
-class KeyPressedEvent;
-
-class KeyReleasedEvent;
-
 class Event;
+class KeyPressedEvent;
+class KeyReleasedEvent;
+class MouseButtonPressedEvent;
+class MouseButtonReleasedEvent;
+class MouseMovedEvent;
+class MouseScrolledEvent;
+class WindowResizedEvent;
 }
 
 class LayerBcifs : public Core::Layer {
 public:
     LayerBcifs(const LayerEditFractal* layerEditFractal);
-
     static void testConstraints();
     void testSubdQuad();
     void testSierpinski();
     void testG2(int rows, int cols);
     void testSquareSierpinski();
     void testBCIFSFromDescription();
-
     void onUpdate(float deltaTime) override;
     void onRender() override;
     void onImGuiRender() override;
@@ -53,12 +45,10 @@ private:
     bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
     bool onKeyPressedEvent(const Core::KeyPressedEvent& event);
     bool onKeyReleasedEvent(const Core::KeyReleasedEvent& event);
-
     void handleSelection();
     void handleMoveControlPoint();
     void handleMoveSubdivisionPoint();
     static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
-
     void loadLuaFile(const std::string& filename);
 
 private:
@@ -72,34 +62,27 @@ private:
     bool m_displayGrid = false;
     bool m_displayHidden = true;
     int m_gridLevel = 0;
-
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;
     BatchControlPoint m_batchControlPoint;
     BatchSubdivisionPoint m_batchSubdivisionPoint;
-
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;
     bool m_uniformsDirty = true;
     glm::vec<2, double> m_mousePos;
     Core::Camera m_camera;
     glm::mat4 m_proj;
-
     std::optional<BCIFS::FormalMatrix> m_currentControlPoint;
     std::optional<BCIFS::SubdivisionPoint> m_currentSubdivisionPoint;
-
     glm::vec3 m_initialControlPointPosition;
-
     bool m_xKeyPressed = false;
     bool m_yKeyPressed = false;
     bool m_zKeyPressed = false;
-
     int m_colorDepth = 0;
     int m_currentIlluminationItem = 0;
     IlluminationMode m_illuminationMode = IlluminationMode::PHONG;
     glm::vec4 m_clearColor = glm::vec4(180.0f / 255.0f, 180.0f / 255.0f, 1.0f, 1.0f);
     bool m_clearColorChanged = true;
-
     const LayerEditFractal* m_layerEditFractal;
 };
 

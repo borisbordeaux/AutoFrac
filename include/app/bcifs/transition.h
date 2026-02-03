@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+
 #include "state.h"
 
 namespace BCIFS {
@@ -12,25 +13,17 @@ enum class TransitionType {
 };
 
 using TransitionID = std::size_t;
-
 using Path = std::vector<TransitionID>;
-
 using Figure = std::vector<Path>;
 
 class Transition {
 public:
     Transition(TransitionID id, std::string name, StateID from, StateID to, TransitionType type);
-
-    inline TransitionID id() const { return m_id; }
-
-    inline const std::string& name() const { return m_name; }
-
-    inline StateID from() const { return m_from; }
-
-    inline StateID to() const { return m_to; }
-
-    inline TransitionType type() const { return m_type; }
-
+    TransitionID id() const { return m_id; }
+    const std::string& name() const { return m_name; }
+    StateID from() const { return m_from; }
+    StateID to() const { return m_to; }
+    TransitionType type() const { return m_type; }
     std::string toString() const;
     void print() const;
 

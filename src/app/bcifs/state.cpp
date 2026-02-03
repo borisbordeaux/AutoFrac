@@ -1,5 +1,6 @@
+#include "app/bcifs/state.h"
+
 #include <iostream>
-#include "app/automaton/state.h"
 
 namespace BCIFS {
 

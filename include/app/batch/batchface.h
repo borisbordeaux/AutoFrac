@@ -12,7 +12,7 @@ class Camera;
 }
 
 namespace BCIFS {
-class BcifsPoint;
+class BcifsVertex;
 class Bcifs;
 }
 
@@ -27,9 +27,7 @@ public:
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
     void setIlluminationMode(IlluminationMode mode);
     void setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel);
-
     void render() const;
-
     std::size_t nbFaces() const { return m_nbFaces; }
     std::size_t nbTriangles() const { return m_nbTriangles; }
     std::size_t nbVertices() const { return m_count / m_floatsPerVertex; }
@@ -38,8 +36,7 @@ public:
     std::size_t nbData() const { return m_count * sizeof(float) + m_countIndices * sizeof(unsigned int); }
 
 private:
-    void addFace(const std::vector<BCIFS::BcifsPoint>& vertices);
-    void addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor);
+    void addFace(const std::vector<BCIFS::BcifsVertex>& vertices);
     void addVertexFace(const glm::vec3& v, const glm::vec3& frontColor, const glm::vec3& backColor);
 
 private:
@@ -53,7 +50,6 @@ private:
     std::size_t m_count = 0;
     std::size_t m_countIndices = 0;
     std::size_t m_floatsPerVertex = 9;
-
     std::size_t m_nbFaces = 0;
     std::size_t m_nbTriangles = 0;
 };

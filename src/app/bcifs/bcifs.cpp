@@ -1,43 +1,24 @@
 #include "app/bcifs/bcifs.h"
-#include "app/automaton/state.h"
-#include "app/bcifs/constraintsolver.h"
-#include <algorithm>
 
+#include "app/bcifs/state.h"
 #include "app/bcifs/booleanmatrix.h"
+#include "app/bcifs/constraintsolver.h"
+#include "app/bcifs/subdivisionpoint.h"
 #include "app/bcifs/utils.h"
+#include "app/bcifs/bcifsvertex.h"
 #include "core/log.h"
+
+#include <algorithm>
 
 namespace BCIFS {
 
-SubdivisionPoint::SubdivisionPoint(arma::mat T, FormalMatrix posBary) :
-    m_T(std::move(T)), m_posBary(std::move(posBary)) {}
-
-glm::vec3 SubdivisionPoint::posR3() const {
-    glm::vec3 res;
-    arma::mat posR3 = m_T * m_posBary.toMat();
-    res.x = posR3.at(0, 0);
-    res.y = posR3.at(1, 0);
-    res.z = posR3.at(2, 0);
-    return res;
-}
-
-BcifsPoint::BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor) :
-    m_pos(std::move(pos)), m_frontColor(std::move(frontColor)), m_backColor(std::move(backColor)) {}
-
-GridFigure::GridFigure(Figure paths, float k, float length) :
-    m_paths(std::move(paths)), m_k(k), m_length(length) {}
-
-GridFigure::GridFigure(std::initializer_list<Path> paths, float k, float length) :
-    m_paths(std::move(paths)), m_k(k), m_length(length) {}
-
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
-    State s(m_automaton.states().size(), std::move(name));
-    m_automaton.addState(s);
+    StateID id = m_automaton.addState(std::move(name));
     std::vector<TransitionID> internalTransitions(internalDimensions);
     for (std::size_t i = 0; i < internalDimensions; i++) {
-        internalTransitions[i] = this->addInternal(std::to_string(i), s.id());
+        internalTransitions[i] = this->addInternal(std::to_string(i), id);
     }
-    return { s.id(), std::move(internalTransitions) };
+    return { id, std::move(internalTransitions) };
 }
 
 StateID Bcifs::addInitState() {
@@ -204,7 +185,7 @@ void Bcifs::reset() {
     m_pool.reset();
 }
 
-std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
+std::vector<std::vector<BcifsVertex>> Bcifs::faces(int iterationLevel) {
     if (!m_initStateID.has_value()) { return {}; }
     if (m_invalidatedMatrices) {
         m_invalidatedMatrices = false;
@@ -248,7 +229,7 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
         }
     }
 
-    std::vector<std::vector<BcifsPoint>> res;
+    std::vector<std::vector<BcifsVertex>> res;
     for (const std::pair<Path, arma::mat>& keyval : m_facesPaths) {
         if (iterationLevel != 0) {
             TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
@@ -258,7 +239,7 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
             glm::vec3 backColor = this->getBackColor(keyval.first);
             // each primitive mat is a face
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<BcifsPoint> vertices;
+                std::vector<BcifsVertex> vertices;
                 arma::mat mat = this->getOperatorMat(keyval.first[0]) * keyval.second * primitive;
                 vertices.reserve(mat.n_cols);
                 for (std::size_t i = 0; i < mat.n_cols; i++) {
@@ -275,7 +256,7 @@ std::vector<std::vector<BcifsPoint>> Bcifs::faces(int iterationLevel) {
             glm::vec3 backColor = this->getBackColor(keyval.first);
             // each primitive mat is a face
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<BcifsPoint> vertices;
+                std::vector<BcifsVertex> vertices;
                 arma::mat mat = keyval.second * primitive;
                 vertices.reserve(mat.n_cols);
                 for (std::size_t i = 0; i < mat.n_cols; i++) {

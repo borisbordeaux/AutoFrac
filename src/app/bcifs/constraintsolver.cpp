@@ -1,8 +1,10 @@
-#include <stdexcept>
-#include "app/bcifs/coefpool.h"
 #include "app/bcifs/constraintsolver.h"
-#include "app/bcifs/formalmatrix.h"
+
+#include "app/bcifs/coefpool.h"
 #include "app/bcifs/formalcoef.h"
+#include "app/bcifs/formalmatrix.h"
+
+#include <stdexcept>
 
 namespace BCIFS {
 

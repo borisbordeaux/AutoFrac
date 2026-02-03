@@ -1,29 +1,25 @@
 #ifndef AUTOFRAC_LAYERTEXTURE_H
 #define AUTOFRAC_LAYERTEXTURE_H
 
-#include <glm/detail/type_vec3.hpp>
 #include <glm/detail/type_vec2.hpp>
+#include <glm/detail/type_vec3.hpp>
+
+#include "core/camera.h"
+#include "core/indexbuffer.h"
 #include "core/layer.h"
+#include "core/shader.h"
+#include "core/texture.h"
 #include "core/vertexarray.h"
 #include "core/vertexbuffer.h"
 #include "core/vertexbufferlayout.h"
-#include "core/indexbuffer.h"
-#include "core/shader.h"
-#include "core/texture.h"
-#include "core/camera.h"
 
 namespace Core {
-class MouseButtonPressedEvent;
-
-class MouseMovedEvent;
-
-class MouseButtonReleasedEvent;
-
-class MouseScrolledEvent;
-
-class WindowResizedEvent;
-
 class Event;
+class MouseButtonPressedEvent;
+class MouseButtonReleasedEvent;
+class MouseMovedEvent;
+class MouseScrolledEvent;
+class WindowResizedEvent;
 }
 
 class LayerTexture : public Core::Layer {
@@ -48,16 +44,13 @@ private:
     Core::IndexBuffer m_ibo;
     Core::ShaderProgram m_program;
     Core::Texture m_texture;
-
     float m_blue = 1.0f;
     float m_increment = 0.01f;
     glm::vec3 m_translation = { 0.0f, 0.0f, 0.0f };
-
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;
     bool m_uniformsDirty = true;
     glm::vec<2, double> m_mousePos;
-
     Core::Camera m_camera;
     glm::mat4 m_proj;
 };

@@ -1,61 +1,23 @@
 #ifndef AUTOFRAC_BCIFS_H
 #define AUTOFRAC_BCIFS_H
 
+#include <glm/vec3.hpp>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <glm/vec3.hpp>
-#include "app/automaton/automaton.h"
-#include "formalmatrix.h"
+
+#include "automaton.h"
 #include "app/massspringsystem/massspringsystem.h"
+#include "formalmatrix.h"
+#include "grid.h"
 
 namespace BCIFS {
-
-class SubdivisionPoint {
-public:
-    SubdivisionPoint(arma::mat T, FormalMatrix posBary);
-    const arma::mat& T() const { return m_T; }
-    const FormalMatrix& posBary() const { return m_posBary; }
-    FormalMatrix& posBary() { return m_posBary; }
-    glm::vec3 posR3() const;
-
-private:
-    arma::mat m_T;
-    FormalMatrix m_posBary;
-};
-
-class BcifsPoint {
-public:
-    BcifsPoint(glm::vec3 pos, glm::vec3 frontColor, glm::vec3 backColor);
-    const glm::vec3& pos() const { return m_pos; }
-    const glm::vec3& frontColor() const { return m_frontColor; }
-    const glm::vec3& backColor() const { return m_backColor; }
-
-private:
-    glm::vec3 m_pos;
-    glm::vec3 m_frontColor;
-    glm::vec3 m_backColor;
-};
-
-class GridFigure {
-public:
-    explicit GridFigure(Figure paths, float k = -1.0f, float length = -1.0f);
-    GridFigure(std::initializer_list<Path> paths, float k = -1.0f, float length = -1.0f);
-    const Figure& paths() const { return m_paths; }
-    float k() const { return m_k; }
-    float length() const { return m_length; }
-
-private:
-    Figure m_paths;
-    float m_k;
-    float m_length;
-};
-
-using Grid = std::vector<GridFigure>;
+class SubdivisionPoint;
+class BcifsVertex;
 
 class Bcifs {
 public:
     Bcifs() = default;
-
     /**
      * Create and add a state to the automaton
      * @param name the name of the state
@@ -79,9 +41,8 @@ public:
     void print() const;
     void check() const;
     void finalize();
-
     void reset();
-    std::vector<std::vector<BcifsPoint>> faces(int iterationLevel);
+    std::vector<std::vector<BcifsVertex>> faces(int iterationLevel);
     std::vector<FormalMatrix> controlPoints(std::size_t gridLevel) const;
     /**
      * Getter for all subdivision points.
@@ -93,21 +54,14 @@ public:
     void updateMSS();
     void updateMSSControlPoints();
     void printMSS() const;
-
-    inline float* k() { return &m_k; }
-
-    inline float* damping() { return &m_damping; }
-
-    void invalidate(bool controlPointsOnly = false);
-
+    float* k() { return &m_k; }
+    float* damping() { return &m_damping; }
     const Automaton& automaton() const { return m_automaton; }
-
+    void invalidate(bool controlPointsOnly = false);
     void setColorDepth(std::size_t colorDepth);
     float* defaultFrontColor() { return &m_defaultFrontColor[0]; }
     float* defaultBackColor() { return &m_defaultBackColor[0]; }
-
     CoefPool* pool() { return &m_pool; }
-
     bool* cacheTransforms() { return &m_cacheTransforms; }
 
 private:
@@ -181,7 +135,6 @@ private:
     std::unordered_map<TransitionID, glm::vec3> m_frontColors;
     std::unordered_map<TransitionID, glm::vec3> m_backColors;
     std::size_t m_colorDepth = 0;
-
     CoefPool m_pool;
     bool m_cacheTransforms = true;
 };

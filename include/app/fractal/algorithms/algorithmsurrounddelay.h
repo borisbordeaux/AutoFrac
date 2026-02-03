@@ -2,12 +2,17 @@
 #define AUTOFRAC_ALGORITHMSURROUNDDELAY_H
 
 #include <vector>
-#include "app/fractal/face.h"
 
-namespace frac::LinksSurroundDelay {
+namespace frac {
 
-std::vector<frac::Face> subdivide(frac::Face const& face);
+class Face;
 
-}
+namespace LinksSurroundDelay {
+
+    std::vector<Face> subdivide(Face const& face);
+
+} // LinksSurroundDelay
+
+} // frac
 
 #endif //AUTOFRAC_ALGORITHMSURROUNDDELAY_H

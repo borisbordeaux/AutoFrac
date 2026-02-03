@@ -1,5 +1,7 @@
 #include "app/batch/batchface.h"
+
 #include "app/bcifs/bcifs.h"
+#include "app/bcifs/bcifsvertex.h"
 #include "core/camera.h"
 #include "core/renderer.h"
 
@@ -49,13 +51,13 @@ void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
     m_dataIndices.clear();
     // get all faces for the current iteration level
     // and add them to the buffer
-    std::vector<std::vector<BCIFS::BcifsPoint>> faces = bcifs.faces(iterationLevel);
+    std::vector<std::vector<BCIFS::BcifsVertex>> faces = bcifs.faces(iterationLevel);
     m_nbFaces = faces.size();
 
     m_nbTriangles = 0;
     std::size_t nbVertices = 0;
     std::size_t nbIndices = 0;
-    for (const std::vector<BCIFS::BcifsPoint>& face : faces) {
+    for (const std::vector<BCIFS::BcifsVertex>& face : faces) {
         m_nbTriangles += face.size();
         nbVertices += face.size() + 1;
         nbIndices += face.size() * 3;
@@ -64,7 +66,7 @@ void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
     m_dataIndices.resize(nbIndices);
     m_data.resize(nbVertices * m_floatsPerVertex);
 
-    for (const std::vector<BCIFS::BcifsPoint>& face : faces) {
+    for (const std::vector<BCIFS::BcifsVertex>& face : faces) {
         this->addFace(face);
     }
 
@@ -76,13 +78,12 @@ void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
 }
 
 void BatchFace::render() const {
-    //Core::Renderer::draw(m_vao, m_count / m_floatsPerVertex, m_program);
     Core::Renderer::draw(m_vao, m_ibo, m_program);
 }
 
-void BatchFace::addFace(const std::vector<BCIFS::BcifsPoint>& vertices) {
+void BatchFace::addFace(const std::vector<BCIFS::BcifsVertex>& vertices) {
     glm::vec3 barycenter{ 0, 0, 0 };
-    for (const BCIFS::BcifsPoint& vertex : vertices) {
+    for (const BCIFS::BcifsVertex& vertex : vertices) {
         barycenter += vertex.pos();
     }
     barycenter /= static_cast<float>(vertices.size());
@@ -105,17 +106,6 @@ void BatchFace::addFace(const std::vector<BCIFS::BcifsPoint>& vertices) {
     for (std::size_t i = 0; i < vertices.size(); i++) {
         this->addVertexFace(vertices[i].pos(), vertices[i].frontColor(), vertices[i].backColor());
     }
-
-    // for (std::size_t i = 0; i < vertices.size(); i++) {
-    //     this->addTriangle(barycenter, vertices[i].pos(), vertices[(i + 1) % vertices.size()].pos(), vertices[0].frontColor(), vertices[0].backColor());
-    // }
-}
-
-void BatchFace::addTriangle(const glm::vec3& pos1, const glm::vec3& pos2, const glm::vec3& pos3, const glm::vec3& frontColor, const glm::vec3& backColor) {
-    //add the vertices to the data
-    this->addVertexFace(pos1, frontColor, backColor);
-    this->addVertexFace(pos2, frontColor, backColor);
-    this->addVertexFace(pos3, frontColor, backColor);
 }
 
 void BatchFace::addVertexFace(const glm::vec3& v, const glm::vec3& frontColor, const glm::vec3& backColor) {

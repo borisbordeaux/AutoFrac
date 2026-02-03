@@ -94,6 +94,25 @@ void LayerTexture::onEvent(Core::Event& event) {
     dispatcher.dispatch<Core::WindowResizedEvent>([this](Core::WindowResizedEvent& e) { return this->onWindowResizedEvent(e); });
 }
 
+bool LayerTexture::onMousePressedEvent(Core::MouseButtonPressedEvent& event) {
+    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
+        m_leftMousePressed = true;
+        m_mousePos = Core::Application::get().window()->mousePos();
+        return true;
+    }
+    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
+        m_rightMousePressed = true;
+        m_mousePos = Core::Application::get().window()->mousePos();
+        return true;
+    }
+    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_3) {
+        m_camera.reset(glm::vec3(0.0f, 0.0f, 0.0f), 8.0f, glm::radians(90.0f), glm::radians(0.0f));
+        m_uniformsDirty = true;
+        return true;
+    }
+    return false;
+}
+
 bool LayerTexture::onMouseMovedEvent(Core::MouseMovedEvent& event) {
     //compute rotations
     double dx = event.x() - m_mousePos.x;
@@ -113,25 +132,6 @@ bool LayerTexture::onMouseMovedEvent(Core::MouseMovedEvent& event) {
         m_camera.moveHorizontal(static_cast<float>(-dx) / 10.0f);
         m_camera.moveVertical(static_cast<float>(dy) / 10.0f);
         m_uniformsDirty = true;
-    }
-    return false;
-}
-
-bool LayerTexture::onMousePressedEvent(Core::MouseButtonPressedEvent& event) {
-    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_1) {
-        m_leftMousePressed = true;
-        m_mousePos = Core::Application::get().window()->mousePos();
-        return true;
-    }
-    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
-        m_rightMousePressed = true;
-        m_mousePos = Core::Application::get().window()->mousePos();
-        return true;
-    }
-    if (event.getMouseButton() == GLFW_MOUSE_BUTTON_3) {
-        m_camera.reset(glm::vec3(0.0f, 0.0f, 0.0f), 8.0f, glm::radians(90.0f), glm::radians(0.0f));
-        m_uniformsDirty = true;
-        return true;
     }
     return false;
 }

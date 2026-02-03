@@ -1,7 +1,6 @@
 #ifndef AUTOFRAC_COEFPOOL_H
 #define AUTOFRAC_COEFPOOL_H
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -21,7 +20,6 @@ public:
     float* valueRef() { return &m_value; }
     CoefKind kind() const { return m_kind; }
     bool initialized() const { return m_initialized; }
-
     void setParent(std::size_t parent) { m_parent = parent; }
     void setValue(float value) { m_value = value; }
     void setKind(CoefKind kind) { m_kind = kind; }

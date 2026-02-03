@@ -25,34 +25,30 @@ enum class BezierType {
 
 class Edge {
 public:
-    Edge(frac::Edge const& other) = default;
-    Edge(frac::EdgeType edgeType, unsigned int nbSubdivisions, unsigned int delay = 0);
-    Edge& operator=(const frac::Edge& other) = default;
+    Edge(Edge const& other) = default;
+    Edge(EdgeType edgeType, unsigned int nbSubdivisions, unsigned int delay = 0);
+    Edge& operator=(const Edge& other) = default;
     static Edge fromStr(std::string const& name);
-
     void decreaseDelay();
-    [[nodiscard]] frac::EdgeType edgeType() const;
-    [[nodiscard]] unsigned int nbSubdivisions() const;
-    [[nodiscard]] unsigned int nbActualSubdivisions() const;
-    [[nodiscard]] unsigned int delay() const;
-    [[nodiscard]] std::vector<frac::Edge> subdivisions(frac::Edge const& reqEdge) const;
-    [[nodiscard]] bool isDelay() const;
-    [[nodiscard]] std::string name() const;
-    void setEdgeType(frac::EdgeType edgeType);
+    EdgeType edgeType() const;
+    unsigned int nbSubdivisions() const;
+    unsigned int nbActualSubdivisions() const;
+    unsigned int delay() const;
+    std::vector<Edge> subdivisions(Edge const& reqEdge) const;
+    bool isDelay() const;
+    std::string name() const;
+    void setEdgeType(EdgeType edgeType);
     void setNbSubdivisions(unsigned int nbSubdivisions);
     void setDelay(unsigned int delay);
-
-    friend std::ostream& operator<<(std::ostream& os, frac::Edge const& edge);
-    bool operator==(frac::Edge const& other) const;
-    bool operator!=(frac::Edge const& other) const;
-
-    [[nodiscard]] std::string toString() const;
-
+    friend std::ostream& operator<<(std::ostream& os, Edge const& edge);
+    bool operator==(Edge const& other) const;
+    bool operator!=(Edge const& other) const;
+    std::string toString() const;
     std::size_t nbControlPoints(BezierType bezierType, CantorType cantorType) const;
     std::size_t nbInternControlPoints(BezierType bezierType, CantorType cantorType) const;
 
 private:
-    frac::EdgeType m_edgeType;
+    EdgeType m_edgeType;
     unsigned int m_nbSubdivisions;
     unsigned int m_delay;
 };

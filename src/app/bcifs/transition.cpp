@@ -1,14 +1,14 @@
-#include "app/automaton/transition.h"
-
-#include <utility>
-#include <iostream>
+#include "app/bcifs/transition.h"
 
 #include "core/log.h"
+
+#include <iostream>
+#include <utility>
 
 namespace BCIFS {
 
 Transition::Transition(TransitionID id, std::string name, StateID from, StateID to, TransitionType type) :
-        m_id(id), m_name(std::move(name)), m_from(from), m_to(to), m_type(type) {}
+    m_id(id), m_name(std::move(name)), m_from(from), m_to(to), m_type(type) {}
 
 std::string Transition::toString() const {
     std::string res;

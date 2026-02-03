@@ -603,7 +603,7 @@ void LayerBcifs::testBCIFSFromDescription() {
     frac::Face::reset();
 
     std::vector<frac::Face> faces;
-    faces.push_back(frac::Face::fromStr("C_2_0 - B_3_0 - C_2_0 - B_2_1 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
+    faces.push_back(frac::Face::fromStr("C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
 
     frac::Structure s{ faces, frac::BezierType::Quadratic_Bezier, frac::CantorType::Quadratic_Cantor };
 

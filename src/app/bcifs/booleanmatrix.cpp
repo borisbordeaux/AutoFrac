@@ -1,6 +1,8 @@
+#include "app/bcifs/booleanmatrix.h"
+
 #include <stdexcept>
 #include <iostream>
-#include "app/bcifs/booleanmatrix.h"
+
 #include "app/bcifs/formalmatrix.h"
 #include "core/log.h"
 
@@ -9,7 +11,7 @@ namespace BCIFS {
 BooleanMatrix::BooleanMatrix() : BooleanMatrix(0, 0) {}
 
 BooleanMatrix::BooleanMatrix(std::size_t rows, std::size_t cols) :
-        m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<bool>(cols, false)) {}
+    m_rows(rows), m_cols(cols), m_coefficients(rows, std::vector<bool>(cols, false)) {}
 
 void BooleanMatrix::setIdentity() {
     if (m_rows == m_cols) {
@@ -37,7 +39,7 @@ BooleanMatrix BooleanMatrix::transitived() const {
 }
 
 BooleanMatrix BooleanMatrix::removedMultipleRows() const {
-    std::vector<std::size_t> indicesToAdd { 0 };
+    std::vector<std::size_t> indicesToAdd{ 0 };
     for (std::size_t currentRow = 1; currentRow < m_rows; currentRow++) {
         bool different = true;
         for (std::size_t rowBefore = 0; rowBefore < currentRow; rowBefore++) {
@@ -59,7 +61,7 @@ BooleanMatrix BooleanMatrix::removedMultipleRows() const {
 }
 
 BooleanMatrix BooleanMatrix::removedMultipleCols() const {
-    std::vector<std::size_t> indicesToAdd { 0 };
+    std::vector<std::size_t> indicesToAdd{ 0 };
     for (std::size_t currentCol = 1; currentCol < m_cols; currentCol++) {
         bool different = true;
         for (std::size_t colBefore = 0; colBefore < currentCol; colBefore++) {
@@ -75,26 +77,6 @@ BooleanMatrix BooleanMatrix::removedMultipleCols() const {
     for (std::size_t row = 0; row < m_rows; row++) {
         for (std::size_t colIndex = 0; colIndex < indicesToAdd.size(); colIndex++) {
             res.set(row, colIndex, this->get(row, indicesToAdd[colIndex]));
-        }
-    }
-    return res;
-}
-
-bool BooleanMatrix::areSameRows(std::size_t row1, std::size_t row2) const {
-    bool res = true;
-    for (std::size_t col = 0; col < m_cols; col++) {
-        if (this->get(row1, col) != this->get(row2, col)) {
-            res = false;
-        }
-    }
-    return res;
-}
-
-bool BooleanMatrix::areSameCols(std::size_t col1, std::size_t col2) const {
-    bool res = true;
-    for (std::size_t row = 0; row < m_rows; row++) {
-        if (this->get(row, col1) != this->get(row, col2)) {
-            res = false;
         }
     }
     return res;
@@ -168,6 +150,38 @@ void BooleanMatrix::squareAndFillByTrue() {
     }
 }
 
+BooleanMatrix BooleanMatrix::transposed() const {
+    BooleanMatrix result(m_cols, m_rows);
+
+    for (std::size_t row = 0; row < m_rows; row++) {
+        for (std::size_t col = 0; col < m_cols; col++) {
+            result.set(col, row, this->get(row, col));
+        }
+    }
+
+    return result;
+}
+
+bool BooleanMatrix::areSameRows(std::size_t row1, std::size_t row2) const {
+    bool res = true;
+    for (std::size_t col = 0; col < m_cols; col++) {
+        if (this->get(row1, col) != this->get(row2, col)) {
+            res = false;
+        }
+    }
+    return res;
+}
+
+bool BooleanMatrix::areSameCols(std::size_t col1, std::size_t col2) const {
+    bool res = true;
+    for (std::size_t row = 0; row < m_rows; row++) {
+        if (this->get(row, col1) != this->get(row, col2)) {
+            res = false;
+        }
+    }
+    return res;
+}
+
 bool BooleanMatrix::rowContainsTrue(std::size_t row) const {
     for (std::size_t col = 0; col < m_cols; col++) {
         if (this->get(row, col)) {
@@ -186,17 +200,6 @@ bool BooleanMatrix::colContainsTrue(std::size_t col) const {
     return false;
 }
 
-BooleanMatrix BooleanMatrix::transposed() const {
-    BooleanMatrix result(m_cols, m_rows);
-
-    for (std::size_t row = 0; row < m_rows; row++) {
-        for (std::size_t col = 0; col < m_cols; col++) {
-            result.set(col, row, this->get(row, col));
-        }
-    }
-
-    return result;
 }
 
-}
 // BCIFS

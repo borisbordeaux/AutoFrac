@@ -4,10 +4,14 @@
 #include <vector>
 #include "app/fractal/face.h"
 
-namespace frac::LinksSurroundDelayAndBezier {
+namespace frac {
 
-std::vector<frac::Face> subdivide(frac::Face const& face);
+class Face;
 
-}
+namespace LinksSurroundDelayAndBezier {
+    std::vector<Face> subdivide(Face const& face);
+} // LinksSurroundDelayAndBezier
+
+} // frac
 
 #endif //AUTOFRAC_ALGORITHMSURROUNDDELAYANDBEZIER_H

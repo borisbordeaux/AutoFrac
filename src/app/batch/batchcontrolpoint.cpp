@@ -1,4 +1,5 @@
 #include "app/batch/batchcontrolpoint.h"
+
 #include "app/bcifs/bcifs.h"
 #include "core/camera.h"
 #include "core/renderer.h"

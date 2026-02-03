@@ -3,8 +3,8 @@
 #include "app/massspringsystem/mass.h"
 
 namespace mss {
-AngularSpring::AngularSpring(Mass& m1, Mass& m2, Mass& m3, float k) : m_m1(m1), m_m2(m2), m_m3(m3), m_k(k) {
-}
+AngularSpring::AngularSpring(Mass& m1, Mass& m2, Mass& m3, float k) :
+    m_m1(m1), m_m2(m2), m_m3(m3), m_k(k) {}
 
 void AngularSpring::applyForces() {
     arma::mat v1 = m_m1.position().toMat() - m_m2.position().toMat();
@@ -32,8 +32,9 @@ void AngularSpring::applyForces() {
     arma::mat f3 = -m_k * dTheta * (cross(axis, n2) / l2);
     arma::mat f2 = -(f1 + f3);
 
-    m_m1.applyForce(arma::conv_to<std::vector<float> >::from(f1));
-    m_m2.applyForce(arma::conv_to<std::vector<float> >::from(f2));
-    m_m3.applyForce(arma::conv_to<std::vector<float> >::from(f3));
+    m_m1.applyForce(arma::conv_to<std::vector<float>>::from(f1));
+    m_m2.applyForce(arma::conv_to<std::vector<float>>::from(f2));
+    m_m3.applyForce(arma::conv_to<std::vector<float>>::from(f3));
 }
+
 } // mss

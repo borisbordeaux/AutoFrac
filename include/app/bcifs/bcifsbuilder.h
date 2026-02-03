@@ -1,5 +1,6 @@
 #ifndef AUTOFRAC_BCIFSBUILDER_H
 #define AUTOFRAC_BCIFSBUILDER_H
+
 #include <string>
 #include <unordered_map>
 #include <vector>

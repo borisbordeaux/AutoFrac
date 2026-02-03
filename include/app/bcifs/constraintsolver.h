@@ -1,13 +1,10 @@
 #ifndef AUTOFRAC_CONSTRAINTSOLVER_H
 #define AUTOFRAC_CONSTRAINTSOLVER_H
 
-#include <memory>
-
 namespace BCIFS {
+
 class CoefPool;
-
 class FormalMatrix;
-
 class FormalCoef;
 
 class ConstraintSolver {

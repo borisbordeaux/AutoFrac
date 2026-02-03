@@ -1,8 +1,8 @@
 #ifndef MASSSPRINGSYSTEM_SYSTEM_H
 #define MASSSPRINGSYSTEM_SYSTEM_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "angularspring.h"
 #include "mass.h"
@@ -10,12 +10,9 @@
 
 namespace mss {
 
-class Vector;
-
 class MassSpringSystem {
 public:
     explicit MassSpringSystem(std::size_t dim = 0);
-
     void addMass(const BCIFS::FormalMatrix& pos, float damping);
     void addSpring(std::size_t indexMass1, std::size_t indexMass2, float k, float length);
     void createAngularSprings(float k);
@@ -23,17 +20,11 @@ public:
     void clearSprings();
     void clearMasses();
     void clear(std::size_t newDim = 0);
-
-    inline std::vector<Mass> const& masses() const { return m_masses; }
-
-    inline std::vector<Mass>& masses() { return m_masses; }
-
-    inline std::vector<Spring> const& springs() const { return m_springs; }
-
-    inline std::vector<Spring>& springs() { return m_springs; }
-
-    inline std::size_t dimension() const { return m_dim; }
-
+    const std::vector<Mass>& masses() const { return m_masses; }
+    std::vector<Mass>& masses() { return m_masses; }
+    const std::vector<Spring>& springs() const { return m_springs; }
+    std::vector<Spring>& springs() { return m_springs; }
+    std::size_t dimension() const { return m_dim; }
     std::string toString() const;
 
 private:

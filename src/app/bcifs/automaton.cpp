@@ -1,15 +1,18 @@
-#include "app/automaton/automaton.h"
-#include "app/automaton/transition.h"
+#include "app/bcifs/automaton.h"
+
 #include <algorithm>
-#include <stdexcept>
 #include <iostream>
 #include <queue>
+#include <stdexcept>
 #include <unordered_set>
+
+#include "app/bcifs/transition.h"
 
 namespace BCIFS {
 
-void Automaton::addState(const State& state) {
-    m_states.push_back(state);
+StateID Automaton::addState(std::string name) {
+    State& state = m_states.emplace_back(m_states.size(), std::move(name));
+    return state.id();
 }
 
 void Automaton::addTransition(const Transition& transition) {
@@ -24,7 +27,7 @@ bool Automaton::containsSubdivision(const Path& path) const {
 }
 
 const Transition& Automaton::findTransitionByID(TransitionID id) const {
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.id() == id) {
             return transition;
         }
@@ -34,7 +37,7 @@ const Transition& Automaton::findTransitionByID(TransitionID id) const {
 }
 
 const State& Automaton::findStateByID(StateID id) const {
-    for (const State& state: m_states) {
+    for (const State& state : m_states) {
         if (state.id() == id) {
             return state;
         }
@@ -45,11 +48,11 @@ const State& Automaton::findStateByID(StateID id) const {
 
 std::string Automaton::toString() const {
     std::string res = "States:\n";
-    for (const State& state: m_states) {
+    for (const State& state : m_states) {
         res += state.name() + " with " + std::to_string(this->internalDimensions(state.id())) + " internal dimensions\n";
     }
     res += "\nTransitions:\n";
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         res += this->findStateByID(transition.from()).name() + " ";
         res += transition.toString();
         res += " " + this->findStateByID(transition.to()).name() + "\n";
@@ -60,11 +63,11 @@ std::string Automaton::toString() const {
 
 void Automaton::print() const {
     std::cout << "States:\n";
-    for (const State& state: m_states) {
+    for (const State& state : m_states) {
         std::cout << state.name() << " with " << this->internalDimensions(state.id()) << " internal dimensions\n";
     }
     std::cout << "\nTransitions:\n";
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         std::cout << this->findStateByID(transition.from()).name() << " ";
         transition.print();
         std::cout << " " << this->findStateByID(transition.to()).name() << "\n";
@@ -74,7 +77,7 @@ void Automaton::print() const {
 
 std::size_t Automaton::internalDimensions(StateID id) const {
     std::size_t res = 0;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.type() == TransitionType::INTERNAL && transition.from() == id) {
             res++;
         }
@@ -90,10 +93,10 @@ void Automaton::check() const {
         throw std::runtime_error("Not enough transitions.");
     }
 
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         bool beginFound = false;
         bool endFound = false;
-        for (const State& state: m_states) {
+        for (const State& state : m_states) {
             if (state.id() == transition.from()) {
                 beginFound = true;
             }
@@ -109,7 +112,7 @@ void Automaton::check() const {
 
 std::vector<TransitionID> Automaton::boundaryTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
             res.push_back(transition.id());
         }
@@ -119,7 +122,7 @@ std::vector<TransitionID> Automaton::boundaryTransitionsOf(StateID id) const {
 
 std::vector<StateID> Automaton::boundaryStatesOf(StateID id) const {
     std::vector<StateID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::BOUNDARY) {
             res.push_back(transition.to());
         }
@@ -129,7 +132,7 @@ std::vector<StateID> Automaton::boundaryStatesOf(StateID id) const {
 
 std::vector<TransitionID> Automaton::internalTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::INTERNAL) {
             res.push_back(transition.id());
         }
@@ -139,7 +142,7 @@ std::vector<TransitionID> Automaton::internalTransitionsOf(StateID id) const {
 
 std::vector<TransitionID> Automaton::boundaryAndInternalTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.from() == id && (transition.type() == TransitionType::BOUNDARY || transition.type() == TransitionType::INTERNAL)) {
             res.push_back(transition.id());
         }
@@ -147,14 +150,9 @@ std::vector<TransitionID> Automaton::boundaryAndInternalTransitionsOf(StateID id
     return res;
 }
 
-void Automaton::reset() {
-    m_states.clear();
-    m_transitions.clear();
-}
-
 std::vector<TransitionID> Automaton::subdivisionTransitionsOf(StateID id) const {
     std::vector<TransitionID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.from() == id && transition.type() == TransitionType::SUBDIVISION) {
             res.push_back(transition.id());
         }
@@ -164,7 +162,7 @@ std::vector<TransitionID> Automaton::subdivisionTransitionsOf(StateID id) const 
 
 std::vector<TransitionID> Automaton::subdivisionTransitionsTo(StateID id, StateID ignoredId) const {
     std::vector<TransitionID> res;
-    for (const Transition& transition: m_transitions) {
+    for (const Transition& transition : m_transitions) {
         if (transition.to() == id && transition.type() == TransitionType::SUBDIVISION && transition.from() != ignoredId) {
             res.push_back(transition.id());
         }
@@ -226,13 +224,18 @@ std::unordered_map<StateID, Path> Automaton::shortestPaths(StateID from) const {
     return result;
 }
 
+void Automaton::reset() {
+    m_states.clear();
+    m_transitions.clear();
+}
+
 void Automaton::dfs(StateID from, int depth, int maxDepth, Path& currentPath, std::vector<Path>& result) const {
     if (depth == maxDepth) {
         result.push_back(currentPath); // copie
         return;
     }
 
-    for (TransitionID transitionId: this->subdivisionTransitionsOf(from)) {
+    for (TransitionID transitionId : this->subdivisionTransitionsOf(from)) {
         currentPath.push_back(transitionId);
         const Transition& t = findTransitionByID(transitionId);
         this->dfs(t.to(), depth + 1, maxDepth, currentPath, result);

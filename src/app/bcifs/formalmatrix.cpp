@@ -1,9 +1,10 @@
-#include <stdexcept>
-#include <iostream>
-#include <random>
 #include "app/bcifs/formalmatrix.h"
+
 #include "app/bcifs/booleanmatrix.h"
 #include "core/log.h"
+
+#include <random>
+#include <stdexcept>
 
 namespace BCIFS {
 

@@ -1,5 +1,7 @@
 #include "app/batch/batchsubdivisionpoint.h"
+
 #include "app/bcifs/bcifs.h"
+#include "app/bcifs/subdivisionpoint.h"
 #include "core/camera.h"
 #include "core/renderer.h"
 

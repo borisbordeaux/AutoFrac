@@ -2,12 +2,17 @@
 #define AUTOFRAC_ALGORITHMONCORNERS_H
 
 #include <vector>
-#include "app/fractal/face.h"
 
-namespace frac::LinksOnCorners {
+namespace frac {
 
-std::vector<frac::Face> subdivide(frac::Face const& face);
+class Face;
 
-}
+namespace LinksOnCorners {
+
+    std::vector<Face> subdivide(const Face& face);
+
+} // LinksOnCorners
+
+} // frac
 
 #endif //AUTOFRAC_ALGORITHMONCORNERS_H

@@ -8,13 +8,10 @@ namespace mss {
 class Mass {
 public:
     explicit Mass(const BCIFS::FormalMatrix& pos, float damping);
-
     void applyForce(const std::vector<float>& force);
     void update();
-
-    [[nodiscard]] inline const BCIFS::FormalMatrix& position() const { return m_pos; }
-
-    [[nodiscard]] inline BCIFS::FormalMatrix& position() { return m_pos; }
+    const BCIFS::FormalMatrix& position() const { return m_pos; }
+    BCIFS::FormalMatrix& position() { return m_pos; }
 
 private:
     BCIFS::FormalMatrix m_pos;
