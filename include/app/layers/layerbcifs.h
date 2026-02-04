@@ -16,6 +16,7 @@ namespace Core {
 class Event;
 class KeyPressedEvent;
 class KeyReleasedEvent;
+class LayerSwappedEvent;
 class MouseButtonPressedEvent;
 class MouseButtonReleasedEvent;
 class MouseMovedEvent;
@@ -31,7 +32,6 @@ public:
     void testSierpinski();
     void testG2(int rows, int cols);
     void testSquareSierpinski();
-    void testBCIFSFromDescription();
     void onUpdate(float deltaTime) override;
     void onRender() override;
     void onImGuiRender() override;
@@ -45,11 +45,13 @@ private:
     bool onMouseScrolledEvent(const Core::MouseScrolledEvent& event);
     bool onKeyPressedEvent(const Core::KeyPressedEvent& event);
     bool onKeyReleasedEvent(const Core::KeyReleasedEvent& event);
+    bool onLayerSwappedEvent(const Core::LayerSwappedEvent& event);
     void handleSelection();
     void handleMoveControlPoint();
     void handleMoveSubdivisionPoint();
     static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
     void loadLuaFile(const std::string& filename);
+    void loadLuaScript(const std::string& luaScript);
 
 private:
     BCIFS::Bcifs m_bcifs;
@@ -59,6 +61,7 @@ private:
     int m_nbIterationsMSS = 1000;
     int m_currentIterationMSS = m_nbIterationsMSS;
     bool m_bcifsChanged = false;
+    bool m_gridChanged = false;
     bool m_displayGrid = false;
     bool m_displayHidden = true;
     int m_gridLevel = 0;

@@ -10,7 +10,8 @@ enum class EventType {
     NONE = 0,
     WindowClosed, WindowResized,
     KeyPressed, KeyReleased,
-    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
+    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
+    LayerSwapped
 };
 
 #define EVENT_CLASS_TYPE(type) static EventType getStaticType() { return EventType::type; }\

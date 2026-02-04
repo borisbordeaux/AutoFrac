@@ -1,28 +1,29 @@
 #include "app/layers/layerbcifs.h"
-#include "app/bcifs/formalcoef.h"
-#include "app/bcifs/formalmatrix.h"
-#include "app/bcifs/constraintsolver.h"
-#include "app/bcifs/bcifs.h"
 
 #include <glm/detail/type_mat4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <GLFW/glfw3.h>
 
+#include "app/bcifs/bcifs.h"
 #include "app/bcifs/bcifsbuilder.h"
+#include "app/bcifs/constraintsolver.h"
+#include "app/bcifs/formalcoef.h"
+#include "app/bcifs/formalmatrix.h"
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
 #include "app/fractal/structureprinter.h"
 #include "app/layers/layereditfractal.h"
+#include "core/application.h"
+#include "core/event.h"
+#include "core/keyevents.h"
+#include "core/layerevent.h"
+#include "core/log.h"
+#include "core/mouseevents.h"
+#include "core/renderer.h"
+#include "core/windowevents.h"
 #include "imgui/imgui.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
-#include "core/event.h"
-#include "core/mouseevents.h"
-#include "core/windowevents.h"
-#include "core/application.h"
-#include "core/keyevents.h"
-#include "core/log.h"
-#include "core/renderer.h"
 
 LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
     m_mousePos(0.0f, 0.0f),
@@ -599,23 +600,6 @@ void LayerBcifs::testSquareSierpinski() {
     m_bcifs.finalize();
 }
 
-void LayerBcifs::testBCIFSFromDescription() {
-    frac::Face::reset();
-
-    std::vector<frac::Face> faces;
-    faces.push_back(frac::Face::fromStr("C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1"));
-
-    frac::Structure s{ faces, frac::BezierType::Quadratic_Bezier, frac::CantorType::Quadratic_Cantor };
-
-    try {
-        frac::StructurePrinter printer(s, false, "result.lua");
-        printer.exportStruct();
-    } catch (std::runtime_error const& error) {
-        Core::LOG_ERROR(error.what());
-    }
-    Core::LOG_INFO("[Finished] Result in result.lua");
-}
-
 void LayerBcifs::onUpdate(float /*deltaTime*/) {
     if (m_updateMSSSubdivisionPoints || m_updateMSSControlPoints) {
         if (m_currentIterationMSS <= 0) {
@@ -639,14 +623,16 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         // update data from BCIFS
         m_bcifs.setColorDepth(static_cast<std::size_t>(m_colorDepth));
         m_batchFace.setBcifs(m_bcifs, m_iterationLevel);
-
         if (m_displayGrid) {
-            m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
-            m_batchControlPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
-            m_batchSubdivisionPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+            m_gridChanged = true;
         }
-
         m_bcifsChanged = false;
+    }
+    if (m_gridChanged) {
+        m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+        m_batchControlPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+        m_batchSubdivisionPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+        m_gridChanged = false;
     }
     if (m_clearColorChanged) {
         m_clearColorChanged = false;
@@ -684,30 +670,8 @@ void LayerBcifs::onRender() {
 void LayerBcifs::onImGuiRender() {
     ImGui::Begin("BC-IFS");
     ImGui::SeparatorText("Test");
-    if (ImGui::Button("Edit mode")) {
-        this->swapLayer();
-    }
     if (ImGui::Button("Test constraints")) {
         this->testConstraints();
-    }
-    if (ImGui::Button("Create BC-IFS automatically")) {
-        this->testBCIFSFromDescription();
-        m_bcifsChanged = true;
-    }
-    if (ImGui::Button("Update BC-IFS from edit")) {
-        std::string face = m_layerEditFractal->face();
-        frac::Face::reset();
-        std::vector<frac::Face> faces;
-        faces.push_back(frac::Face::fromStr(face));
-        frac::Structure s{ faces, frac::BezierType::Cubic_Bezier, frac::CantorType::Linear_Cantor };
-        try {
-            frac::StructurePrinter printer(s, false, "result.lua");
-            printer.exportStruct();
-        } catch (std::runtime_error const& error) {
-            Core::LOG_ERROR(error.what());
-        }
-        Core::LOG_INFO("[Finished] Result in result.lua");
-        m_bcifsChanged = true;
     }
     ImGui::SeparatorText("Default fractals");
     if (ImGui::Button("Quad")) {
@@ -757,7 +721,7 @@ void LayerBcifs::onImGuiRender() {
         m_bcifsChanged = true;
     }
     if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
-        m_bcifsChanged = true;
+        m_gridChanged = true;
     }
     ImGui::SameLine();
     ImGui::Checkbox("Display hidden", &m_displayHidden);
@@ -765,7 +729,7 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_gridLevel < 0)
             m_gridLevel = 0;
-        m_bcifsChanged = true;
+        m_gridChanged = true;
     }
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);
     ImGui::DragFloat("Damping", m_bcifs.damping(), 0.01f);
@@ -861,6 +825,7 @@ void LayerBcifs::onEvent(Core::Event& event) {
     dispatcher.dispatch<Core::KeyPressedEvent>([this](const Core::KeyPressedEvent& e) { return this->onKeyPressedEvent(e); });
     dispatcher.dispatch<Core::KeyReleasedEvent>([this](const Core::KeyReleasedEvent& e) { return this->onKeyReleasedEvent(e); });
     dispatcher.dispatch<Core::WindowResizedEvent>([this](const Core::WindowResizedEvent& e) { return this->onWindowResizedEvent(e); });
+    dispatcher.dispatch<Core::LayerSwappedEvent>([this](const Core::LayerSwappedEvent& e) { return this->onLayerSwappedEvent(e); });
 }
 
 bool LayerBcifs::onMousePressedEvent(const Core::MouseButtonPressedEvent& event) {
@@ -974,6 +939,26 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
     }
     if (event.getKeyName() == 'z') {
         m_zKeyPressed = false;
+        return true;
+    }
+    return false;
+}
+
+bool LayerBcifs::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
+    if (event.getLayer() == this && m_layerEditFractal->face() != "" && m_layerEditFractal->edited()) {
+        frac::Face::reset();
+
+        std::vector<frac::Face> faces;
+        faces.push_back(frac::Face::fromStr(m_layerEditFractal->face()));
+
+        frac::Structure s{ faces, frac::BezierType::Quadratic_Bezier, frac::CantorType::Quadratic_Cantor };
+
+        try {
+            frac::StructurePrinter printer(s, false, "");
+            this->loadLuaScript(printer.exportStruct());
+        } catch (const std::runtime_error& error) {
+            Core::LOG_ERROR(error.what());
+        }
         return true;
     }
     return false;
@@ -1208,7 +1193,34 @@ void LayerBcifs::loadLuaFile(const std::string& filename) {
     bool ok = true;
     try {
         Core::LOG_DEBUG("Begin loading script...");
-        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs, filename);
+        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs);
+        bcifsBuilder.loadFile(filename);
+        Core::LOG_DEBUG("Script loaded.");
+    } catch (const std::exception& e) {
+        Core::LOG_ERROR(e.what());
+        m_bcifs.reset();
+        ok = false;
+    }
+    if (ok) {
+        Core::LOG_DEBUG("Checking description...");
+        try {
+            m_bcifs.check();
+            m_bcifs.finalize();
+            Core::LOG_DEBUG("Description is valid.");
+        } catch (const std::exception& e) {
+            Core::LOG_ERROR(e.what());
+            m_bcifs.reset();
+        }
+    }
+    m_bcifsChanged = true;
+}
+
+void LayerBcifs::loadLuaScript(const std::string& luaScript) {
+    bool ok = true;
+    try {
+        Core::LOG_DEBUG("Begin loading script...");
+        BCIFS::BcifsBuilder bcifsBuilder(m_bcifs);
+        bcifsBuilder.loadScript(luaScript);
         Core::LOG_DEBUG("Script loaded.");
     } catch (const std::exception& e) {
         Core::LOG_ERROR(e.what());

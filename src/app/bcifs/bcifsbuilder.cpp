@@ -5,7 +5,7 @@ namespace BCIFS {
 GridFigureName::GridFigureName(FigureName paths, float k, float length) :
     m_paths(std::move(paths)), m_k(k), m_length(length) {}
 
-BcifsBuilder::BcifsBuilder(Bcifs& bcifs, const std::string& filePath) : m_bcifs(bcifs) {
+BcifsBuilder::BcifsBuilder(Bcifs& bcifs) : m_bcifs(bcifs) {
     m_bcifs.reset();
     m_mapStates.emplace("init", m_bcifs.addInitState());
 
@@ -13,7 +13,14 @@ BcifsBuilder::BcifsBuilder(Bcifs& bcifs, const std::string& filePath) : m_bcifs(
 
     // open some common libraries
     m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::table);
+}
+
+void BcifsBuilder::loadFile(const std::string& filePath) {
     m_lua.safe_script_file(filePath);
+}
+
+void BcifsBuilder::loadScript(const std::string& script) {
+    m_lua.safe_script(script);
 }
 
 void BcifsBuilder::state(const std::string& name, std::size_t internalDimension) {

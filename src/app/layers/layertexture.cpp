@@ -77,9 +77,6 @@ void LayerTexture::onRender() {
 }
 
 void LayerTexture::onImGuiRender() {
-    if (ImGui::Button("Edit mode")) {
-        this->swapLayer();
-    }
     if (ImGui::DragFloat3("World Translation", &m_translation.x, 0.02f, -10.0f, 10.0f)) {
         m_uniformsDirty = true;
     }

@@ -31,7 +31,9 @@ using GridName = std::vector<GridFigureName>;
 
 class BcifsBuilder {
 public:
-    explicit BcifsBuilder(Bcifs& bcifs, const std::string& filePath);
+    explicit BcifsBuilder(Bcifs& bcifs);
+    void loadFile(const std::string& filePath);
+    void loadScript(const std::string& script);
     void state(const std::string& name, std::size_t internalDimension);
     void boundary(const std::string& name, const std::string& from, const std::string& to);
     void grid(const std::string& state, const GridName& grid);

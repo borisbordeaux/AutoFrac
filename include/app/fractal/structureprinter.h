@@ -14,7 +14,7 @@ class Structure;
 class StructurePrinter {
 public:
     explicit StructurePrinter(Structure const& structure, bool planarControlPoints, std::string filename);
-    void exportStruct();
+    std::string exportStruct();
 
 private:
     void print_vertex_state();

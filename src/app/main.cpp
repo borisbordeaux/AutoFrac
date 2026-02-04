@@ -11,7 +11,7 @@ int main() {
 
     Core::Application application(appSpec);
     application.pushCacheLayer<LayerEditFractal>();
-    application.pushLayer<LayerBcifs>(dynamic_cast<LayerEditFractal*>(application.cacheLayer()));
+    application.pushLayer<LayerBcifs>(dynamic_cast<LayerEditFractal*>(application.getCacheLayer(0)));
     application.pushLayer<LayerMenu>();
     application.run();
 }

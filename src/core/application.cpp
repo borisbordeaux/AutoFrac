@@ -1,5 +1,6 @@
 #include "core/application.h"
 #include "core/event.h"
+#include "core/layerevent.h"
 #include "core/log.h"
 #include "core/renderer.h"
 #include "imgui/imgui.h"
@@ -111,6 +112,26 @@ void Application::raiseEvent(Event& event) {
         if (event.handled())
             break;
     }
+}
+
+void Application::swapWithCacheLayer(std::size_t indexLayer, std::size_t indexCacheLayer) {
+    if (indexLayer < m_layerStack.size() && indexCacheLayer < m_cacheLayerStack.size()) {
+        std::swap(m_layerStack[indexLayer], m_cacheLayerStack[indexCacheLayer]);
+        LayerSwappedEvent event(m_layerStack[indexLayer].get());
+        this->raiseEvent(event);
+    }
+}
+
+Layer* Application::getLayer(std::size_t index) const {
+    if (index < m_layerStack.size())
+        return m_layerStack[index].get();
+    return nullptr;
+}
+
+Layer* Application::getCacheLayer(std::size_t index) const {
+    if (index < m_cacheLayerStack.size())
+        return m_cacheLayerStack[index].get();
+    return nullptr;
 }
 
 glm::vec2 Application::framebufferSize() const {

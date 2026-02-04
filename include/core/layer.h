@@ -1,8 +1,6 @@
 #ifndef AUTOFRAC_LAYER_H
 #define AUTOFRAC_LAYER_H
 
-#include <memory>
-
 namespace Core {
 
 class Event;
@@ -18,16 +16,6 @@ public:
     virtual void onRender() {}
 
     virtual void onImGuiRender() {}
-
-    template<typename TLayer, typename... Args>
-    void transitionTo(Args&& ... args) {
-        this->queueTransition(std::move(std::make_unique<TLayer>(std::forward<Args>(args)...)));
-    }
-
-    void swapLayer();
-
-private:
-    void queueTransition(std::unique_ptr<Layer> toLayer);
 };
 
 } // Core

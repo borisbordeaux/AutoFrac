@@ -11,6 +11,7 @@ public:
     void append(std::string const& text);
     void append_nl(std::string const& text);
     void printToFile(std::string const& filename) const;
+    std::string text() const { return m_output; }
     void reset();
 
 private:

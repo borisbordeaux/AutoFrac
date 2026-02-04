@@ -9,7 +9,7 @@ namespace frac {
 StructurePrinter::StructurePrinter(Structure const& structure, bool planarControlPoints, std::string filename) :
     m_structure(structure), m_planarControlPoints(planarControlPoints), m_filename(std::move(filename)) {}
 
-void StructurePrinter::exportStruct() {
+std::string StructurePrinter::exportStruct() {
     m_filePrinter.reset();
     this->print_vertex_state();
     m_filePrinter.append_nl("------------------------------");
@@ -84,7 +84,11 @@ void StructurePrinter::exportStruct() {
     m_filePrinter.append_nl("-- constraints on init cells");
     m_filePrinter.append(m_structure.strAdjacencies());
 
-    m_filePrinter.printToFile(m_filename);
+    if (m_filename != "") {
+        m_filePrinter.printToFile(m_filename);
+    }
+
+    return m_filePrinter.text();
 }
 
 void StructurePrinter::print_vertex_state() {

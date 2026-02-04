@@ -23,13 +23,10 @@ private:
 class KeyPressedEvent : public KeyEvent {
 public:
     KeyPressedEvent(int key, int scanCode, const char* keyName, bool isRepeat) : KeyEvent(key, scanCode, keyName), m_isRepeat(isRepeat) {}
-
-    inline bool isRepeat() const { return m_isRepeat; }
-
+    bool isRepeat() const { return m_isRepeat; }
     std::string toString() const override {
         return "KeyPressedEvent: " + std::to_string(this->getKey()) + ", " + std::to_string(this->getScanCode()) + ", " + this->getKeyName() + " (repeat=" + std::to_string(m_isRepeat) + ")";
     }
-
     EVENT_CLASS_TYPE(KeyPressed)
 
 private:
@@ -39,11 +36,9 @@ private:
 class KeyReleasedEvent : public KeyEvent {
 public:
     KeyReleasedEvent(int key, int scanCode, const char* keyName) : KeyEvent(key, scanCode, keyName) {}
-
     std::string toString() const override {
         return "KeyReleasedEvent: " + std::to_string(this->getKey()) + ", " + std::to_string(this->getScanCode()) + ", " + this->getKeyName();
     }
-
     EVENT_CLASS_TYPE(KeyReleased)
 };
 
