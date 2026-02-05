@@ -4,13 +4,17 @@
 #include "imgui/imgui.h"
 
 void LayerEditFractal::onImGuiRender() {
+    constexpr float width = 0.6f;
     ImGui::Begin("BC-IFS");
     ImGui::Text("%s", m_currentFace.c_str());
     const char* items[] = { "Cantor", "Bezier" };
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::Combo("Edge Type", &m_currentEdgeType, items, IM_ARRAYSIZE(items));
-    ImGui::SliderInt("Number of subdivisions", &m_currentEdgeNbSubs, 2, 10);
-    ImGui::SliderInt("Number of delay", &m_currentEdgeDelay, 0, 10);
-    if (ImGui::Button("Add edge")) {
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
+    ImGui::SliderInt("Subdivisions", &m_currentEdgeNbSubs, 2, 10);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
+    ImGui::SliderInt("Delay", &m_currentEdgeDelay, 0, 10);
+    if (ImGui::Button("Add edge", ImVec2(-FLT_MIN,0))) {
         m_edited = true;
         m_edges.emplace_back(this->buildEdge());
         this->buildFace();

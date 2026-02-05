@@ -43,9 +43,8 @@ Application::Application(ApplicationSpecification specification) : m_specificati
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
     io.ConfigDockingTransparentPayload = true;
-    io.Fonts->AddFontFromFileTTF("../res/font/Roboto-Medium.ttf");
-    ImGui::PushFont(nullptr, 18);
-    ImGui::StyleColorsDark();
+    io.Fonts->AddFontFromFileTTF("../res/font/Roboto-Medium.ttf", 19);
+    ImGui::StyleColorsClassic();
     ImGui_ImplGlfw_InitForOpenGL(m_window->handle(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 

@@ -552,28 +552,32 @@ void LayerBcifs::onRender() {
 }
 
 void LayerBcifs::onImGuiRender() {
+    constexpr float width = 0.6f;
+    ImGui::SetNextWindowSize(ImVec2(407, 962), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(2, 116), ImGuiCond_FirstUseEver);
     ImGui::Begin("BC-IFS");
     ImGui::SeparatorText("Default fractals");
-    if (ImGui::Button("Quad")) {
+    if (ImGui::Button("Quad", ImVec2(-FLT_MIN,0))) {
         this->testSubdQuad();
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Sierpinski")) {
+    if (ImGui::Button("Sierpinski", ImVec2(-FLT_MIN,0))) {
         this->testSierpinski();
         m_bcifsChanged = true;
     }
     static int dim[2] = { 1, 1 };
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::SliderInt2("Grid size", dim, 1, 20);
-    if (ImGui::Button("Hexagon in a grid")) {
+    if (ImGui::Button("Hexagon in a grid", ImVec2(-FLT_MIN,0))) {
         this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Square Sierpinski")) {
+    if (ImGui::Button("Square Sierpinski", ImVec2(-FLT_MIN,0))) {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
     }
     ImGui::SeparatorText("Interface BC-IFS");
-    if (ImGui::Button("Load Lua File...")) {
+    if (ImGui::Button("Load Lua File...", ImVec2(-FLT_MIN,0))) {
         IGFD::FileDialogConfig config;
         config.path = "../res/scripts";
         config.flags |= ImGuiFileDialogFlags_Modal;
@@ -587,6 +591,7 @@ void LayerBcifs::onImGuiRender() {
         }
         ImGuiFileDialog::Instance()->Close();
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Iteration level", &m_iterationLevel);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_iterationLevel < 0)
@@ -594,6 +599,7 @@ void LayerBcifs::onImGuiRender() {
         m_bcifsChanged = true;
         m_bcifs.invalidate();
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Color level", &m_colorDepth);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_colorDepth < 0)
@@ -605,34 +611,50 @@ void LayerBcifs::onImGuiRender() {
     }
     ImGui::SameLine();
     ImGui::Checkbox("Display hidden", &m_displayHidden);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Grid level", &m_gridLevel);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         if (m_gridLevel < 0)
             m_gridLevel = 0;
         m_gridChanged = true;
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::DragFloat("Damping", m_bcifs.damping(), 0.01f);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     if (ImGui::InputInt("MSS Max Iterations", &m_nbIterationsMSS)) {
         m_currentIterationMSS = m_nbIterationsMSS;
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("MSS Iterations", &m_currentIterationMSS);
-    if (ImGui::Button("Auto subdivision points")) {
-        m_updateMSSSubdivisionPoints = true;
-    }
-    if (ImGui::Button("Auto control points")) {
-        m_updateMSSControlPoints = true;
-    }
-    if (ImGui::Button("Auto all points")) {
-        m_updateMSSSubdivisionPoints = true;
-        m_updateMSSControlPoints = true;
-    }
-    if (ImGui::Button("Random control points")) {
-        for (BCIFS::FormalMatrix& matrix : m_bcifs.controlPoints(0)) {
-            matrix.setRandomValues();
+
+    if (ImGui::BeginTable("table1", 2))
+    {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("Random control points", ImVec2(-FLT_MIN,0))) {
+            for (BCIFS::FormalMatrix& matrix : m_bcifs.controlPoints(0)) {
+                matrix.setRandomValues();
+            }
+            m_bcifs.invalidate(true);
+            m_bcifsChanged = true;
         }
-        m_bcifs.invalidate(true);
-        m_bcifsChanged = true;
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::Button("Auto control points", ImVec2(-FLT_MIN,0))) {
+            m_updateMSSControlPoints = true;
+        }
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("Auto subdivision points", ImVec2(-FLT_MIN,0))) {
+            m_updateMSSSubdivisionPoints = true;
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::Button("Auto all points", ImVec2(-FLT_MIN,0))) {
+            m_updateMSSSubdivisionPoints = true;
+            m_updateMSSControlPoints = true;
+        }
+        ImGui::EndTable();
     }
     static bool editControlPoints = false;
     ImGui::Checkbox("Edit control points", &editControlPoints);
@@ -641,14 +663,17 @@ void LayerBcifs::onImGuiRender() {
         for (std::size_t j = 0; j < controlPoints.size(); j++) {
             for (std::size_t i = 0; i < controlPoints[j].cols(); i++) {
                 ImGui::Text("Control point %zu", i);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
                 if (ImGui::DragFloat((std::string("x##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(0, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
                 }
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
                 if (ImGui::DragFloat((std::string("y##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(1, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
                 }
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
                 if (ImGui::DragFloat((std::string("z##") + std::to_string(i) + std::to_string(j)).c_str(), controlPoints[j].valueRef(2, i), 0.01f)) {
                     m_bcifsChanged = true;
                     m_bcifs.invalidate(true);
@@ -657,21 +682,26 @@ void LayerBcifs::onImGuiRender() {
         }
     }
     ImGui::SeparatorText("Settings");
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     if (ImGui::ColorEdit4("Clear Color", &m_clearColor[0])) {
         m_clearColorChanged = true;
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     if (ImGui::ColorEdit3("Front color", m_bcifs.defaultFrontColor())) {
         m_bcifsChanged = true;
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     if (ImGui::ColorEdit3("Back color", m_bcifs.defaultBackColor())) {
         m_bcifsChanged = true;
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, "PHONG\0FLAT")) {
         m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
         m_uniformsDirty = true;
     }
     ImGui::Checkbox("Cache transforms", m_bcifs.cacheTransforms());
     static bool cullFaces = false;
+    ImGui::SameLine();
     if (ImGui::Checkbox("Cull faces", &cullFaces)) {
         if (cullFaces) {
             Core::GLCall(glEnable(GL_CULL_FACE));
@@ -683,6 +713,7 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Button("Print BC-IFS")) {
         m_bcifs.print();
     }
+    ImGui::SameLine();
     if (ImGui::Button("Print Mass Spring Systems")) {
         m_bcifs.printMSS();
     }
