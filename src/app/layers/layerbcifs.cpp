@@ -7,8 +7,6 @@
 
 #include "app/bcifs/bcifs.h"
 #include "app/bcifs/bcifsbuilder.h"
-#include "app/bcifs/constraintsolver.h"
-#include "app/bcifs/formalcoef.h"
 #include "app/bcifs/formalmatrix.h"
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
@@ -30,120 +28,6 @@ LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
     m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
     m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)),
     m_layerEditFractal(layerEditFractal) {}
-
-void LayerBcifs::testConstraints() {
-    BCIFS::CoefPool pool;
-    BCIFS::FormalCoef a(pool.makeVar(0.1f));
-    BCIFS::FormalCoef b(pool.makeVar(0.2f));
-    BCIFS::FormalCoef c(pool.makeVar(0.3f));
-    BCIFS::FormalCoef d(pool.makeVar(0.4f));
-    BCIFS::FormalCoef e(pool.makeVar(0.5f));
-    BCIFS::FormalCoef f(pool.makeVar(0.6f));
-    BCIFS::FormalCoef g(pool.makeVar(0.7f));
-    BCIFS::FormalCoef h(pool.makeVar(0.8f));
-    BCIFS::FormalCoef i(pool.makeVar(0.9f));
-
-    BCIFS::FormalCoef j(pool.makeVar(1.1f));
-    BCIFS::FormalCoef k(pool.makeVar(1.2f));
-    BCIFS::FormalCoef l(pool.makeVar(1.3f));
-    BCIFS::FormalCoef m(pool.makeVar(1.4f));
-    BCIFS::FormalCoef n(pool.makeVar(1.5f));
-    BCIFS::FormalCoef o(pool.makeVar(1.6f));
-    BCIFS::FormalCoef p(pool.makeVar(1.7f));
-    BCIFS::FormalCoef q(pool.makeVar(1.8f));
-    BCIFS::FormalCoef r(pool.makeVar(1.9f));
-
-    BCIFS::FormalMatrix T0(3, 3, &pool);
-    BCIFS::FormalMatrix T1(3, 3, &pool);
-    BCIFS::FormalMatrix BL(3, 1, &pool);
-    BCIFS::FormalMatrix BR(3, 1, &pool);
-    BCIFS::FormalMatrix TS(1, 1, &pool);
-    BCIFS::FormalMatrix P0(3, 3, &pool);
-
-    T0.set(0, 0, a);
-    T0.set(1, 0, b);
-    T0.set(2, 0, c);
-    T0.set(0, 1, d);
-    T0.set(1, 1, e);
-    T0.set(2, 1, f);
-    T0.set(0, 2, g);
-    T0.set(1, 2, h);
-    T0.set(2, 2, i);
-
-    T1.set(0, 0, j);
-    T1.set(1, 0, k);
-    T1.set(2, 0, l);
-    T1.set(0, 1, m);
-    T1.set(1, 1, n);
-    T1.set(2, 1, o);
-    T1.set(0, 2, p);
-    T1.set(1, 2, q);
-    T1.set(2, 2, r);
-
-    BL.set(0, 0, BCIFS::FormalCoef::one());
-    BR.set(2, 0, BCIFS::FormalCoef::one());
-
-    TS.set(0, 0, BCIFS::FormalCoef::one());
-
-    P0.set(0, 2, BCIFS::FormalCoef::one());
-    P0.set(1, 1, BCIFS::FormalCoef::one());
-    P0.set(2, 0, BCIFS::FormalCoef::one());
-
-    BCIFS::FormalMatrix leftIncLeft = BL * TS;
-    BCIFS::FormalMatrix rightIncLeft = T0 * BL;
-
-    BCIFS::FormalMatrix leftIncRight = BR * TS;
-    BCIFS::FormalMatrix rightIncRight = T1 * BR;
-
-    BCIFS::FormalMatrix leftAdj = T0 * BR;
-    BCIFS::FormalMatrix rightAdj = T1 * BL;
-
-    BCIFS::FormalMatrix leftPermutLeft = T0 * P0;
-    BCIFS::FormalMatrix rightPermutLeft = P0 * T1;
-
-    BCIFS::FormalMatrix leftPermutRight = T1 * P0;
-    BCIFS::FormalMatrix rightPermutRight = P0 * T0;
-
-    T0.print();
-    T1.print();
-
-    BCIFS::ConstraintSolver::solve(leftIncLeft, rightIncLeft, pool);
-
-    T0.print();
-    T1.print();
-
-    BCIFS::ConstraintSolver::solve(leftIncRight, rightIncRight, pool);
-
-    T0.print();
-    T1.print();
-
-    BCIFS::ConstraintSolver::solve(leftAdj, rightAdj, pool);
-
-    T0.print();
-    T1.print();
-
-    BCIFS::ConstraintSolver::solve(leftPermutLeft, rightPermutLeft, pool);
-
-    T0.print();
-    T1.print();
-
-    BCIFS::ConstraintSolver::solve(leftPermutRight, rightPermutRight, pool);
-
-    T0.print();
-    T1.print();
-
-    pool.setValue(f.index(), 0.1f);
-    pool.setValue(g.index(), 0.1f);
-
-    T0.print();
-    T1.print();
-
-    T0.print(true);
-    T1.print(true);
-
-    T0.concatenateColumns(T1);
-    T0.print(true);
-}
 
 void LayerBcifs::testSubdQuad() {
     m_bcifs.reset();
@@ -669,10 +553,6 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     ImGui::Begin("BC-IFS");
-    ImGui::SeparatorText("Test");
-    if (ImGui::Button("Test constraints")) {
-        this->testConstraints();
-    }
     ImGui::SeparatorText("Default fractals");
     if (ImGui::Button("Quad")) {
         this->testSubdQuad();

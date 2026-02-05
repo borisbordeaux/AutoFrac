@@ -27,7 +27,6 @@ class WindowResizedEvent;
 class LayerBcifs : public Core::Layer {
 public:
     LayerBcifs(const LayerEditFractal* layerEditFractal);
-    static void testConstraints();
     void testSubdQuad();
     void testSierpinski();
     void testG2(int rows, int cols);

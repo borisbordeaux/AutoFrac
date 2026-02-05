@@ -36,32 +36,24 @@ private:
 class CoefPool {
 public:
     CoefPool(); // insert 0 et 1
-
     std::size_t makeVar(float value);
     std::size_t makeConst(float value);
-
     void unify(std::size_t index1, std::size_t index2);
-
     float value(std::size_t index) const;
     float* valueRef(std::size_t index);
     void setValue(std::size_t index, float value);
     void setKind(std::size_t index, CoefKind kind);
     CoefKind getKind(std::size_t index) const;
     void setInitialized(std::size_t index);
-
     bool isConst(std::size_t index) const;
     bool isZero(std::size_t index) const;
     bool isOne(std::size_t index) const;
     bool isVar(std::size_t index) const;
     bool isInitialized(std::size_t index) const;
-
     std::size_t mul(std::size_t a, std::size_t b) const;
     std::size_t add(std::size_t a, std::size_t b) const;
-
     std::string toString(std::size_t index, bool showAddress = false) const;
-
     std::size_t root(std::size_t index) const;
-
     void reset();
 
 private:
