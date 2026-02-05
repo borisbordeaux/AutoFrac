@@ -31,7 +31,7 @@ void main()
         vec3 L = normalize(lightPos - vertexPos);
 
         // Lambert's cosine law
-        float lambertian = abs(dot(N, L));
+        float lambertian = max(0.0, dot(N, L));
         float specular = 0.0;
         if (lambertian > 0.0) {
             vec3 R = reflect(-L, N); // Reflected light vector
