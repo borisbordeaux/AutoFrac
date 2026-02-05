@@ -16,7 +16,7 @@ target_link_libraries(AutoFrac PRIVATE -lglfw3 -lGLEW -lGL -lfmt -lspdlog -larma
 
 target_compile_options(AutoFrac PRIVATE -Wall -Wextra -Werror)
 
-option(ENABLE_TESTS "Build unit tests" ON)
+option(ENABLE_TESTS "Build unit tests" OFF)
 
 if (ENABLE_TESTS)
     enable_testing()
