@@ -7,9 +7,9 @@
 #include <unordered_map>
 
 #include "automaton.h"
-#include "app/massspringsystem/massspringsystem.h"
 #include "formalmatrix.h"
 #include "grid.h"
+#include "massspringsystem.h"
 
 namespace BCIFS {
 class SubdivisionPoint;
@@ -116,8 +116,8 @@ private:
     std::unordered_map<TransitionID, arma::mat> m_mapOperatorsMat;
     std::unordered_map<StateID, Grid> m_mapGrids;
     std::vector<StateID> m_createGridFromBoundary;
-    std::unordered_map<StateID, mss::MassSpringSystem> m_mapMSS;
-    mss::MassSpringSystem m_MSSControlPoints;
+    std::unordered_map<StateID, MassSpringSystem> m_mapMSS;
+    MassSpringSystem m_MSSControlPoints;
     float m_damping = 0.3f;
     float m_k = 0.005f;
     float m_dampingControlPoints = 0.3f;

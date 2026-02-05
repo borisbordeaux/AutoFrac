@@ -8,7 +8,7 @@
 #include "mass.h"
 #include "spring.h"
 
-namespace mss {
+namespace BCIFS {
 
 class MassSpringSystem {
 public:
@@ -39,6 +39,6 @@ private:
     std::size_t m_dim;
 };
 
-} // mss
+} // BCIFS
 
 #endif //MASSSPRINGSYSTEM_SYSTEM_H

@@ -1,8 +1,8 @@
-#include "app/massspringsystem/mass.h"
+#include "app/bcifs/mass.h"
 
-namespace mss {
+namespace BCIFS {
 
-Mass::Mass(const BCIFS::FormalMatrix& pos, float damping) : m_pos(pos), m_velocity(pos.rows()), m_acceleration(pos.rows()), m_damping(damping) {}
+Mass::Mass(const FormalMatrix& pos, float damping) : m_pos(pos), m_velocity(pos.rows()), m_acceleration(pos.rows()), m_damping(damping) {}
 
 void Mass::applyForce(const std::vector<float>& force) {
     for (std::size_t i = 0; i < m_velocity.size(); i++) {
@@ -22,4 +22,4 @@ void Mass::update() {
         }
     }
 }
-} // mss
+} // BCIFS

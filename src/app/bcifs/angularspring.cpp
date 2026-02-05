@@ -1,12 +1,15 @@
-#include <armadillo>
-#include "app/massspringsystem/angularspring.h"
-#include "app/massspringsystem/mass.h"
+#include "app/bcifs/angularspring.h"
 
-namespace mss {
+#include <armadillo>
+
+#include "app/bcifs/mass.h"
+
+namespace BCIFS {
+
 AngularSpring::AngularSpring(Mass& m1, Mass& m2, Mass& m3, float k) :
     m_m1(m1), m_m2(m2), m_m3(m3), m_k(k) {}
 
-void AngularSpring::applyForces() {
+void AngularSpring::applyForces() const {
     arma::mat v1 = m_m1.position().toMat() - m_m2.position().toMat();
     arma::mat v2 = m_m3.position().toMat() - m_m2.position().toMat();
 
@@ -37,4 +40,4 @@ void AngularSpring::applyForces() {
     m_m3.applyForce(arma::conv_to<std::vector<float>>::from(f3));
 }
 
-} // mss
+} // BCIFS

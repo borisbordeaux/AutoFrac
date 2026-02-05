@@ -29,6 +29,7 @@ if (ENABLE_TESTS)
 
     file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
     file(GLOB_RECURSE TESTED_FILES
+            "src/app/bcifs/angularspring.cpp"
             "src/app/bcifs/automaton.cpp"
             "src/app/bcifs/bcifs.cpp"
             "src/app/bcifs/bcifsvertex.cpp"
@@ -37,17 +38,24 @@ if (ENABLE_TESTS)
             "src/app/bcifs/constraintsolver.cpp"
             "src/app/bcifs/formalmatrix.cpp"
             "src/app/bcifs/grid.cpp"
+            "src/app/bcifs/mass.cpp"
+            "src/app/bcifs/massspringsystem.cpp"
+            "src/app/bcifs/spring.cpp"
             "src/app/bcifs/state.cpp"
             "src/app/bcifs/subdivisionpoint.cpp"
             "src/app/bcifs/transition.cpp"
-            "src/app/massspringsystem/*.cpp"
             "src/core/log.cpp"
     )
-    add_executable(runTests ${TEST_FILES} ${TESTED_FILES})
-    target_include_directories(runTests PRIVATE "include")
-    target_link_libraries(runTests PRIVATE GTest::gtest_main -lfmt -lspdlog -larmadillo)
-    target_compile_options(runTests PRIVATE -Wall -Wextra -Werror)
+
+    add_executable(AutoFracTests ${TEST_FILES} ${TESTED_FILES})
+
+    target_include_directories(AutoFracTests PRIVATE "include")
+
+    target_link_libraries(AutoFracTests PRIVATE GTest::gtest_main -lfmt -lspdlog -larmadillo)
+
+    target_compile_options(AutoFracTests PRIVATE -Wall -Wextra -Werror)
 
     include(GoogleTest)
-    gtest_discover_tests(runTests)
+
+    gtest_discover_tests(AutoFracTests)
 endif ()

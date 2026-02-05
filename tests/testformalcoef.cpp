@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "app/bcifs/formalcoef.h"
 
 TEST(FormalCoef, IndexZeroAndOne) {

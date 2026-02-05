@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "app/bcifs/coefpool.h"
 
 TEST(CoefPool, ConstructorAddsZeroAndOne) {

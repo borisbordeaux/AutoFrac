@@ -1,11 +1,13 @@
-#include <iomanip>
-#include <algorithm>
-#include "app/massspringsystem/massspringsystem.h"
+#include "app/bcifs/massspringsystem.h"
 
-namespace mss {
+#include <algorithm>
+#include <iomanip>
+
+namespace BCIFS {
+
 MassSpringSystem::MassSpringSystem(std::size_t dim) : m_dim(dim) {}
 
-void MassSpringSystem::addMass(const BCIFS::FormalMatrix& pos, float damping) {
+void MassSpringSystem::addMass(const FormalMatrix& pos, float damping) {
     m_masses.emplace_back(pos, damping);
 }
 
@@ -42,14 +44,14 @@ void MassSpringSystem::createAngularSprings(float k) {
 }
 
 void MassSpringSystem::update() {
-    for (Spring& s: m_springs)
+    for (Spring& s : m_springs)
         s.applyForces();
 
-    for (AngularSpring& s: m_angularSprings) {
+    for (AngularSpring& s : m_angularSprings) {
         s.applyForces();
     }
 
-    for (Mass& m: m_masses)
+    for (Mass& m : m_masses)
         m.update();
 }
 
@@ -72,10 +74,10 @@ void MassSpringSystem::clear(std::size_t newDim) {
 
 std::string MassSpringSystem::toString() const {
     std::string res = "d " + std::to_string(m_dim);
-    for (mss::Mass const& m: m_masses) {
+    for (Mass const& m : m_masses) {
         res += "\nm";
         for (std::size_t i = 0; i < m_dim; i++) {
-            res += " " + MassSpringSystem::toString(m.position().value(i,0));
+            res += " " + MassSpringSystem::toString(m.position().value(i, 0));
         }
     }
     for (std::size_t i = 0; i < m_springs.size(); i++) {
@@ -102,4 +104,5 @@ std::string MassSpringSystem::toString(float value) {
     std::replace(res.begin(), res.end(), ',', '.');
     return res;
 }
-} // mss
+
+} // BCIFS

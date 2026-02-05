@@ -3,7 +3,7 @@
 
 #include "app/bcifs/formalmatrix.h"
 
-namespace mss {
+namespace BCIFS {
 
 class Mass {
 public:
@@ -20,6 +20,6 @@ private:
     float m_damping;
 };
 
-} // mss
+} // BCIFS
 
 #endif //MASSSPRINGSYSTEM_MASS_H

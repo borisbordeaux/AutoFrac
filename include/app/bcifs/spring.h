@@ -1,14 +1,14 @@
 #ifndef MASSSPRINGSYSTEM_SPRING_H
 #define MASSSPRINGSYSTEM_SPRING_H
 
-namespace mss {
+namespace BCIFS {
 
 class Mass;
 
 class Spring {
 public:
     Spring(Mass& m1, Mass& m2, float k, float length);
-    void applyForces();
+    void applyForces() const;
     Mass const& m1() const { return m_m1; }
     Mass const& m2() const { return m_m2; }
     float k() const { return m_k; }
@@ -23,6 +23,6 @@ private:
     float m_length;
 };
 
-} // mss
+} // BCIFS
 
 #endif //MASSSPRINGSYSTEM_SPRING_H

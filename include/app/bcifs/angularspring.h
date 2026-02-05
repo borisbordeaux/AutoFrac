@@ -1,14 +1,14 @@
 #ifndef MASSSPRINGSYSTEM_ANGULARSPRING_H
 #define MASSSPRINGSYSTEM_ANGULARSPRING_H
 
-namespace mss {
+namespace BCIFS {
 
 class Mass;
 
 class AngularSpring {
 public:
     AngularSpring(Mass& m1, Mass& m2, Mass& m3, float k);
-    void applyForces();
+    void applyForces() const;
     const Mass& m1() const { return m_m1; }
     const Mass& m2() const { return m_m2; }
     const Mass& m3() const { return m_m3; }
@@ -22,6 +22,6 @@ private:
     float m_k;
 };
 
-} // mss
+} // BCIFS
 
 #endif //MASSSPRINGSYSTEM_ANGULARSPRING_H

@@ -298,11 +298,11 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
         bool hasMSS = m_mapMSS.find(state.id()) != m_mapMSS.end();
         // if the state has a mass spring system
         if (hasMSS && state.id() != m_initStateID.value()) {
-            for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+            for (const std::pair<const StateID, MassSpringSystem>& keyval : m_mapMSS) {
                 auto it = paths.find(keyval.first);
                 if (it != paths.end() && (gridLevel == 0 || gridLevel == it->second.size() + 1)) {
-                    std::vector<mss::Mass> masses = keyval.second.masses();
-                    for (mss::Mass& mass : masses) {
+                    std::vector<Mass> masses = keyval.second.masses();
+                    for (Mass& mass : masses) {
                         FormalMatrix& posBarycentricSpace = mass.position();
                         bool fixed = true;
                         for (std::size_t i = 0; i < posBarycentricSpace.rows(); i++) {
@@ -329,11 +329,11 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs(std::size_t gridLeve
 
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
     std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
-    for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+    for (const std::pair<const StateID, MassSpringSystem>& keyval : m_mapMSS) {
         auto it = paths.find(keyval.first);
         if (it != paths.end() && (gridLevel == 0 || gridLevel == it->second.size() + 1)) {
-            std::vector<mss::Spring> springs = keyval.second.springs();
-            for (mss::Spring& spring : springs) {
+            std::vector<Spring> springs = keyval.second.springs();
+            for (Spring& spring : springs) {
                 arma::mat op = this->getOperatorOfPathForMSS(paths[keyval.first]);
                 arma::mat pos1BarycentricSpace = spring.m1().position().toMat();
                 arma::mat pos13D = op * pos1BarycentricSpace;
@@ -354,8 +354,8 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings(std::si
     if (!m_initStateID.has_value() || gridLevel > 1) { return {}; }
 
     std::vector<std::pair<glm::vec3, glm::vec3>> res;
-    std::vector<mss::Spring> springs = m_MSSControlPoints.springs();
-    for (mss::Spring& spring : springs) {
+    std::vector<Spring> springs = m_MSSControlPoints.springs();
+    for (Spring& spring : springs) {
         FormalMatrix pos13D = spring.m1().position();
         FormalMatrix pos23D = spring.m2().position();
         res.emplace_back(
@@ -367,7 +367,7 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings(std::si
 }
 
 void Bcifs::updateMSS() {
-    for (std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+    for (std::pair<const StateID, MassSpringSystem>& keyval : m_mapMSS) {
         keyval.second.update();
         std::vector<TransitionID> transitions = m_automaton.subdivisionTransitionsOf(keyval.first);
         for (TransitionID id : transitions) {
@@ -383,7 +383,7 @@ void Bcifs::updateMSSControlPoints() {
 }
 
 void Bcifs::printMSS() const {
-    for (const std::pair<const StateID, mss::MassSpringSystem>& keyval : m_mapMSS) {
+    for (const std::pair<const StateID, MassSpringSystem>& keyval : m_mapMSS) {
         Core::LOG_INFO(keyval.second.toString());
     }
     Core::LOG_INFO(m_MSSControlPoints.toString());
