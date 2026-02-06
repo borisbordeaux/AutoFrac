@@ -8,14 +8,11 @@ namespace Core {
 class MouseMovedEvent : public Event {
 public:
     MouseMovedEvent(double x, double y) : m_x(x), m_y(y) {}
-
-    inline double x() const { return m_x; }
-    inline double y() const { return m_y; }
-
+    double x() const { return m_x; }
+    double y() const { return m_y; }
     std::string toString() const override {
         return "MouseMovedEvent: " + std::to_string(m_x) + ", " + std::to_string(m_y);
     }
-
     EVENT_CLASS_TYPE(MouseMoved)
 
 private:
@@ -25,16 +22,12 @@ private:
 
 class MouseScrolledEvent : public Event {
 public:
-    MouseScrolledEvent(double xOffset, double yOffset) :
-            m_xOffset(xOffset), m_yOffset(yOffset) {}
-
-    inline double xOffset() const { return m_xOffset; }
-    inline double yOffset() const { return m_yOffset; }
-
+    MouseScrolledEvent(double xOffset, double yOffset) : m_xOffset(xOffset), m_yOffset(yOffset) {}
+    double xOffset() const { return m_xOffset; }
+    double yOffset() const { return m_yOffset; }
     std::string toString() const override {
         return "MouseScrolledEvent: " + std::to_string(m_xOffset) + ", " + std::to_string(m_yOffset);
     }
-
     EVENT_CLASS_TYPE(MouseScrolled)
 
 private:
@@ -44,10 +37,10 @@ private:
 
 class MouseButtonEvent : public Event {
 public:
-    inline int getMouseButton() const { return m_button; }
+    int getMouseButton() const { return m_button; }
 
 protected:
-    MouseButtonEvent(int button) : m_button(button) {}
+    explicit MouseButtonEvent(int button) : m_button(button) {}
 
 private:
     int m_button;
@@ -56,22 +49,18 @@ private:
 class MouseButtonPressedEvent : public MouseButtonEvent {
 public:
     explicit MouseButtonPressedEvent(int button) : MouseButtonEvent(button) {}
-
     std::string toString() const override {
         return "MouseButtonPressedEvent: " + std::to_string(this->getMouseButton());
     }
-
     EVENT_CLASS_TYPE(MouseButtonPressed)
 };
 
 class MouseButtonReleasedEvent : public MouseButtonEvent {
 public:
     explicit MouseButtonReleasedEvent(int button) : MouseButtonEvent(button) {}
-
     std::string toString() const override {
         return "MouseButtonReleasedEvent: " + std::to_string(this->getMouseButton());
     }
-
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
 

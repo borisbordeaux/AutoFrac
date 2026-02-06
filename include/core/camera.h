@@ -12,20 +12,15 @@ public:
     void rotatePolar(float radians);
     void zoom(float by = 0.1f);
     void dezoom(float by = 0.1f);
-
     void moveHorizontal(float distance);
     void moveVertical(float distance);
-
     glm::mat4 getViewMatrix() const;
     glm::vec3 getEye() const;
-
     void reset(const glm::vec3& center, float radius, float azimuthAngle, float polarAngle);
-
     void setCenter(const glm::vec3& center);
     void setRadius(float radius);
     void setAzimuthAngle(float azimuthAngle);
     void setPolarAngle(float polarAngle);
-
     const glm::vec3& center() const;
     float radius() const;
     float azimuthAngle() const;

@@ -19,8 +19,7 @@ struct WindowSpecification {
     bool isResizable = true;
     bool VSync = true;
 
-    using EventCallbackFn = std::function<void(Event&)>;
-    EventCallbackFn eventCallback;
+    std::function<void(Event&)> eventCallback;
 };
 
 class Window {

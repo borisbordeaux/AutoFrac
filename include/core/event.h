@@ -21,14 +21,10 @@ enum class EventType {
 class Event {
 public:
     virtual ~Event() = default;
-
     virtual EventType getEventType() const = 0;
     virtual const char* getName() const = 0;
-
     virtual std::string toString() const { return this->getName(); }
-
     void setHandled(bool handled) { m_handled = handled; }
-
     bool handled() const { return m_handled; }
 
 private:

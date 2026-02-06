@@ -11,12 +11,9 @@ public:
     IndexBuffer(const unsigned int* data, unsigned int count);
     explicit IndexBuffer(const std::vector<unsigned int>& data);
     ~IndexBuffer();
-
     void bind() const;
     void unbind() const;
-
-    inline unsigned int count() const { return m_count; }
-
+    unsigned int count() const { return m_count; }
     void bufferData(const std::vector<unsigned int>& data);
 
 private:

@@ -9,7 +9,6 @@ class Texture {
 public:
     explicit Texture(std::string const& filepath);
     ~Texture();
-
     void bind(unsigned int slot = 0) const;
     void unbind() const;
 

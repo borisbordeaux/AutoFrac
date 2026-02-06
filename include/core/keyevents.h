@@ -7,9 +7,9 @@ namespace Core {
 
 class KeyEvent : public Event {
 public:
-    inline int getKey() const { return m_key; }
-    inline int getScanCode() const { return m_scanCode; }
-    inline const char& getKeyName() const { return m_keyName; }
+    int getKey() const { return m_key; }
+    int getScanCode() const { return m_scanCode; }
+    const char& getKeyName() const { return m_keyName; }
 
 protected:
     KeyEvent(int key, int scanCode, const char* keyName) : m_key(key), m_scanCode(scanCode), m_keyName(keyName == nullptr ? '\0' : *keyName) {}

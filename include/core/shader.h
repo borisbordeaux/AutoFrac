@@ -1,10 +1,10 @@
 #ifndef AUTOFRAC_SHADER_H
 #define AUTOFRAC_SHADER_H
 
+#include <glm/fwd.hpp>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <optional>
-#include <glm/fwd.hpp>
 
 namespace Core {
 
@@ -16,14 +16,10 @@ class ShaderProgram {
 public:
     ShaderProgram();
     ~ShaderProgram();
-
     void addShaderFromFile(ShaderType type, std::string const& filepath);
     void link();
-
     void bind() const;
     void unbind() const;
-
-    //set uniforms
     void setUniform1i(std::string const& name, int value);
     void setUniform3f(std::string const& name, const glm::vec3& v);
     void setUniform4f(std::string const& name, float v0, float v1, float v2, float v3);
@@ -39,7 +35,6 @@ private:
         Shader(ShaderType type, std::string src);
         ~Shader();
         bool compileShader();
-
         void attachShader(unsigned int programID) const;
 
     private:

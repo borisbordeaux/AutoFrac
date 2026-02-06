@@ -17,15 +17,12 @@ struct VertexBufferElement {
 class VertexBufferLayout {
 public:
     VertexBufferLayout() : m_stride(0) {}
-
     void pushFloats(unsigned int count) {
         m_elements.emplace_back(GL_FLOAT, count, GL_FALSE);
         m_stride += count * sizeof(float);
     }
-
-    inline std::vector<VertexBufferElement> const& elements() const { return m_elements; }
-
-    inline unsigned int stride() const { return m_stride; }
+    std::vector<VertexBufferElement> const& elements() const { return m_elements; }
+    unsigned int stride() const { return m_stride; }
 
 private:
     std::vector<VertexBufferElement> m_elements;
