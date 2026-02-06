@@ -8,6 +8,7 @@ int main() {
     appSpec.name = "AutoFrac";
     appSpec.windowSpec.width = 1920;
     appSpec.windowSpec.height = 1080;
+    appSpec.windowSpec.samples = 16;
 
     Core::Application application(appSpec);
     application.pushCacheLayer<LayerEditFractal>();

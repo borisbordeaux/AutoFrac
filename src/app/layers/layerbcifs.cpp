@@ -553,9 +553,10 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     constexpr float width = 0.6f;
+    ImGuiViewport* vp = ImGui::GetMainViewport();
     ImGui::SetNextWindowSize(ImVec2(407, 962), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(2, 116), ImGuiCond_FirstUseEver);
-    ImGui::Begin("BC-IFS");
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + 2, vp->Pos.y + 116), ImGuiCond_FirstUseEver);
+    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SeparatorText("Default fractals");
     if (ImGui::Button("Quad", ImVec2(-FLT_MIN,0))) {
         this->testSubdQuad();

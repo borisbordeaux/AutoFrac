@@ -5,7 +5,7 @@
 
 void LayerEditFractal::onImGuiRender() {
     constexpr float width = 0.6f;
-    ImGui::Begin("BC-IFS");
+    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::Text("%s", m_currentFace.c_str());
     const char* items[] = { "Cantor", "Bezier" };
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);

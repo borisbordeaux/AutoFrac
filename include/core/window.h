@@ -15,6 +15,7 @@ struct WindowSpecification {
     std::string title;
     uint32_t width = 1280;
     uint32_t height = 720;
+    uint8_t samples = 0;
     bool isResizable = true;
     bool VSync = true;
 
@@ -26,17 +27,15 @@ class Window {
 public:
     explicit Window(WindowSpecification specification = WindowSpecification());
     ~Window();
-
     void create();
     void destroy();
-    void update();
+    void update() const;
     void raiseEvent(Event& event) const;
     glm::vec2 framebufferSize() const;
     glm::vec2 mousePos() const;
     bool shouldClose() const;
     void pollEvents() const;
     float time() const;
-
     GLFWwindow* handle() const { return m_handle; }
 
 private:

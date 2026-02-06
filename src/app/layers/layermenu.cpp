@@ -10,9 +10,10 @@ void LayerMenu::onImGuiRender() {
     if (m_showDemo) {
         ImGui::ShowDemoWindow(&m_showDemo);
     }
+    ImGuiViewport* vp = ImGui::GetMainViewport();
     ImGui::SetNextWindowSize(ImVec2(407, 112), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(2, 2), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Menu");
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + 2, vp->Pos.y + 2), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Menu", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::Text("Application average %.3f ms/frame (%.0f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::Text("Delta time is %.3f seconds, %.3f ms", m_deltaTime, m_deltaTime * 1000.0f);
     if (ImGui::Button("Render/Edit mode")) {

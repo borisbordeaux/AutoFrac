@@ -40,11 +40,14 @@ Application::Application(ApplicationSpecification specification) : m_specificati
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingTransparentPayload = true;
     io.Fonts->AddFontFromFileTTF("../res/font/Roboto-Medium.ttf", 19);
     ImGui::StyleColorsClassic();
+    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
     ImGui_ImplGlfw_InitForOpenGL(m_window->handle(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
@@ -63,7 +66,6 @@ Application::~Application() {
 
 void Application::run() {
     float lastTime = time();
-    ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
     while (m_running) {
         m_window->pollEvents();
@@ -95,6 +97,12 @@ void Application::run() {
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // Update and Render additional Platform Windows
+        // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(m_window->handle());
 
         m_window->update();
     }

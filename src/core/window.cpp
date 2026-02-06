@@ -26,7 +26,7 @@ void Window::create() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_SAMPLES, m_specification.samples);
 
     glfwWindowHint(GLFW_RESIZABLE, m_specification.isResizable ? GLFW_TRUE : GLFW_FALSE);
 
@@ -45,7 +45,7 @@ void Window::create() {
     glfwSetWindowUserPointer(m_handle, this);
 
     glfwSetWindowCloseCallback(m_handle, [](GLFWwindow* handle) {
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         WindowClosedEvent event;
         window.raiseEvent(event);
     });
@@ -59,7 +59,7 @@ void Window::create() {
 
     glfwSetKeyCallback(m_handle, [](GLFWwindow* handle, int key, int scancode, int action, int /*mods*/) {
         if (ImGui::GetIO().WantCaptureKeyboard) return;
-        Window& window = *((Window*) glfwGetWindowUserPointer(handle));
+        Window& window = *static_cast<Window*>(glfwGetWindowUserPointer(handle));
         switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT: {
@@ -118,7 +118,7 @@ void Window::destroy() {
     m_handle = nullptr;
 }
 
-void Window::update() {
+void Window::update() const {
     glfwSwapBuffers(m_handle);
 }
 
