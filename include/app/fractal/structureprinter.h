@@ -17,23 +17,23 @@ public:
     std::string exportStruct();
 
 private:
-    void print_vertex_state();
-    void print_decl_of_edge(Edge const& edge);
-    void print_delay_cantor_decl(unsigned int n, unsigned int delay_count);
-    void print_cantor_n_state_decl(unsigned int n);
-    void print_delay_bezier_decl(unsigned int n, unsigned int delay_count);
-    void print_bezier_state_decl(unsigned int n);
-    void print_impl_of_edge(Edge const& edge);
-    void print_delay_cantor_impl(unsigned int n, unsigned int delay_count);
-    void print_cantor_n_state_impl(unsigned int n);
-    void print_delay_bezier_impl(unsigned int n, unsigned int delay_count);
-    void print_bezier_state_impl(unsigned int n);
-    void print_init_subds();
-    void print_edges_of_cell(Face const& cell);
-    void print_subd_of_cell(Face const& cell);
-    void print_space_of_cell(Face const& cell);
-    void print_prim_of_cell(Face const& cell);
-    void print_edge_adjacencies_of_cell(Face const& cell);
+    void printVertexState();
+    void printDeclOfEdge(Edge const& edge);
+    void printDelayCantorDecl(unsigned int n, unsigned int delay_count);
+    void printCantorDecl(unsigned int n);
+    void printDelayBezierDecl(unsigned int n, unsigned int delay_count);
+    void printBezierDecl(unsigned int n);
+    void printImplOfEdge(Edge const& edge);
+    void printDelayCantorImpl(unsigned int n, unsigned int delay_count);
+    void printCantorImpl(unsigned int n);
+    void printDelayBezierImpl(unsigned int n, unsigned int delay_count);
+    void printBezierImpl(unsigned int n);
+    void printInitSubds();
+    void printEdgesOfCell(Face const& cell);
+    void printSubdOfCell(Face const& cell);
+    void printSpaceOfCell(Face const& cell);
+    void printPrimOfCell(Face const& cell);
+    void printEdgeAdjacenciesOfCell(Face const& cell);
 
 private:
     Structure const& m_structure;

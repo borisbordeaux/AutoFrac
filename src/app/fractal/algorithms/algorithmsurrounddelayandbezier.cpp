@@ -1,4 +1,6 @@
 #include "app/fractal/algorithms/algorithmsurrounddelayandbezier.h"
+
+#include "app/fractal/face.h"
 #include "app/utils/utils.h"
 
 namespace frac::LinksSurroundDelayAndBezier {

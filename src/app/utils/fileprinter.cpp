@@ -6,7 +6,7 @@ void frac::FilePrinter::append(std::string const& text) {
     m_output += text;
 }
 
-void frac::FilePrinter::append_nl(std::string const& text) {
+void frac::FilePrinter::appendNewLine(std::string const& text) {
     m_output += text + '\n';
 }
 

@@ -14,25 +14,11 @@ public:
             this->m_data.emplace_back(elt);
         }
     }
-
-    std::size_t size() const {
-        return this->m_data.size();
-    }
-
-    T const& operator[](std::size_t index) const {
-        return this->m_data[index];
-    }
-
-    std::vector<T> const& data() const {
-        return this->m_data;
-    }
-
-    void clear() {
-        this->m_data.clear();
-    }
-
+    std::size_t size() const { return this->m_data.size(); }
+    T const& operator[](std::size_t index) const { return this->m_data[index]; }
+    std::vector<T> const& data() const { return this->m_data; }
+    void clear() { this->m_data.clear(); }
     auto begin() { return m_data.begin(); }
-
     auto end() { return m_data.end(); }
 
 private:

@@ -8,7 +8,7 @@
 
 namespace frac::utils {
 
-inline std::string to_string(float value) {
+inline std::string toString(float value) {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(4) << value;
     std::string res = stream.str();
@@ -53,7 +53,7 @@ inline std::vector<std::string> split(std::string const& str, std::string const&
     return strings;
 }
 
-inline std::vector<float> get_bezier_linear_transformation(unsigned int i, unsigned int n) {
+inline std::vector<float> getBezierLinearTransformation(unsigned int i, unsigned int n) {
     float denominator = static_cast<float>(n);
     return {
         static_cast<float>(n - i) / denominator,
@@ -64,7 +64,7 @@ inline std::vector<float> get_bezier_linear_transformation(unsigned int i, unsig
     };
 }
 
-inline std::vector<float> get_bezier_quadratic_transformation(unsigned int i, unsigned int n) {
+inline std::vector<float> getBezierQuadraticTransformation(unsigned int i, unsigned int n) {
     float denominator = static_cast<float>(n * n);
     return {
         static_cast<float>((i - n) * (i - n)) / denominator,
@@ -81,7 +81,7 @@ inline std::vector<float> get_bezier_quadratic_transformation(unsigned int i, un
     };
 }
 
-inline std::vector<float> get_bezier_cubic_transformation(unsigned int i, unsigned int n) {
+inline std::vector<float> getBezierCubicTransformation(unsigned int i, unsigned int n) {
     float denominator = static_cast<float>(n * n * n);
     return {
         static_cast<float>(-(i - n) * (i - n) * (i - n)) / denominator,
@@ -106,16 +106,16 @@ inline std::vector<float> get_bezier_cubic_transformation(unsigned int i, unsign
     };
 }
 
-inline std::vector<float> get_cantor_linear_transformation(unsigned int i, unsigned int n) {
-    return get_bezier_linear_transformation(2 * i, 2 * n - 1);
+inline std::vector<float> getCantorLinearTransformation(unsigned int i, unsigned int n) {
+    return getBezierLinearTransformation(2 * i, 2 * n - 1);
 }
 
-inline std::vector<float> get_cantor_quadratic_transformation(unsigned int i, unsigned int n) {
-    return get_bezier_quadratic_transformation(2 * i, 2 * n - 1);
+inline std::vector<float> getCantorQuadraticTransformation(unsigned int i, unsigned int n) {
+    return getBezierQuadraticTransformation(2 * i, 2 * n - 1);
 }
 
-inline std::vector<float> get_cantor_cubic_transformation(unsigned int i, unsigned int n) {
-    return get_bezier_cubic_transformation(2 * i, 2 * n - 1);
+inline std::vector<float> getCantorCubicTransformation(unsigned int i, unsigned int n) {
+    return getBezierCubicTransformation(2 * i, 2 * n - 1);
 }
 
 } // frac::utils

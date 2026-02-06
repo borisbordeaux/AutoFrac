@@ -1,7 +1,6 @@
 #ifndef AUTOFRAC_FRAC_STRUCTURE_H
 #define AUTOFRAC_FRAC_STRUCTURE_H
 
-#include <ostream>
 #include <string>
 #include <vector>
 
