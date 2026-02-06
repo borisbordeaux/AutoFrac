@@ -1,15 +1,17 @@
 #ifndef AUTOFRAC_APPLICATION_H
 #define AUTOFRAC_APPLICATION_H
 
-#include <string>
 #include <memory>
-#include "core/window.h"
+#include <string>
+
 #include "core/layer.h"
+#include "core/window.h"
 
 namespace Core {
 
 struct ApplicationSpecification {
     std::string name = "Application";
+    std::string initLayout = "imgui.ini";
     WindowSpecification windowSpec;
 };
 

@@ -6,6 +6,7 @@
 int main() {
     Core::ApplicationSpecification appSpec;
     appSpec.name = "AutoFrac";
+    appSpec.initLayout = "../res/layout/imgui.ini";
     appSpec.windowSpec.width = 1920;
     appSpec.windowSpec.height = 1080;
     appSpec.windowSpec.samples = 16;

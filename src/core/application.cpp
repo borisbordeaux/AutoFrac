@@ -12,6 +12,8 @@
 #include <iostream>
 #include <utility>
 
+#include "imgui/imgui_internal.h"
+
 namespace Core {
 
 static Application* s_Application = nullptr;
@@ -50,6 +52,11 @@ Application::Application(ApplicationSpecification specification) : m_specificati
     ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
     ImGui_ImplGlfw_InitForOpenGL(m_window->handle(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
+
+    ImGui::LoadIniSettingsFromDisk(io.IniFilename);
+    if (!ImGui::GetCurrentContext()->SettingsLoaded) {
+        ImGui::LoadIniSettingsFromDisk(m_specification.initLayout.c_str());
+    }
 
     Renderer::initOpenGL();
 }

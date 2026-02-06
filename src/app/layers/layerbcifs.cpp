@@ -21,6 +21,7 @@
 #include "core/renderer.h"
 #include "core/windowevents.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
 
 LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
@@ -520,7 +521,7 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
     }
     if (m_clearColorChanged) {
         m_clearColorChanged = false;
-        Core::Renderer::setClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
+        Core::Renderer::setClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, 1.0);
     }
 }
 
@@ -553,9 +554,6 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     constexpr float width = 0.6f;
-    ImGuiViewport* vp = ImGui::GetMainViewport();
-    ImGui::SetNextWindowSize(ImVec2(407, 962), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + 2, vp->Pos.y + 116), ImGuiCond_FirstUseEver);
     ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SeparatorText("Default fractals");
     if (ImGui::Button("Quad", ImVec2(-FLT_MIN,0))) {
@@ -634,16 +632,16 @@ void LayerBcifs::onImGuiRender() {
     {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("Auto control points", ImVec2(-FLT_MIN,0))) {
+            m_updateMSSControlPoints = true;
+        }
+        ImGui::TableSetColumnIndex(1);
         if (ImGui::Button("Random control points", ImVec2(-FLT_MIN,0))) {
             for (BCIFS::FormalMatrix& matrix : m_bcifs.controlPoints(0)) {
                 matrix.setRandomValues();
             }
             m_bcifs.invalidate(true);
             m_bcifsChanged = true;
-        }
-        ImGui::TableSetColumnIndex(1);
-        if (ImGui::Button("Auto control points", ImVec2(-FLT_MIN,0))) {
-            m_updateMSSControlPoints = true;
         }
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -684,7 +682,7 @@ void LayerBcifs::onImGuiRender() {
     }
     ImGui::SeparatorText("Settings");
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::ColorEdit4("Clear Color", &m_clearColor[0])) {
+    if (ImGui::ColorEdit3("Clear Color", &m_clearColor[0])) {
         m_clearColorChanged = true;
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
