@@ -855,13 +855,17 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
 }
 
 bool LayerBcifs::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
+    Core::LOG_INFO("edited fractal: {}", m_layerEditFractal->edited());
     if (event.getLayer() == this && m_layerEditFractal->face() != "" && m_layerEditFractal->edited()) {
         frac::Face::reset();
 
         std::vector<frac::Face> faces;
         faces.push_back(frac::Face::fromStr(m_layerEditFractal->face()));
 
-        frac::Structure s{ faces, frac::BezierType::Quadratic_Bezier, frac::CantorType::Quadratic_Cantor };
+        frac::BezierType bezierType = static_cast<frac::BezierType>(m_layerEditFractal->bezierType());
+        frac::CantorType cantorType = static_cast<frac::CantorType>(m_layerEditFractal->cantorType());
+
+        frac::Structure s{ faces, bezierType, cantorType };
 
         try {
             frac::StructurePrinter printer(s, false, "");
