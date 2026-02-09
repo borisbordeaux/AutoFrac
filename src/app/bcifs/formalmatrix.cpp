@@ -246,7 +246,7 @@ FormalMatrix FormalMatrix::variableEmbeddingMatrix() const {
 }
 
 FormalMatrix FormalMatrix::variableMatrix() const {
-    if (m_cols != 1) { throw std::runtime_error("The variable embedding matrix can be computed only for column matrices."); }
+    if (m_cols != 1) { throw std::runtime_error("The variable matrix can be computed only for column matrices."); }
 
     std::vector<std::size_t> differentValueIndices;
     std::vector<std::size_t> valueReferences;

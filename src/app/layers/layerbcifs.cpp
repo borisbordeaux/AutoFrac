@@ -988,8 +988,6 @@ void LayerBcifs::handleSelection() {
 }
 
 void LayerBcifs::handleMoveControlPoint() {
-    // move the control point
-    float t;
     glm::vec3 planePoint(m_currentControlPoint->value(0, 0), m_currentControlPoint->value(1, 0), m_currentControlPoint->value(2, 0));
     glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
     if (m_xKeyPressed) {
@@ -1015,6 +1013,7 @@ void LayerBcifs::handleMoveControlPoint() {
 
     glm::vec3 rayOrigin = m_camera.getEye();
 
+    float t;
     if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
         glm::vec3 newPos = rayOrigin + t * rayDirection;
         m_currentControlPoint->setValue(0, 0, newPos.x);
@@ -1026,7 +1025,6 @@ void LayerBcifs::handleMoveControlPoint() {
 }
 
 void LayerBcifs::handleMoveSubdivisionPoint() {
-    float t;
     glm::vec3 planePoint = m_currentSubdivisionPoint->posR3();
     glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
 
@@ -1042,51 +1040,38 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
 
     glm::vec3 rayOrigin = m_camera.getEye();
 
+    float t;
     if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
         glm::vec3 newPos = rayOrigin + t * rayDirection;
-        BCIFS::FormalMatrix Uv = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix();
-        arma::mat q = m_currentSubdivisionPoint->posBary().toMat();
-        std::cout << "q  : " << std::endl << q << std::endl;
-        arma::mat pv = Uv.toMat();
-        std::cout << "pv  : " << std::endl << pv << std::endl;
-        arma::mat matTrue = m_currentSubdivisionPoint->T();
-        std::cout << "mat True  : " << std::endl << matTrue << std::endl;
-        arma::mat mat(matTrue.n_rows + 1, matTrue.n_cols);
-        mat.ones();
-        for (std::size_t row = 0; row < matTrue.n_rows; row++) {
-            for (std::size_t col = 0; col < matTrue.n_cols; col++) {
-                mat.at(row, col) = matTrue.at(row, col);
+        arma::mat posBary = m_currentSubdivisionPoint->posBary().toMat();
+        arma::mat variableBoundaryOperatorMat = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix().toMat();
+        const arma::mat& transform = m_currentSubdivisionPoint->T();
+        arma::mat transformHomogeneous(transform.n_rows + 1, transform.n_cols);
+        transformHomogeneous.ones();
+        for (std::size_t row = 0; row < transform.n_rows; row++) {
+            for (std::size_t col = 0; col < transform.n_cols; col++) {
+                transformHomogeneous.at(row, col) = transform.at(row, col);
             }
         }
-        std::cout << "mat  : " << std::endl << mat << std::endl;
-        BCIFS::FormalMatrix mv = m_currentSubdivisionPoint->posBary().variableMatrix();
-        std::cout << "mv  : " << std::endl << mv.toString() << std::endl;
-
-        glm::vec3 deltaR3glm = newPos;
-        arma::mat p_(4, 1);
-        p_.at(0, 0) = deltaR3glm.x;
-        p_.at(1, 0) = deltaR3glm.y;
-        p_.at(2, 0) = deltaR3glm.z;
-        p_.at(3, 0) = 1.0f;
-        arma::mat dp = p_;
-        std::cout << "dp : " << std::endl << dp << std::endl;
-        arma::mat m2 = dp;
-        std::cout << "m2 : " << std::endl << m2 << std::endl;
-        arma::mat m3 = mat * pv;
-        std::cout << "m3 : " << std::endl << m3 << std::endl;
-        arma::mat m4 = arma::pinv(m3, 0.01);
-        std::cout << "m4 : " << std::endl << m4 << std::endl;
-        arma::mat m6 = m4 * m2;
-        std::cout << "m6 : " << std::endl << m6 << std::endl;
-        for (std::size_t row = 0; row < mv.rows(); row++) {
-            mv.setValue(row, 0, m6.at(row, 0));
+        BCIFS::FormalMatrix variableMatrix = m_currentSubdivisionPoint->posBary().variableMatrix();
+        arma::mat newPosHomogeneous(4, 1);
+        newPosHomogeneous.at(0, 0) = newPos.x;
+        newPosHomogeneous.at(1, 0) = newPos.y;
+        newPosHomogeneous.at(2, 0) = newPos.z;
+        newPosHomogeneous.at(3, 0) = 1.0f;
+        arma::mat variableTransformHomogenous = transformHomogeneous * variableBoundaryOperatorMat;
+        arma::mat invVariableTransformHomogenous = arma::pinv(variableTransformHomogenous, 0.01);
+        arma::mat newPosBaryVariableHomogeneous = invVariableTransformHomogenous * newPosHomogeneous;
+        // update values with homogeneous values
+        for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
+            variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0));
         }
-        arma::mat coord = mat * m_currentSubdivisionPoint->posBary().toMat();
-        float r = 1.0f / coord.at(3, 0);
-        arma::mat m7 = m6 * r;
-        std::cout << "m7 : " << std::endl << m7 << std::endl;
-        for (std::size_t row = 0; row < mv.rows(); row++) {
-            mv.setValue(row, 0, m7.at(row, 0));
+        // get homogeneous coords to compute ratio
+        arma::mat coordHomogeneous = transformHomogeneous * m_currentSubdivisionPoint->posBary().toMat();
+        float r = 1.0f / coordHomogeneous.at(3, 0);
+        // update coords with the computed ratio (homogeneous to barycentric coords)
+        for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
+            variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0) * r);
         }
     }
 
