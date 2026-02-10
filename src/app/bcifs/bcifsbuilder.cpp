@@ -36,7 +36,7 @@ void BcifsBuilder::boundary(const std::string& name, const std::string& from, co
     StateID fromId = this->getStateID(from);
     this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions[fromId].emplace(name, m_bcifs.addBoundary(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addBoundary(name, fromId, toId));
 }
 
 void BcifsBuilder::grid(const std::string& state, const GridName& grid) {
@@ -68,7 +68,7 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
     StateID fromId = this->getStateID(from);
     this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(name, fromId, toId));
 }
 
 void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor) {
@@ -79,7 +79,7 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
         throw sol::error("The color must be an array of 3 floats");
     }
     glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
-    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId, std::move(frontColorVec)));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(name, fromId, toId, frontColorVec));
 }
 
 void BcifsBuilder::subdivision(const std::string& name, const std::string& from, const std::string& to, const std::vector<float>& frontColor, const std::vector<float>& backColor) {
@@ -91,14 +91,14 @@ void BcifsBuilder::subdivision(const std::string& name, const std::string& from,
     }
     glm::vec3 frontColorVec(frontColor[0], frontColor[1], frontColor[2]);
     glm::vec3 backColorVec(backColor[0], backColor[1], backColor[2]);
-    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(std::move(name), fromId, toId, std::move(frontColorVec), std::move(backColorVec)));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addSubdivision(name, fromId, toId, frontColorVec, backColorVec));
 }
 
 void BcifsBuilder::permutation(const std::string& name, const std::string& from, const std::string& to) {
     StateID fromId = this->getStateID(from);
     this->assertTransitionDoesntExist(fromId, name);
     StateID toId = this->getStateID(to);
-    m_mapTransitions[fromId].emplace(name, m_bcifs.addPermutation(std::move(name), fromId, toId));
+    m_mapTransitions[fromId].emplace(name, m_bcifs.addPermutation(name, fromId, toId));
 }
 
 void BcifsBuilder::space(const std::string& state, const std::vector<std::string>& boundaries) {
