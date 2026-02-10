@@ -9,11 +9,11 @@ state("WC", 0)
 state("L", 0)
 
 -- permutations
-permutation("permut", "C", "C")
-permutation("permut", "B", "B")
-permutation("permut", "L", "L")
-permutation("permut", "WC", "WC")
-permutation("permut", "WB", "WB")
+permutation("p0", "C", "C")
+permutation("p0", "B", "B")
+permutation("p0", "L", "L")
+permutation("p0", "WC", "WC")
+permutation("p0", "WB", "WB")
 
 -- boundary of states
 boundary("b0", "B", "V")
@@ -240,36 +240,36 @@ primitive("Vol", {
 
 -- permutation constraints
 -- to define permutation operators
-constraint("C", { "permut", "b0" }, { "b1" })
-constraint("C", { "permut", "b1" }, { "b0" })
-constraint("L", { "permut", "b0" }, { "b1" })
-constraint("L", { "permut", "b1" }, { "b0" })
-constraint("B", { "permut", "b0" }, { "b1" })
-constraint("B", { "permut", "intern_0" }, { "intern_0" })
-constraint("B", { "permut", "b1" }, { "b0" })
-constraint("WC", { "permut", "b0" }, { "b0", "permut" })
-constraint("WC", { "permut", "b1" }, { "b3", "permut" })
-constraint("WC", { "permut", "b2" }, { "b2", "permut" })
-constraint("WC", { "permut", "b3" }, { "b1", "permut" })
-constraint("WB", { "permut", "b0" }, { "b0", "permut" })
-constraint("WB", { "permut", "b1" }, { "b3", "permut" })
-constraint("WB", { "permut", "b2" }, { "b2", "permut" })
-constraint("WB", { "permut", "b3" }, { "b1", "permut" })
+constraint("C", { "p0", "b0" }, { "b1" })
+constraint("C", { "p0", "b1" }, { "b0" })
+constraint("L", { "p0", "b0" }, { "b1" })
+constraint("L", { "p0", "b1" }, { "b0" })
+constraint("B", { "p0", "b0" }, { "b1" })
+constraint("B", { "p0", "intern_0" }, { "intern_0" })
+constraint("B", { "p0", "b1" }, { "b0" })
+constraint("WC", { "p0", "b0" }, { "b0", "p0" })
+constraint("WC", { "p0", "b1" }, { "b3", "p0" })
+constraint("WC", { "p0", "b2" }, { "b2", "p0" })
+constraint("WC", { "p0", "b3" }, { "b1", "p0" })
+constraint("WB", { "p0", "b0" }, { "b0", "p0" })
+constraint("WB", { "p0", "b1" }, { "b3", "p0" })
+constraint("WB", { "p0", "b2" }, { "b2", "p0" })
+constraint("WB", { "p0", "b3" }, { "b1", "p0" })
 -- to constrain subdivision operators using permutation operators
-constraint("C", { "permut", "s0" }, { "s1", "permut" })
-constraint("C", { "permut", "s1" }, { "s0", "permut" })
-constraint("B", { "permut", "s0" }, { "s1", "permut" })
-constraint("B", { "permut", "s1" }, { "s0", "permut" })
-constraint("L", { "permut", "s0" }, { "s1", "permut" })
-constraint("L", { "permut", "s1" }, { "s0", "permut" })
-constraint("WC", { "permut", "s0" }, { "s1", "permut" })
-constraint("WC", { "permut", "s1" }, { "s0", "permut" })
-constraint("WC", { "permut", "s2" }, { "s3", "permut" })
-constraint("WC", { "permut", "s3" }, { "s2", "permut" })
-constraint("WB", { "permut", "s0" }, { "s1", "permut" })
-constraint("WB", { "permut", "s1" }, { "s0", "permut" })
-constraint("WB", { "permut", "s2" }, { "s3", "permut" })
-constraint("WB", { "permut", "s3" }, { "s2", "permut" })
+constraint("C", { "p0", "s0" }, { "s1", "p0" })
+constraint("C", { "p0", "s1" }, { "s0", "p0" })
+constraint("B", { "p0", "s0" }, { "s1", "p0" })
+constraint("B", { "p0", "s1" }, { "s0", "p0" })
+constraint("L", { "p0", "s0" }, { "s1", "p0" })
+constraint("L", { "p0", "s1" }, { "s0", "p0" })
+constraint("WC", { "p0", "s0" }, { "s1", "p0" })
+constraint("WC", { "p0", "s1" }, { "s0", "p0" })
+constraint("WC", { "p0", "s2" }, { "s3", "p0" })
+constraint("WC", { "p0", "s3" }, { "s2", "p0" })
+constraint("WB", { "p0", "s0" }, { "s1", "p0" })
+constraint("WB", { "p0", "s1" }, { "s0", "p0" })
+constraint("WB", { "p0", "s2" }, { "s3", "p0" })
+constraint("WB", { "p0", "s3" }, { "s2", "p0" })
 
 -- incidence constraints
 -- on edge
@@ -353,20 +353,20 @@ constraint("Vol", { "b7", "s3" }, { "s11", "b7" })
 -- on edge
 constraint("B", { "s0", "b1" }, { "s1", "b0" })
 -- on face
-constraint("F", { "s0", "b2", "permut" }, { "s1", "b0" })
-constraint("F", { "s1", "b4", "permut" }, { "s2", "b0" })
-constraint("F", { "s2", "b4", "permut" }, { "s3", "b2" })
-constraint("F", { "s3", "b0", "permut" }, { "s4", "b2" })
-constraint("F", { "s4", "b0", "permut" }, { "s5", "b4" })
-constraint("F", { "s5", "b2", "permut" }, { "s0", "b4" })
+constraint("F", { "s0", "b2", "p0" }, { "s1", "b0" })
+constraint("F", { "s1", "b4", "p0" }, { "s2", "b0" })
+constraint("F", { "s2", "b4", "p0" }, { "s3", "b2" })
+constraint("F", { "s3", "b0", "p0" }, { "s4", "b2" })
+constraint("F", { "s4", "b0", "p0" }, { "s5", "b4" })
+constraint("F", { "s5", "b2", "p0" }, { "s0", "b4" })
 -- on walls
-constraint("WB", { "s0", "b1", "permut" }, { "s1", "b3" })
-constraint("WB", { "s1", "b2", "permut" }, { "s2", "b0" })
-constraint("WB", { "s2", "b3", "permut" }, { "s3", "b1" })
-constraint("WB", { "s3", "b0", "permut" }, { "s0", "b2" })
+constraint("WB", { "s0", "b1", "p0" }, { "s1", "b3" })
+constraint("WB", { "s1", "b2", "p0" }, { "s2", "b0" })
+constraint("WB", { "s2", "b3", "p0" }, { "s3", "b1" })
+constraint("WB", { "s3", "b0", "p0" }, { "s0", "b2" })
 
-constraint("WC", { "s1", "b2", "permut" }, { "s2", "b0" })
-constraint("WC", { "s3", "b0", "permut" }, { "s0", "b2" })
+constraint("WC", { "s1", "b2", "p0" }, { "s2", "b0" })
+constraint("WC", { "s3", "b0", "p0" }, { "s0", "b2" })
 -- on volume
 constraint("Vol", { "s0", "b1" }, { "s6", "b0" })
 constraint("Vol", { "s1", "b1" }, { "s7", "b0" })
@@ -375,19 +375,19 @@ constraint("Vol", { "s3", "b1" }, { "s9", "b0" })
 constraint("Vol", { "s4", "b1" }, { "s10", "b0" })
 constraint("Vol", { "s5", "b1" }, { "s11", "b0" })
 
-constraint("Vol", { "s0", "b4", "permut" }, { "s1", "b2" })
-constraint("Vol", { "s1", "b6", "permut" }, { "s2", "b2" })
-constraint("Vol", { "s2", "b6", "permut" }, { "s3", "b4" })
-constraint("Vol", { "s3", "b2", "permut" }, { "s4", "b4" })
-constraint("Vol", { "s4", "b2", "permut" }, { "s5", "b6" })
-constraint("Vol", { "s5", "b4", "permut" }, { "s0", "b6" })
+constraint("Vol", { "s0", "b4", "p0" }, { "s1", "b2" })
+constraint("Vol", { "s1", "b6", "p0" }, { "s2", "b2" })
+constraint("Vol", { "s2", "b6", "p0" }, { "s3", "b4" })
+constraint("Vol", { "s3", "b2", "p0" }, { "s4", "b4" })
+constraint("Vol", { "s4", "b2", "p0" }, { "s5", "b6" })
+constraint("Vol", { "s5", "b4", "p0" }, { "s0", "b6" })
 
-constraint("Vol", { "s6", "b4", "permut" }, { "s7", "b2" })
-constraint("Vol", { "s7", "b6", "permut" }, { "s8", "b2" })
-constraint("Vol", { "s8", "b6", "permut" }, { "s9", "b4" })
-constraint("Vol", { "s9", "b2", "permut" }, { "s10", "b4" })
-constraint("Vol", { "s10", "b2", "permut" }, { "s11", "b6" })
-constraint("Vol", { "s11", "b4", "permut" }, { "s6", "b6" })
+constraint("Vol", { "s6", "b4", "p0" }, { "s7", "b2" })
+constraint("Vol", { "s7", "b6", "p0" }, { "s8", "b2" })
+constraint("Vol", { "s8", "b6", "p0" }, { "s9", "b4" })
+constraint("Vol", { "s9", "b2", "p0" }, { "s10", "b4" })
+constraint("Vol", { "s10", "b2", "p0" }, { "s11", "b6" })
+constraint("Vol", { "s11", "b4", "p0" }, { "s6", "b6" })
 -- on incidence operators
 constraint("F", { "b0", "b1" }, { "b1", "b0" })
 constraint("F", { "b1", "b1" }, { "b2", "b0" })
@@ -406,12 +406,12 @@ constraint("WC", { "b1", "b1" }, { "b2", "b0" })
 constraint("WC", { "b2", "b1" }, { "b3", "b0" })
 constraint("WC", { "b3", "b1" }, { "b0", "b0" })
 
-constraint("Vol", { "b0", "b0", "permut" }, { "b2", "b0" })
-constraint("Vol", { "b0", "b1", "permut" }, { "b3", "b0" })
-constraint("Vol", { "b0", "b2", "permut" }, { "b4", "b0" })
-constraint("Vol", { "b0", "b3", "permut" }, { "b5", "b0" })
-constraint("Vol", { "b0", "b4", "permut" }, { "b6", "b0" })
-constraint("Vol", { "b0", "b5", "permut" }, { "b7", "b0" })
+constraint("Vol", { "b0", "b0", "p0" }, { "b2", "b0" })
+constraint("Vol", { "b0", "b1", "p0" }, { "b3", "b0" })
+constraint("Vol", { "b0", "b2", "p0" }, { "b4", "b0" })
+constraint("Vol", { "b0", "b3", "p0" }, { "b5", "b0" })
+constraint("Vol", { "b0", "b4", "p0" }, { "b6", "b0" })
+constraint("Vol", { "b0", "b5", "p0" }, { "b7", "b0" })
 
 constraint("Vol", { "b1", "b0" }, { "b2", "b2" })
 constraint("Vol", { "b1", "b1" }, { "b3", "b2" })
@@ -420,12 +420,12 @@ constraint("Vol", { "b1", "b3" }, { "b5", "b2" })
 constraint("Vol", { "b1", "b4" }, { "b6", "b2" })
 constraint("Vol", { "b1", "b5" }, { "b7", "b2" })
 
-constraint("Vol", { "b2", "b3", "permut" }, { "b3", "b1" })
-constraint("Vol", { "b3", "b3", "permut" }, { "b4", "b1" })
-constraint("Vol", { "b4", "b3", "permut" }, { "b5", "b1" })
-constraint("Vol", { "b5", "b3", "permut" }, { "b6", "b1" })
-constraint("Vol", { "b6", "b3", "permut" }, { "b7", "b1" })
-constraint("Vol", { "b7", "b3", "permut" }, { "b2", "b1" })
+constraint("Vol", { "b2", "b3", "p0" }, { "b3", "b1" })
+constraint("Vol", { "b3", "b3", "p0" }, { "b4", "b1" })
+constraint("Vol", { "b4", "b3", "p0" }, { "b5", "b1" })
+constraint("Vol", { "b5", "b3", "p0" }, { "b6", "b1" })
+constraint("Vol", { "b6", "b3", "p0" }, { "b7", "b1" })
+constraint("Vol", { "b7", "b3", "p0" }, { "b2", "b1" })
 
 -- init matrices for edges
 -- for cantor
@@ -448,28 +448,22 @@ initMat("B", "s1", {
     { 0.50, 0.5, 0.0 },
     { 0.25, 0.5, 1.0 }
 }, "CONST")
-initMat("WC", "s0", {
-    { 1, 2.0 / 3.0, 1.0 / 3.0, 0.5 },
-    { 0, 1.0 / 3.0, 1.0 / 6.0, 0.0 },
-    { 0,       0.0, 1.0 / 6.0, 0.0 },
-    { 0,       0.0, 1.0 / 3.0, 0.5 }
-}, "CONST")
 
-initMat("WC", "s1", {
-    { 1.0 / 3.0, 0.0, 0.0, 1.0 / 6.0 },
-    { 2.0 / 3.0, 1.0, 0.5, 1.0 / 3.0 },
-    {         0, 0.0, 0.5, 1.0 / 3.0 },
-    {         0, 0.0, 0.0, 1.0 / 6.0 }
-}, "CONST")
-
-initMat("WB", "s0", {
-    { 1, 0.5, 0.25, 0.125, 0.25, 0.5 },
-    { 0, 0.5, 0.50, 0.250, 0.25, 0.0 },
-    { 0, 0.0, 0.25, 0.125, 0.00, 0.0 },
-    { 0, 0.0, 0.00, 0.125, 0.00, 0.0 },
-    { 0, 0.0, 0.00, 0.250, 0.25, 0.0 },
-    { 0, 0.0, 0.00, 0.125, 0.25, 0.5 }
-}, "CONST")
+-- to have a more consistent boundary
+-- initMat("WC", "s0", {
+--     { 1, 2.0 / 3.0, 1.0 / 3.0, 0.5 },
+--     { 0, 1.0 / 3.0, 1.0 / 6.0, 0.0 },
+--     { 0,       0.0, 1.0 / 6.0, 0.0 },
+--     { 0,       0.0, 1.0 / 3.0, 0.5 }
+-- }, "CONST")
+-- initMat("WB", "s0", {
+--     { 1, 0.5, 0.25, 0.125, 0.25, 0.5 },
+--     { 0, 0.5, 0.50, 0.250, 0.25, 0.0 },
+--     { 0, 0.0, 0.25, 0.125, 0.00, 0.0 },
+--     { 0, 0.0, 0.00, 0.125, 0.00, 0.0 },
+--     { 0, 0.0, 0.00, 0.250, 0.25, 0.0 },
+--     { 0, 0.0, 0.00, 0.125, 0.25, 0.5 }
+-- }, "CONST")
 
 -- init control points
 initMat("init", "s0", {

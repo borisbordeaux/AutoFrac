@@ -5,8 +5,8 @@ state("C", 0)
 state("F", 0)
 
 -- permutations
-permutation("permut", "C", "C")
-permutation("permut", "B", "B")
+permutation("p0", "C", "C")
+permutation("p0", "B", "B")
 
 -- boundary of states
 boundary("b0", "B", "V")
@@ -72,16 +72,16 @@ primitive("F", {
 
 -- permutation constraints
 -- to define permutation operators
-constraint("C", { "permut", "b0" }, { "b1" })
-constraint("C", { "permut", "b1" }, { "b0" })
-constraint("B", { "permut", "b0" }, { "b1" })
-constraint("B", { "permut", "intern_0" }, { "intern_0" })
-constraint("B", { "permut", "b1" }, { "b0" })
+constraint("C", { "p0", "b0" }, { "b1" })
+constraint("C", { "p0", "b1" }, { "b0" })
+constraint("B", { "p0", "b0" }, { "b1" })
+constraint("B", { "p0", "intern_0" }, { "intern_0" })
+constraint("B", { "p0", "b1" }, { "b0" })
 -- to constrain subdivision operators using permutation operators
-constraint("C", { "permut", "s0" }, { "s1", "permut" })
-constraint("C", { "permut", "s1" }, { "s0", "permut" })
-constraint("B", { "permut", "s0" }, { "s1", "permut" })
-constraint("B", { "permut", "s1" }, { "s0", "permut" })
+constraint("C", { "p0", "s0" }, { "s1", "p0" })
+constraint("C", { "p0", "s1" }, { "s0", "p0" })
+constraint("B", { "p0", "s0" }, { "s1", "p0" })
+constraint("B", { "p0", "s1" }, { "s0", "p0" })
 
 -- incidence constraints
 -- on edge
@@ -107,12 +107,12 @@ constraint("F", { "b5", "s1" }, { "s5", "b5" })
 -- on edge
 constraint("B", { "s0", "b1" }, { "s1", "b0" })
 -- on face
-constraint("F", { "s0", "b2", "permut" }, { "s1", "b0" })
-constraint("F", { "s1", "b4", "permut" }, { "s2", "b0" })
-constraint("F", { "s2", "b4", "permut" }, { "s3", "b2" })
-constraint("F", { "s3", "b0", "permut" }, { "s4", "b2" })
-constraint("F", { "s4", "b0", "permut" }, { "s5", "b4" })
-constraint("F", { "s5", "b2", "permut" }, { "s0", "b4" })
+constraint("F", { "s0", "b2", "p0" }, { "s1", "b0" })
+constraint("F", { "s1", "b4", "p0" }, { "s2", "b0" })
+constraint("F", { "s2", "b4", "p0" }, { "s3", "b2" })
+constraint("F", { "s3", "b0", "p0" }, { "s4", "b2" })
+constraint("F", { "s4", "b0", "p0" }, { "s5", "b4" })
+constraint("F", { "s5", "b2", "p0" }, { "s0", "b4" })
 -- on incidence operators
 constraint("F", { "b0", "b1" }, { "b1", "b0" })
 constraint("F", { "b1", "b1" }, { "b2", "b0" })
