@@ -554,15 +554,28 @@ void LayerBcifs::onRender() {
 void LayerBcifs::onImGuiRender() {
     constexpr float width = 0.6f;
     ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav);
+
     ImGui::SeparatorText("Default fractals");
-    if (ImGui::Button("Quad", ImVec2(-FLT_MIN, 0))) {
-        this->testSubdQuad();
-        m_bcifsChanged = true;
+    if (ImGui::BeginTable("tableDefaultFractals", 3)) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("Quad", ImVec2(-FLT_MIN, 0))) {
+            this->testSubdQuad();
+            m_bcifsChanged = true;
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::Button("Sierpinski", ImVec2(-FLT_MIN, 0))) {
+            this->testSierpinski();
+            m_bcifsChanged = true;
+        }
+        ImGui::TableSetColumnIndex(2);
+        if (ImGui::Button("Squarepinski", ImVec2(-FLT_MIN, 0))) {
+            this->testSquareSierpinski();
+            m_bcifsChanged = true;
+        }
+        ImGui::EndTable();
     }
-    if (ImGui::Button("Sierpinski", ImVec2(-FLT_MIN, 0))) {
-        this->testSierpinski();
-        m_bcifsChanged = true;
-    }
+
     static int dim[2] = { 1, 1 };
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::SliderInt2("Grid size", dim, 1, 20);
@@ -570,10 +583,7 @@ void LayerBcifs::onImGuiRender() {
         this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Square Sierpinski", ImVec2(-FLT_MIN, 0))) {
-        this->testSquareSierpinski();
-        m_bcifsChanged = true;
-    }
+
     ImGui::SeparatorText("Interface BC-IFS");
     if (ImGui::Button("Load Lua File...", ImVec2(-FLT_MIN, 0))) {
         IGFD::FileDialogConfig config;
@@ -695,7 +705,8 @@ void LayerBcifs::onImGuiRender() {
         m_bcifsChanged = true;
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, "PHONG\0FLAT\0")) {
+    const char* typeNames[3] = { "Phong", "Flat" };
+    if (ImGui::SliderInt("Illumination mode", &m_currentIlluminationItem, 0, 1, typeNames[m_currentIlluminationItem], ImGuiSliderFlags_NoInput)) {
         m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
         m_uniformsDirty = true;
     }
@@ -856,7 +867,6 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
 }
 
 bool LayerBcifs::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
-    Core::LOG_INFO("edited fractal: {}", m_layerEditFractal->edited());
     if (event.getLayer() == this && !m_layerEditFractal->faces().empty() && m_layerEditFractal->edited()) {
         frac::Face::reset();
 

@@ -129,13 +129,15 @@ void LayerEditFractal::onImGuiRender() {
         m_faces[m_selectedFace] = m_currentFace.toString();
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Face process", &m_faceProc, "Surround Delay\0Surround delay and Bézier\0Corners\0")) {
+    const char* procNames[3] = { "Surround Delay", "Surround delay and Bézier", "Corners" };
+    if (ImGui::SliderInt("Face process", &m_faceProc, 0, 2, procNames[m_faceProc], ImGuiSliderFlags_NoInput)) {
         m_currentFace.setAlgo(static_cast<frac::AlgorithmSubdivision>(m_faceProc));
         m_faces[m_selectedFace] = m_currentFace.toString();
     }
     ImGui::SeparatorText("Geometry");
-    ImGui::Combo("Cantor type", &m_cantorType, "Linear\0Quadratic\0Cubic\0");
-    ImGui::Combo("Bézier type", &m_bezierType, "Linear\0Quadratic\0Cubic\0");
+    const char* typeNames[3] = { "Linear", "Quadratic", "Cubic" };
+    ImGui::SliderInt("Cantor type", &m_cantorType, 0, 2, typeNames[m_cantorType], ImGuiSliderFlags_NoInput);
+    ImGui::SliderInt("Bézier type", &m_bezierType, 0, 2, typeNames[m_bezierType], ImGuiSliderFlags_NoInput);
     ImGui::End();
     this->updateEdited();
 }
@@ -189,7 +191,8 @@ void LayerEditFractal::displayEdgeSettings(const std::string& desc, frac::Edge& 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::Combo(("##type" + desc).c_str(), type, "Cantor\0Bézier\0")) {
+        const char* typeNames[2] = { "Cantor", "Bézier" };
+        if (ImGui::SliderInt(("##type" + desc).c_str(), type, 0, 1, typeNames[*type], ImGuiSliderFlags_NoInput)) {
             edge.setEdgeType(static_cast<frac::EdgeType>(*type));
             m_faces[m_selectedFace] = m_currentFace.toString();
         }

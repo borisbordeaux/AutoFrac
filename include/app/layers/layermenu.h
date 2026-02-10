@@ -19,7 +19,6 @@ private:
 
 private:
     float m_deltaTime = 0.0f;
-    bool m_showDemo = false;
 };
 
 #endif //AUTOFRAC_LAYERMENU_H

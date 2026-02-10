@@ -7,9 +7,13 @@
 #include "imgui/imgui.h"
 
 void LayerMenu::onImGuiRender() {
-    if (m_showDemo) {
-        ImGui::ShowDemoWindow(&m_showDemo);
+#define demo 0
+#if demo
+    static bool showDemo = false;
+    if (showDemo) {
+        ImGui::ShowDemoWindow(&showDemo);
     }
+#endif
     static int location = 1;
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     if (location >= 0)
@@ -32,7 +36,9 @@ void LayerMenu::onImGuiRender() {
     {
         ImGui::Text("Application average %.3f ms/frame (%.0f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::Text("Delta time is %.3f seconds, %.3f ms", m_deltaTime, m_deltaTime * 1000.0f);
-        ImGui::Checkbox("Show Demo Window", &m_showDemo);
+#if demo
+        ImGui::Checkbox("Show Demo Window", &showDemo);
+#endif
         if (ImGui::BeginPopupContextWindow())
         {
             if (ImGui::MenuItem("Custom", nullptr, location == -1)) location = -1;
