@@ -27,10 +27,9 @@ The main pipeline is:
 
 ### The script
 
-The script must be written in Lua.
-The fractal topology has to be described using the BC-IFS model.
+The script, written in Lua, should describe the topology of a fractal with the BC-IFS model [[1](#1), [2](#2)].
 Some example files are provided inside the `res/script/` folder.
-I provide a list of all available Lua functions relative to the BC-IFS model [in a following section](#available-lua-functions).
+A list of all available Lua functions relative to the BC-IFS model is provided [in a following section](#available-lua-functions).
 
 ### The interface
 
@@ -52,7 +51,7 @@ This software also offers the possibility the see 3D colorful fractals, as demon
 #### Automatic conception interface
 
 This software allows to conceive fractal faces by describing the fractal behavior of their edges.
-See [[1]](#1) or [[2]](#2) for more theoretical information on how it is done.  
+See [[3](#3)] or [[4](#4)] for more theoretical information on how it is done.  
 Press the `tab` key to switch between edit and render mode.  
 Note that when returning to the render mode, if something has changed in edit mode, a new fractal is automatically constructed with the settings currently in the edit mode.
 
@@ -159,7 +158,13 @@ initMat(stateName, subdivisionName, matrix, type)
 ### References
 
 <a id="1">[1]</a>
-BORDEAUX, Boris et GENTIL, Christian. [*Automatic construction of fractal structures with locally controlled lacunarity.*](https://dspace.zcu.cz/bitstreams/a4fdeb1a-4486-4c5c-8597-16de0cd32303/download) In : Journal of WSCG. 2024.
+GOUATY, Gilles. [*Modélisation géométrique itérative sous contraintes.*](https://core.ac.uk/download/pdf/147955210.pdf) 2010. Thèse de doctorat. École Polytechnique Fédérale de Lausanne.
 
 <a id="2">[2]</a>
+GENTIL, Christian, GOUATY, Gilles, et SOKOLOV, Dmitry. Geometric modeling of fractal forms for CAD. John Wiley & Sons, 2021.
+
+<a id="3">[3]</a>
+BORDEAUX, Boris et GENTIL, Christian. [*Automatic construction of fractal structures with locally controlled lacunarity.*](https://dspace.zcu.cz/bitstreams/a4fdeb1a-4486-4c5c-8597-16de0cd32303/download) In : Journal of WSCG. 2024.
+
+<a id="4">[4]</a>
 BORDEAUX, Boris. [*Conception automatique de structures lacunaires fractales.*](https://theses.hal.science/tel-05443346/) 2025. Thèse de doctorat. Université Bourgogne Europe.
