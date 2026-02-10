@@ -28,7 +28,7 @@ The main pipeline is:
 ### The script
 
 The script, written in Lua, should describe the topology of a fractal with the BC-IFS model [[1](#1), [2](#2)].
-Some example files are provided inside the `res/script/` folder.
+Some example files are provided inside the `res/scripts/` folder.
 A list of all available Lua functions relative to the BC-IFS model is provided [in a following section](#available-lua-functions).
 
 ### The interface
