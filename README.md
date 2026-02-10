@@ -40,7 +40,7 @@ When openning the software, it leads to the following window.
 <img src="images/init_interface.png" alt="Initial interface" width="800px"/>
 
 From this window, you can directly see default fractals in the software.
-Here, for instance, is a quad that subdivides into 4 quads.
+Here, for instance, is a quad that subdivides into 3 quads and a Sierpinski triangle.
 
 <img src="images/default_fractals.png" alt="Example of a fractal quad" width="800px"/>
 
