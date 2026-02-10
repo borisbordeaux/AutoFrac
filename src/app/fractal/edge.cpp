@@ -33,7 +33,15 @@ unsigned int Edge::nbSubdivisions() const {
     return m_nbSubdivisions;
 }
 
+unsigned int& Edge::nbSubdivisions() {
+    return m_nbSubdivisions;
+}
+
 unsigned int Edge::delay() const {
+    return m_delay;
+}
+
+unsigned int& Edge::delay() {
     return m_delay;
 }
 

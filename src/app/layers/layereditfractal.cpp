@@ -5,16 +5,70 @@
 
 void LayerEditFractal::onImGuiRender() {
     constexpr float width = 0.6f;
-    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse);
-    ImGui::Text("Face:");
-    ImGui::Text("%s", m_face.c_str());
+    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav);
+    ImGui::SeparatorText("Faces");
+    if (ImGui::BeginListBox("##listbox faces", ImVec2(-FLT_MIN, 7 * ImGui::GetTextLineHeightWithSpacing()))) {
+        for (std::size_t n = 0; n < m_faces.size(); n++) {
+            const bool is_selected = (m_selectedFace == n);
+            if (ImGui::Selectable((m_faces[n] + "##" + std::to_string(n)).c_str(), is_selected)) {
+                m_selectedFace = n;
+                m_currentFace = frac::Face::fromStr(m_faces[m_selectedFace]);
+            }
+            ImGui::SetItemTooltip("%s", m_faces[n].c_str());
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndListBox();
+    }
 
-    ImGui::Text("Face edges:");
-    if (ImGui::BeginListBox("##listbox 1")) {
-        for (std::size_t n = 0; n < m_edges.size(); n++) {
-            const bool is_selected = (m_currentEdge == n);
-            if (ImGui::Selectable((m_edges[n] + "##" + std::to_string(n)).c_str(), is_selected)) {
-                m_currentEdge = n;
+    if (ImGui::BeginTable("table1Faces", 3)) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("+##face", ImVec2(-FLT_MIN, 0))) {
+            if (m_faces.empty()) {
+                m_faces.emplace_back("C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1");
+            } else {
+                m_selectedFace++;
+                m_faces.emplace(m_faces.begin() + m_selectedFace, "C_2_0 - B_2_0 - C_2_0 - B_2_0 - C_2_0 - B_2_0 / C_2_0 - B_2_0 - B_2_0 / 0 / 1");
+            }
+            m_currentFace = frac::Face::fromStr(m_faces[m_selectedFace]);
+        }
+        ImGui::TableSetColumnIndex(1);
+        ImGui::BeginDisabled(m_faces.empty());
+        if (ImGui::Button("Duplicate##face", ImVec2(-FLT_MIN, 0))) {
+            std::string face = m_faces[m_selectedFace];
+            m_selectedFace++;
+            m_faces.emplace(m_faces.begin() + m_selectedFace, face);
+            m_currentFace = frac::Face::fromStr(m_faces[m_selectedFace]);
+        }
+        ImGui::TableSetColumnIndex(2);
+        if (ImGui::Button("-##face", ImVec2(-FLT_MIN, 0))) {
+            m_faces.erase(m_faces.begin() + m_selectedFace);
+            if (m_selectedFace == m_faces.size()) {
+                if (!m_faces.empty()) {
+                    m_selectedFace--;
+                    m_currentFace = frac::Face::fromStr(m_faces[m_selectedFace]);
+                }
+            }
+        }
+        ImGui::EndDisabled();
+        ImGui::EndTable();
+    }
+
+    if (m_faces.empty()) {
+        ImGui::End();
+        this->updateEdited();
+        return;
+    }
+
+    ImGui::SeparatorText("Selected face edges");
+    if (ImGui::BeginListBox("##listbox edges", ImVec2(-FLT_MIN, 7 * ImGui::GetTextLineHeightWithSpacing()))) {
+        const std::vector<frac::Edge>& edges = m_currentFace.constData();
+        for (std::size_t n = 0; n < edges.size(); n++) {
+            const bool is_selected = (m_selectedEdge == n);
+            if (ImGui::Selectable((edges[n].toString() + "##" + std::to_string(n)).c_str(), is_selected)) {
+                m_selectedEdge = n;
             }
             if (is_selected) {
                 ImGui::SetItemDefaultFocus();
@@ -23,99 +77,67 @@ void LayerEditFractal::onImGuiRender() {
         ImGui::EndListBox();
     }
 
-    ImGui::Text("Edge settings:");
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    ImGui::Combo("Type", &m_currentEdgeType, "Cantor\0Bezier");
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    ImGui::SliderInt("Subdivisions", &m_currentEdgeNbSubs, 2, 10);
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    ImGui::SliderInt("Delay", &m_currentEdgeDelay, 0, 10);
-    if (ImGui::Button("Add edge", ImVec2(-FLT_MIN,0))) {
-        m_edges.emplace_back(this->buildEdge(m_currentEdgeType, m_currentEdgeNbSubs, m_currentEdgeDelay));
-        m_currentEdge = m_edges.size() - 1;
-        this->buildFace();
+    if (ImGui::BeginTable("table1Edges", 3)) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("+##edge", ImVec2(-FLT_MIN, 0))) {
+            m_selectedEdge++;
+            m_currentFace.data().emplace(m_currentFace.data().begin() + m_selectedEdge, frac::Edge(frac::EdgeType::CANTOR, 2, 0));
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::Button("Duplicate##edge", ImVec2(-FLT_MIN, 0))) {
+            frac::Edge e = m_currentFace.data()[m_selectedEdge];
+            m_selectedEdge++;
+            m_currentFace.data().emplace(m_currentFace.data().begin() + m_selectedEdge, e);
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::TableSetColumnIndex(2);
+        ImGui::BeginDisabled(m_currentFace.constData().size() == 3);
+        if (ImGui::Button("-##edge", ImVec2(-FLT_MIN, 0))) {
+            m_currentFace.data().erase(m_currentFace.data().begin() + m_selectedEdge);
+            if (m_selectedEdge == m_currentFace.data().size()) {
+                m_selectedEdge--;
+            }
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::EndDisabled();
+        ImGui::EndTable();
     }
 
-    if (ImGui::Button("Default face", ImVec2(-FLT_MIN, 0))) {
-        m_edges.clear();
-        m_edges.reserve(6);
-        for (int i = 0; i < 3; i++) {
-            m_edges.emplace_back("C_2_0");
-            m_edges.emplace_back("B_2_0");
-        }
-        m_currentEdge = m_edges.size() - 1;
-        this->buildFace();
-    }
-
-    ImGui::BeginDisabled(m_edges.empty());
-    if (ImGui::Button("Remove selected edge", ImVec2(-FLT_MIN, 0))) {
-        m_edges.erase(m_edges.begin() + m_currentEdge);
-        if (m_currentEdge == m_edges.size()) {
-            m_currentEdge--;
-        }
-        this->buildFace();
-    }
-    ImGui::EndDisabled();
+    frac::Edge& edge = m_currentFace.data()[m_selectedEdge];
+    m_selectedEdgeType = static_cast<int>(edge.edgeType());
+    this->displayEdgeSettings("Selected edge:", edge, &m_selectedEdgeType);
 
     ImGui::SeparatorText("E parameter");
-    ImGui::Text("Ea edge:");
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Type##Ea", &m_EaType, "Cantor\0Bezier")) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Subdivisions##Ea", &m_EaNbSubs, 2, 10)) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Delay##Ea", &m_EaDelay, 0, 10)) {
-        this->buildFace();
-    }
 
-    ImGui::Text("El edge:");
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Type##El", &m_ElType, "Cantor\0Bezier")) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Subdivisions##El", &m_ElNbSubs, 2, 10)) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Delay##El", &m_ElDelay, 0, 10)) {
-        this->buildFace();
-    }
+    frac::Edge& Ea = m_currentFace.adjEdge();
+    m_EaType = static_cast<int>(Ea.edgeType());
+    this->displayEdgeSettings("Ea edge:", Ea, &m_EaType);
 
-    ImGui::Text("Ec edge:");
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Type##Ec", &m_EcType, "Cantor\0Bezier")) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Subdivisions##Ec", &m_EcNbSubs, 2, 10)) {
-        this->buildFace();
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Delay##Ec", &m_EcDelay, 0, 10)) {
-        this->buildFace();
-    }
+    frac::Edge& El = m_currentFace.gapEdge();
+    m_ElType = static_cast<int>(El.edgeType());
+    this->displayEdgeSettings("El edge:", El, &m_ElType);
 
-    ImGui::SeparatorText("Delay and processus");
+    frac::Edge& Ec = m_currentFace.reqEdge();
+    m_ElType = static_cast<int>(Ec.edgeType());
+    this->displayEdgeSettings("Ec edge:", Ec, &m_EcType);
+
+    ImGui::SeparatorText("Delay and process");
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::SliderInt("Face delay", &m_faceDelay, 0, 10)) {
-        this->buildFace();
+    if (LayerEditFractal::mySliderUnsignedInt("Face delay", &m_currentFace.delay())) {
+        m_faces[m_selectedFace] = m_currentFace.toString();
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Face processus", &m_faceProc, "Surround Delay\0Surround delay and Bézier\0Corners")) {
-        this->buildFace();
+    if (ImGui::Combo("Face process", &m_faceProc, "Surround Delay\0Surround delay and Bézier\0Corners\0")) {
+        m_currentFace.setAlgo(static_cast<frac::AlgorithmSubdivision>(m_faceProc));
+        m_faces[m_selectedFace] = m_currentFace.toString();
     }
-    if (ImGui::Combo("Cantor type", &m_cantorType, "Linear\0Quadratic\0Cubic")) {
-        this->buildFace();
-    }
-    if (ImGui::Combo("Bezier type", &m_bezierType, "Linear\0Quadratic\0Cubic")) {
-        this->buildFace();
-    }
+    ImGui::SeparatorText("Geometry");
+    ImGui::Combo("Cantor type", &m_cantorType, "Linear\0Quadratic\0Cubic\0");
+    ImGui::Combo("Bézier type", &m_bezierType, "Linear\0Quadratic\0Cubic\0");
     ImGui::End();
+    this->updateEdited();
 }
 
 void LayerEditFractal::onEvent(Core::Event& event) {
@@ -123,48 +145,64 @@ void LayerEditFractal::onEvent(Core::Event& event) {
     dispatcher.dispatch<Core::LayerSwappedEvent>([this](const Core::LayerSwappedEvent& e) { return this->onLayerSwappedEvent(e); });
 }
 
-std::string LayerEditFractal::buildEdge(int type, int nbSubs, int delay) {
-    std::string res = "";
-    if (type == 0) {
-        res += "C_";
-    } else {
-        res += "B_";
-    }
-    res += std::to_string(nbSubs);
-    res += "_";
-    res += std::to_string(delay);
-    return res;
-}
-
-void LayerEditFractal::buildFace() {
-    m_face = "";
-    if (m_edges.empty()) { return; }
-    bool firstEdge = true;
-    for (const std::string& edge : m_edges) {
-        if (firstEdge) {
-            m_face += edge;
-            firstEdge = false;
-        } else {
-            m_face += " - " + edge;
+void LayerEditFractal::updateEdited() {
+    bool editedFaces = m_lastFaces.size() != m_faces.size();
+    if (!editedFaces) {
+        for (std::size_t i = 0; i < m_faces.size(); i++) {
+            if (m_lastFaces[i] != m_faces[i]) {
+                editedFaces = true;
+            }
         }
     }
-    m_face += " / ";
-    m_face += this->buildEdge(m_EaType, m_EaNbSubs, m_EaDelay) + " - ";
-    m_face += this->buildEdge(m_ElType, m_ElNbSubs, m_ElDelay) + " - ";
-    m_face += this->buildEdge(m_EcType, m_EcNbSubs, m_EcDelay) + " / ";
-    m_face += std::to_string(m_faceDelay) + " / ";
-    m_face += std::to_string(m_faceProc);
-
-    m_edited = m_face != m_lastFace || m_lastBezierType != m_bezierType || m_lastCantorType != m_cantorType;
+    bool editedBezierType = m_lastBezierType != m_bezierType;
+    bool editedCantorType = m_lastCantorType != m_cantorType;
+    m_edited = editedFaces || editedBezierType || editedCantorType;
 }
 
 bool LayerEditFractal::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
     if (event.getLayer() == this) {
         m_edited = false;
-        m_lastFace = m_face;
+        m_lastFaces = m_faces; // copy
         m_lastCantorType = m_cantorType;
         m_lastBezierType = m_bezierType;
+        frac::Face::reset();
         return true;
     }
     return false;
+}
+
+bool LayerEditFractal::mySliderUnsignedInt(const char* label, unsigned int* value, unsigned int min) {
+    int max = 10;
+    return ImGui::SliderScalar(label, ImGuiDataType_U32, value, &min, &max, "%lld");
+}
+
+void LayerEditFractal::displayEdgeSettings(const std::string& desc, frac::Edge& edge, int* type) {
+    ImGui::Text("%s", desc.c_str());
+    if (ImGui::BeginTable(("tableEdgeSetting" + desc).c_str(), 3)) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Type");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("Subdivisions");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("Delay");
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::Combo(("##type" + desc).c_str(), type, "Cantor\0Bézier\0")) {
+            edge.setEdgeType(static_cast<frac::EdgeType>(*type));
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (LayerEditFractal::mySliderUnsignedInt(("##subdivision" + desc).c_str(), &edge.nbSubdivisions(), 2)) {
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::TableSetColumnIndex(2);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (LayerEditFractal::mySliderUnsignedInt(("##delay" + desc).c_str(), &edge.delay())) {
+            m_faces[m_selectedFace] = m_currentFace.toString();
+        }
+        ImGui::EndTable();
+    }
 }

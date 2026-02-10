@@ -91,7 +91,23 @@ Edge Face::reqEdge() const {
     return m_reqEdge;
 }
 
+Edge& Face::adjEdge() {
+    return m_adjEdge;
+}
+
+Edge& Face::gapEdge() {
+    return m_gapEdge;
+}
+
+Edge& Face::reqEdge() {
+    return m_reqEdge;
+}
+
 unsigned int Face::delay() const {
+    return m_delay;
+}
+
+unsigned int& Face::delay() {
     return m_delay;
 }
 

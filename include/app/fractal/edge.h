@@ -32,8 +32,10 @@ public:
     void decreaseDelay();
     EdgeType edgeType() const;
     unsigned int nbSubdivisions() const;
+    unsigned int& nbSubdivisions();
     unsigned int nbActualSubdivisions() const;
     unsigned int delay() const;
+    unsigned int& delay();
     std::vector<Edge> subdivisions(Edge const& reqEdge) const;
     bool isDelay() const;
     std::string name() const;

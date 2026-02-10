@@ -5,10 +5,10 @@
 #include "app/batch/batchface.h"
 #include "app/batch/batchgrid.h"
 #include "app/batch/batchsubdivisionpoint.h"
-#include "core/layer.h"
 #include "app/bcifs/bcifs.h"
 #include "app/bcifs/subdivisionpoint.h"
 #include "core/camera.h"
+#include "core/layer.h"
 
 class LayerEditFractal;
 

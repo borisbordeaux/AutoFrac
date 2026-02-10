@@ -1,9 +1,9 @@
 #include "app/layers/layerbcifs.h"
 
-#include <glm/detail/type_mat4x4.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/detail/type_mat4x4.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #include "app/bcifs/bcifs.h"
 #include "app/bcifs/bcifsbuilder.h"
@@ -21,7 +21,6 @@
 #include "core/renderer.h"
 #include "core/windowevents.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
 
 LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
@@ -554,29 +553,29 @@ void LayerBcifs::onRender() {
 
 void LayerBcifs::onImGuiRender() {
     constexpr float width = 0.6f;
-    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("BC-IFS", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav);
     ImGui::SeparatorText("Default fractals");
-    if (ImGui::Button("Quad", ImVec2(-FLT_MIN,0))) {
+    if (ImGui::Button("Quad", ImVec2(-FLT_MIN, 0))) {
         this->testSubdQuad();
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Sierpinski", ImVec2(-FLT_MIN,0))) {
+    if (ImGui::Button("Sierpinski", ImVec2(-FLT_MIN, 0))) {
         this->testSierpinski();
         m_bcifsChanged = true;
     }
     static int dim[2] = { 1, 1 };
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::SliderInt2("Grid size", dim, 1, 20);
-    if (ImGui::Button("Hexagon in a grid", ImVec2(-FLT_MIN,0))) {
+    if (ImGui::Button("Hexagon in a grid", ImVec2(-FLT_MIN, 0))) {
         this->testG2(dim[0], dim[1]);
         m_bcifsChanged = true;
     }
-    if (ImGui::Button("Square Sierpinski", ImVec2(-FLT_MIN,0))) {
+    if (ImGui::Button("Square Sierpinski", ImVec2(-FLT_MIN, 0))) {
         this->testSquareSierpinski();
         m_bcifsChanged = true;
     }
     ImGui::SeparatorText("Interface BC-IFS");
-    if (ImGui::Button("Load Lua File...", ImVec2(-FLT_MIN,0))) {
+    if (ImGui::Button("Load Lua File...", ImVec2(-FLT_MIN, 0))) {
         IGFD::FileDialogConfig config;
         config.path = "../res/scripts";
         config.flags |= ImGuiFileDialogFlags_Modal;
@@ -592,17 +591,19 @@ void LayerBcifs::onImGuiRender() {
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Iteration level", &m_iterationLevel);
+    if (m_iterationLevel < 0) {
+        m_iterationLevel = 0;
+    }
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (m_iterationLevel < 0)
-            m_iterationLevel = 0;
         m_bcifsChanged = true;
         m_bcifs.invalidate();
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Color level", &m_colorDepth);
+    if (m_colorDepth < 0) {
+        m_colorDepth = 0;
+    }
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (m_colorDepth < 0)
-            m_colorDepth = 0;
         m_bcifsChanged = true;
     }
     if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
@@ -612,9 +613,10 @@ void LayerBcifs::onImGuiRender() {
     ImGui::Checkbox("Display hidden", &m_displayHidden);
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Grid level", &m_gridLevel);
+    if (m_gridLevel < 0) {
+        m_gridLevel = 0;
+    }
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (m_gridLevel < 0)
-            m_gridLevel = 0;
         m_gridChanged = true;
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
@@ -628,15 +630,14 @@ void LayerBcifs::onImGuiRender() {
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("MSS Iterations", &m_currentIterationMSS);
 
-    if (ImGui::BeginTable("table1", 2))
-    {
+    if (ImGui::BeginTable("table1", 2)) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        if (ImGui::Button("Auto control points", ImVec2(-FLT_MIN,0))) {
+        if (ImGui::Button("Auto control points", ImVec2(-FLT_MIN, 0))) {
             m_updateMSSControlPoints = true;
         }
         ImGui::TableSetColumnIndex(1);
-        if (ImGui::Button("Random control points", ImVec2(-FLT_MIN,0))) {
+        if (ImGui::Button("Random control points", ImVec2(-FLT_MIN, 0))) {
             for (BCIFS::FormalMatrix& matrix : m_bcifs.controlPoints(0)) {
                 matrix.setRandomValues();
             }
@@ -645,11 +646,11 @@ void LayerBcifs::onImGuiRender() {
         }
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        if (ImGui::Button("Auto subdivision points", ImVec2(-FLT_MIN,0))) {
+        if (ImGui::Button("Auto subdivision points", ImVec2(-FLT_MIN, 0))) {
             m_updateMSSSubdivisionPoints = true;
         }
         ImGui::TableSetColumnIndex(1);
-        if (ImGui::Button("Auto all points", ImVec2(-FLT_MIN,0))) {
+        if (ImGui::Button("Auto all points", ImVec2(-FLT_MIN, 0))) {
             m_updateMSSSubdivisionPoints = true;
             m_updateMSSControlPoints = true;
         }
@@ -694,7 +695,7 @@ void LayerBcifs::onImGuiRender() {
         m_bcifsChanged = true;
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, "PHONG\0FLAT")) {
+    if (ImGui::Combo("Illumination mode", &m_currentIlluminationItem, "PHONG\0FLAT\0")) {
         m_illuminationMode = static_cast<IlluminationMode>(m_currentIlluminationItem);
         m_uniformsDirty = true;
     }
@@ -856,11 +857,13 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
 
 bool LayerBcifs::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
     Core::LOG_INFO("edited fractal: {}", m_layerEditFractal->edited());
-    if (event.getLayer() == this && m_layerEditFractal->face() != "" && m_layerEditFractal->edited()) {
+    if (event.getLayer() == this && !m_layerEditFractal->faces().empty() && m_layerEditFractal->edited()) {
         frac::Face::reset();
 
         std::vector<frac::Face> faces;
-        faces.push_back(frac::Face::fromStr(m_layerEditFractal->face()));
+        for (const std::string& faceStr : m_layerEditFractal->faces()) {
+            faces.push_back(frac::Face::fromStr(faceStr));
+        }
 
         frac::BezierType bezierType = static_cast<frac::BezierType>(m_layerEditFractal->bezierType());
         frac::CantorType cantorType = static_cast<frac::CantorType>(m_layerEditFractal->cantorType());

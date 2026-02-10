@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "app/fractal/edge.h"
+#include "app/fractal/face.h"
+
 namespace Core {
 class LayerSwappedEvent;
 }
@@ -13,40 +16,38 @@ class LayerEditFractal : public Core::Layer {
 public:
     void onImGuiRender() override;
     void onEvent(Core::Event&) override;
-    std::string face() const { return m_face; }
+    const std::vector<std::string>& faces() const { return m_faces; }
     int cantorType() const { return m_cantorType; }
     int bezierType() const { return m_bezierType; }
     bool edited() const { return m_edited; }
 
 private:
-    static std::string buildEdge(int type, int nbSubs, int delay);
-    void buildFace();
+    void updateEdited();
     bool onLayerSwappedEvent(const Core::LayerSwappedEvent& event);
+    static bool mySliderUnsignedInt(const char *label, unsigned int* value, unsigned int min = 0);
+    void displayEdgeSettings(const std::string& desc, frac::Edge& edge, int* type);
 
 private:
-    int m_currentEdgeType = 0;
-    int m_currentEdgeNbSubs = 2;
-    int m_currentEdgeDelay = 0;
+    // faces
+    std::vector<std::string> m_faces;
+    int m_EaType = 0;
+    int m_ElType = 1;
+    int m_EcType = 1;
     int m_faceDelay = 0;
     int m_faceProc = 1;
-    std::vector<std::string> m_edges;
-    std::string m_face = "";
-    bool m_edited = true;
-    std::size_t m_currentEdge = 0;
-    std::string m_lastFace = "";
+    std::size_t m_selectedFace = 0;
+    frac::Face m_currentFace;
+    // edges
+    int m_selectedEdgeType = 0;
+    std::size_t m_selectedEdge = 0;
+    // geometry
     int m_cantorType = 0;
     int m_bezierType = 1;
+    // to avoid construction of new structure if no changes
+    bool m_edited = false;
+    std::vector<std::string> m_lastFaces;
     int m_lastCantorType = 0;
     int m_lastBezierType = 1;
-    int m_EaType = 0;
-    int m_EaNbSubs = 2;
-    int m_EaDelay = 0;
-    int m_ElType = 1;
-    int m_ElNbSubs = 2;
-    int m_ElDelay = 0;
-    int m_EcType = 1;
-    int m_EcNbSubs = 2;
-    int m_EcDelay = 0;
 };
 
 #endif //AUTOFRAC_LAYEREDITFRACTAL_H

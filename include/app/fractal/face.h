@@ -36,7 +36,11 @@ public:
     Edge adjEdge() const;
     Edge gapEdge() const;
     Edge reqEdge() const;
+    Edge& adjEdge();
+    Edge& gapEdge();
+    Edge& reqEdge();
     unsigned int delay() const;
+    unsigned int& delay();
     AlgorithmSubdivision algo() const;
     std::optional<Edge> edgeIfRequired(Edge const& edge) const;
     void setAdjEdge(Edge const& edge);
