@@ -8,7 +8,7 @@ namespace BCIFS {
 
 class FormalCoef;
 
-enum class CoefKind : uint8_t {
+enum class CoefKind {
     VAR, CONST, ZERO, ONE
 };
 
