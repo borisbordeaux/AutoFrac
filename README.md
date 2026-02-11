@@ -6,7 +6,7 @@ Software for CAD of lacunar fractal structures on Linux.
 
 You need to install some dependencies:
 ```bash
-sudo apt install libglfw3-dev libglew-dev libgl-dev libfmt-dev libspdlog-dev libarmadillo-dev liblua5.4-dev 
+sudo apt install libglfw3-dev libglew-dev libgl-dev libglm-dev libfmt-dev libspdlog-dev libarmadillo-dev liblua5.4-dev 
 ```
 Then you can build this project.
 Replace `{NB_CORES}` by the number of cores to use to compile the project.
