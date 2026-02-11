@@ -55,7 +55,7 @@ void Renderer::initOpenGL() {
     if (glewInit() != GLEW_OK)
         LOG_ERROR("Glew not initialized");
     else {
-        GLCall(const unsigned char* version = glGetString(GL_VERSION));
+        GLCall(const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION)));
         LOG_INFO("OpenGL version is {}", version);
     }
 

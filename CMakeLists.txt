@@ -12,7 +12,7 @@ target_include_directories(AutoFrac PUBLIC include SYSTEM PRIVATE vendor)
 
 set_source_files_properties(${VENDOR_FILES} PROPERTIES COMPILE_OPTIONS "-w")
 
-target_link_libraries(AutoFrac PRIVATE -lglfw3 -lGLEW -lGL -lfmt -lspdlog -larmadillo -llua5.4)
+target_link_libraries(AutoFrac PRIVATE -lglfw -lGLEW -lGL -lfmt -lspdlog -larmadillo -llua5.4)
 
 target_compile_options(AutoFrac PRIVATE -Wall -Wextra -Werror)
 
