@@ -23,8 +23,8 @@ if (ENABLE_TESTS)
 
     include(FetchContent)
     FetchContent_Declare(googletest
-            URL https://github.com/google/googletest/archive/refs/heads/main.zip
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            URL https://github.com/google/googletest/archive/refs/heads/main.zip)
     FetchContent_MakeAvailable(googletest)
 
     file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
