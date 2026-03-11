@@ -6,13 +6,12 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_internal.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <utility>
-
-#include "imgui/imgui_internal.h"
 
 namespace Core {
 
@@ -150,6 +149,10 @@ Layer* Application::getCacheLayer(std::size_t index) const {
 
 glm::vec2 Application::framebufferSize() const {
     return m_window->framebufferSize();
+}
+
+glm::vec2 Application::inverseFramebufferSize() const {
+    return 1.0f / m_window->framebufferSize();
 }
 
 Application& Application::get() {

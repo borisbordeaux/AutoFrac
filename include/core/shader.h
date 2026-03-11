@@ -21,6 +21,7 @@ public:
     void bind() const;
     void unbind() const;
     void setUniform1i(std::string const& name, int value);
+    void setUniform2f(std::string const& name, const glm::vec2& v);
     void setUniform3f(std::string const& name, const glm::vec3& v);
     void setUniform4f(std::string const& name, float v0, float v1, float v2, float v3);
     void setUniformMat4f(std::string const& name, const glm::mat4& values);

@@ -23,11 +23,13 @@
 #include "imgui/imgui.h"
 #include "imguifiledialog/ImGuiFileDialog.h"
 
-LayerBcifs::LayerBcifs(const LayerEditFractal* layerEditFractal) :
+LayerBcifs::LayerBcifs(LayerEditFractal* layerEditFractal) :
     m_mousePos(0.0f, 0.0f),
     m_camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 8.0f, 0.0051f, 250.0f, glm::radians(90.0f), glm::radians(0.0f)),
     m_proj(glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f)),
-    m_layerEditFractal(layerEditFractal) {}
+    m_layerEditFractal(layerEditFractal) {
+    m_layerEditFractal->setCamera(&m_camera);
+}
 
 void LayerBcifs::testSubdQuad() {
     m_bcifs.reset();
@@ -771,7 +773,6 @@ bool LayerBcifs::onMousePressedEvent(const Core::MouseButtonPressedEvent& event)
 }
 
 bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
-    //compute rotations
     double dx = event.x() - m_mousePos.x;
     double dy = event.y() - m_mousePos.y;
 
@@ -821,8 +822,7 @@ bool LayerBcifs::onWindowResizedEvent(const Core::WindowResizedEvent& event) {
 }
 
 bool LayerBcifs::onMouseScrolledEvent(const Core::MouseScrolledEvent& event) {
-    // compute new distance of camera from object
-    float val = static_cast<float>(event.yOffset()) / 500.0f;
+    float val = static_cast<float>(event.yOffset());
 
     if (val > 0.0f) {
         this->m_camera.zoom();
@@ -867,24 +867,16 @@ bool LayerBcifs::onKeyReleasedEvent(const Core::KeyReleasedEvent& event) {
 }
 
 bool LayerBcifs::onLayerSwappedEvent(const Core::LayerSwappedEvent& event) {
-    if (event.getLayer() == this && !m_layerEditFractal->faces().empty() && m_layerEditFractal->edited()) {
-        frac::Face::reset();
-
-        std::vector<frac::Face> faces;
-        for (const std::string& faceStr : m_layerEditFractal->faces()) {
-            faces.push_back(frac::Face::fromStr(faceStr));
-        }
-
-        frac::BezierType bezierType = static_cast<frac::BezierType>(m_layerEditFractal->bezierType());
-        frac::CantorType cantorType = static_cast<frac::CantorType>(m_layerEditFractal->cantorType());
-
-        frac::Structure s{ faces, bezierType, cantorType };
-
-        try {
-            frac::StructurePrinter printer(s, false, "");
-            this->loadLuaScript(printer.exportStruct());
-        } catch (const std::runtime_error& error) {
-            Core::LOG_ERROR(error.what());
+    if (event.getLayer() == this) {
+        m_proj = glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f);
+        m_uniformsDirty = true;
+        if (!m_layerEditFractal->faces().empty() && m_layerEditFractal->edited()) {
+            try {
+                frac::StructurePrinter printer(m_layerEditFractal->structure());
+                this->loadLuaScript(printer.exportStruct());
+            } catch (const std::runtime_error& error) {
+                Core::LOG_ERROR(error.what());
+            }
         }
         return true;
     }

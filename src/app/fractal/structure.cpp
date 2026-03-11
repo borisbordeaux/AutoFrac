@@ -1,4 +1,7 @@
 #include "app/fractal/structure.h"
+
+#include <cmath>
+
 #include "app/utils/utils.h"
 #include <iostream>
 
@@ -22,7 +25,7 @@ Adjacency Adjacency::fromStr(std::string const& strConstraint) {
     return { face1, edge1, face2, edge2 };
 }
 
-Structure::Structure(std::vector<Face> const& faces, BezierType bezierType, CantorType cantorType) : m_faces(faces), m_bezierType(bezierType), m_cantorType(cantorType) {}
+Structure::Structure(std::vector<Face> const& faces, BezierType bezierType, CantorType cantorType, bool useColor) : m_faces(faces), m_bezierType(bezierType), m_cantorType(cantorType), m_useColors(useColor) {}
 
 void Structure::addAdjacency(Adjacency const& adj) {
     if (m_faces[adj.Face1][adj.Edge1] == m_faces[adj.Face2][adj.Edge2]) {
@@ -69,6 +72,10 @@ Set<Face> Structure::allFaces() const {
 }
 
 const std::vector<Face>& Structure::faces() const {
+    return m_faces;
+}
+
+std::vector<Face>& Structure::faces() {
     return m_faces;
 }
 
@@ -134,6 +141,88 @@ BezierType Structure::bezierType() const {
 
 CantorType Structure::cantorType() const {
     return m_cantorType;
+}
+
+void Structure::fillControlPoints() {
+    m_controlPoints.resize(m_faces.size());
+    for (std::size_t indexFace = 0; indexFace < m_faces.size(); indexFace++) {
+        m_controlPoints[indexFace].resize(this->nbControlPointsOfFace(indexFace));
+    }
+
+    for (std::size_t indexFace = 0; indexFace < m_faces.size(); indexFace++) {
+        //barycenter coordinates
+        float x = static_cast<float>(indexFace) * 3.0f;
+
+        //number of control points that are not intern (equivalent to the number of corners)
+        float nbCtrlPtsF = 0.0f;
+        for (std::size_t i = 0; i < m_controlPoints[indexFace].size(); i++) {
+            if (!this->isInternControlPoint(i, indexFace)) {
+                nbCtrlPtsF += 1.0f;
+            }
+        }
+
+        //distribute points around the origin and add the computed barycenter to place correctly the face
+        double radius = 1.0f;
+
+        //for not intern control points
+        float j = 0.0f;
+        for (std::size_t i = 0; i < m_controlPoints[indexFace].size(); i++) {
+            if (!this->isInternControlPoint(i, indexFace)) {
+                m_controlPoints[indexFace][i].x = radius * std::cos(j * 2.0f * 3.1415926f / nbCtrlPtsF) + x;
+                m_controlPoints[indexFace][i].y = radius * std::sin(j * 2.0f * 3.1415926f / nbCtrlPtsF);
+                j += 1.0f;
+            }
+        }
+
+        //for intern control points
+        int nbCtrlPts = static_cast<int>(m_controlPoints[indexFace].size());
+        for (int i = 0; i < nbCtrlPts; i++) {
+            if (this->isInternControlPoint(i, indexFace)) {
+                std::pair<std::size_t, std::size_t> indexControlPointOfEdge = this->faces()[indexFace].indexControlPointOfEdge(i, this->bezierType(), this->cantorType());
+                std::size_t indexEdge = indexControlPointOfEdge.second;
+                std::size_t indexControlPoint = indexControlPointOfEdge.first;
+                frac::EdgeType edgeType = this->faces()[indexFace][indexEdge].edgeType();
+                bool isCubic = false;
+                if (edgeType == frac::EdgeType::CANTOR) {
+                    isCubic = this->cantorType() == frac::CantorType::Cubic_Cantor;
+                } else {
+                    isCubic = this->bezierType() == frac::BezierType::Cubic_Bezier;
+                }
+                if (isCubic) {
+                    if (indexControlPoint == 1) {
+                        glm::vec2 P0 = m_controlPoints[indexFace][i - 1];
+                        glm::vec2 P1 = m_controlPoints[indexFace][(i + 2) % nbCtrlPts];
+                        glm::vec2 c = frac::utils::coordOfPointOnLineAt(1.f / 3.f, P0, P1);
+                        m_controlPoints[indexFace][i] = c;
+                    } else {
+                        glm::vec2 P0 = m_controlPoints[indexFace][i - 2];
+                        glm::vec2 P1 = m_controlPoints[indexFace][(i + 1) % nbCtrlPts];
+                        glm::vec2 c = frac::utils::coordOfPointOnLineAt(2.f / 3.f, P0, P1);
+                        m_controlPoints[indexFace][i] = c;
+                    }
+                } else {
+                    // quadratic
+                    m_controlPoints[indexFace][i] = (m_controlPoints[indexFace][i - 1] + m_controlPoints[indexFace][(i + 1) % nbCtrlPts]) / 2.0f;
+                }
+            }
+        }
+    }
+}
+
+void Structure::setControlPoints(std::vector<std::vector<glm::vec2>> controlPoints) {
+    m_controlPoints = std::move(controlPoints);
+}
+
+const std::vector<std::vector<glm::vec2>>& Structure::controlPoints() const {
+    return m_controlPoints;
+}
+
+std::vector<std::vector<glm::vec2>>& Structure::controlPoints() {
+    return m_controlPoints;
+}
+
+bool Structure::useColors() const {
+    return m_useColors;
 }
 
 } // frac

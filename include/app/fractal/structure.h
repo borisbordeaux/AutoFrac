@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <glm/vec2.hpp>
 
 #include "app/fractal/face.h"
 #include "app/utils/set.h"
@@ -27,13 +28,14 @@ struct Adjacency {
 
 class Structure {
 public:
-    explicit Structure(std::vector<Face> const& faces, BezierType bezierType, CantorType cantorType);
+    explicit Structure(std::vector<Face> const& faces = {}, BezierType bezierType = BezierType::Quadratic_Bezier, CantorType cantorType = CantorType::Linear_Cantor, bool useColors = true);
     void addAdjacency(Adjacency const& adj);
     std::string strAdjacencies() const;
     std::vector<Adjacency> const& adjacencies() const;
     Set<Edge> allEdges() const;
     Set<Face> allFaces() const;
     std::vector<Face> const& faces() const;
+    std::vector<Face>& faces();
     std::size_t nbControlPointsOfFace(std::size_t indexFace) const;
     std::vector<std::size_t> controlPointIndices(std::size_t indexEdge, std::size_t indexFace, bool reverse = false) const;
     bool isInternControlPoint(std::size_t indexControlPoint, std::size_t indexFace) const;
@@ -42,6 +44,11 @@ public:
     Face const& operator[](std::size_t index) const;
     BezierType bezierType() const;
     CantorType cantorType() const;
+    void fillControlPoints();
+    void setControlPoints(std::vector<std::vector<glm::vec2>> controlPoints);
+    const std::vector<std::vector<glm::vec2>>& controlPoints() const;
+    std::vector<std::vector<glm::vec2>>& controlPoints();
+    bool useColors() const;
 
 private:
     std::vector<Face> m_faces;
@@ -49,6 +56,9 @@ private:
     std::vector<Adjacency> m_adjacencies;
     BezierType m_bezierType;
     CantorType m_cantorType;
+    bool m_useColors;
+
+    std::vector<std::vector<glm::vec2>> m_controlPoints;
 };
 
 } // frac

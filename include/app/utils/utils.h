@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <glm/vec2.hpp>
 
 namespace frac::utils {
 
@@ -116,6 +117,18 @@ inline std::vector<float> getCantorQuadraticTransformation(unsigned int i, unsig
 
 inline std::vector<float> getCantorCubicTransformation(unsigned int i, unsigned int n) {
     return getBezierCubicTransformation(2 * i, 2 * n - 1);
+}
+
+inline glm::vec2 coordOfPointOnLineAt(float t, const glm::vec2& p0, const glm::vec2& p1) {
+    return { p0 * (1 - t) + p1 * t };
+}
+
+inline glm::vec2 coordOfPointOnQuadCurveAt(float t, const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2) {
+    return { p0 * (1.0f - t) * (1.0f - t) + p1 * 2.0f * t * (1.0f - t) + p2 * t * t };
+}
+
+inline glm::vec2 coordOfPointOnCubicCurveAt(float t, const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3) {
+    return { p0 * (1.0f - t) * (1.0f - t) * (1.0f - t) + p1 * 3.0f * t * (1.0f - t) * (1.0f - t) + p2 * 3.0f * t * t * (1.0f - t) + p3 * t * t * t };
 }
 
 } // frac::utils

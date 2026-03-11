@@ -9,7 +9,6 @@ class KeyReleasedEvent;
 
 class LayerMenu : public Core::Layer {
 public:
-    LayerMenu() = default;
     void onImGuiRender() override;
     void onUpdate(float deltaTime) override;
     void onEvent(Core::Event& event) override;

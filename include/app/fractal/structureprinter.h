@@ -13,7 +13,7 @@ class Structure;
 
 class StructurePrinter {
 public:
-    explicit StructurePrinter(Structure const& structure, bool planarControlPoints, std::string filename);
+    explicit StructurePrinter(Structure const& structure, std::string filename = "");
     std::string exportStruct();
 
 private:
@@ -34,10 +34,10 @@ private:
     void printSpaceOfCell(Face const& cell);
     void printPrimOfCell(Face const& cell);
     void printEdgeAdjacenciesOfCell(Face const& cell);
+    void printControlPoints();
 
 private:
     Structure const& m_structure;
-    bool m_planarControlPoints;
     std::string const m_filename;
     FilePrinter m_filePrinter;
 };

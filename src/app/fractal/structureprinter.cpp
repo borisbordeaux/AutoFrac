@@ -6,8 +6,8 @@
 
 namespace frac {
 
-StructurePrinter::StructurePrinter(Structure const& structure, bool planarControlPoints, std::string filename) :
-    m_structure(structure), m_planarControlPoints(planarControlPoints), m_filename(std::move(filename)) {}
+StructurePrinter::StructurePrinter(Structure const& structure, std::string filename) :
+    m_structure(structure), m_filename(std::move(filename)) {}
 
 std::string StructurePrinter::exportStruct() {
     m_filePrinter.reset();
@@ -83,6 +83,11 @@ std::string StructurePrinter::exportStruct() {
     m_filePrinter.appendNewLine("------------------------------");
     m_filePrinter.appendNewLine("-- constraints on init cells");
     m_filePrinter.append(m_structure.strAdjacencies());
+
+    m_filePrinter.appendNewLine("-- control points");
+    if (!m_structure.controlPoints().empty()) {
+        this->printControlPoints();
+    }
 
     if (m_filename != "") {
         m_filePrinter.printToFile(m_filename);
@@ -429,7 +434,43 @@ void StructurePrinter::printSubdOfCell(Face const& cell) {
     std::vector<Face> subds = cell.subdivisions();
     int i = 0;
     for (Face const& f : subds) {
-        m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "')");
+        if (m_structure.useColors()) {
+            const std::string COLORS[30] = {
+                "{ 252/255, 127/255,   0/255 }",
+                "{   0/255,  71/255, 232/255 }",
+                "{ 205/255, 207/255,   0/255 }",
+                "{ 206/255,   0/255,   0/255 }",
+                "{   0/255, 183/255,   0/255 }",
+                "{ 129/255,  50/255, 255/255 }",
+                "{   0/255, 200/255, 200/255 }",
+                "{ 255/255, 105/255, 180/255 }",
+                "{ 148/255,   0/255, 211/255 }",
+                "{ 255/255, 165/255,   0/255 }",
+                "{   0/255, 128/255, 128/255 }",
+                "{ 255/255,  20/255, 147/255 }",
+                "{ 138/255,  43/255, 226/255 }",
+                "{ 255/255, 215/255,   0/255 }",
+                "{  46/255, 139/255,  87/255 }",
+                "{ 220/255,  20/255,  60/255 }",
+                "{  30/255, 144/255, 255/255 }",
+                "{ 255/255, 140/255,   0/255 }",
+                "{  75/255,   0/255, 130/255 }",
+                "{ 154/255, 205/255,  50/255 }",
+                "{ 255/255,  69/255,   0/255 }",
+                "{   0/255, 191/255, 255/255 }",
+                "{ 218/255, 112/255, 214/255 }",
+                "{ 189/255, 183/255, 107/255 }",
+                "{ 255/255,  99/255,  71/255 }",
+                "{  60/255, 179/255, 113/255 }",
+                "{ 123/255, 104/255, 238/255 }",
+                "{ 210/255, 105/255,  30/255 }",
+                "{  70/255, 130/255, 180/255 }",
+                "{ 199/255,  21/255, 133/255 }"
+            };
+            m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "', " + COLORS[i % 30] + ")");
+        } else {
+            m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "')");
+        }
         i += 1;
     }
 }
@@ -469,6 +510,34 @@ void StructurePrinter::printPrimOfCell(Face const& cell) {
 void StructurePrinter::printEdgeAdjacenciesOfCell(Face const& cell) {
     for (std::size_t i = 0; i < cell.len(); ++i) {
         m_filePrinter.appendNewLine("constraint('" + cell.name() + "', { 'b" + std::to_string(i) + "', 'b1' }, { 'b" + std::to_string(utils::mod(i + 1, cell.len())) + "', 'b0' })");
+    }
+}
+
+void StructurePrinter::printControlPoints() {
+    for (std::size_t indexFace = 0; indexFace < m_structure.controlPoints().size(); indexFace++) {
+        std::size_t nb_pts = m_structure.controlPoints()[indexFace].size();
+        m_filePrinter.appendNewLine("initMat('init', 's" + std::to_string(indexFace) + "', {");
+        //x
+        m_filePrinter.append("    { ");
+        for (std::size_t i = 0; i < nb_pts - 1; ++i) {
+            m_filePrinter.append(frac::utils::toString(m_structure.controlPoints()[indexFace][i].x) + ", ");
+        }
+        m_filePrinter.appendNewLine(frac::utils::toString(m_structure.controlPoints()[indexFace][nb_pts - 1].x) + " },");
+
+        //y
+        m_filePrinter.append("    { ");
+        for (std::size_t i = 0; i < nb_pts - 1; ++i) {
+            m_filePrinter.append(frac::utils::toString(m_structure.controlPoints()[indexFace][i].y) + ", ");
+        }
+        m_filePrinter.appendNewLine(frac::utils::toString(m_structure.controlPoints()[indexFace][nb_pts - 1].y) + " },");
+
+        //z
+        m_filePrinter.append("    { ");
+        for (std::size_t i = 0; i < nb_pts - 1; ++i) {
+            m_filePrinter.append("0, ");
+        }
+        m_filePrinter.appendNewLine("0 }");
+        m_filePrinter.appendNewLine("}, 'VAR')");
     }
 }
 

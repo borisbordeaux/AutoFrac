@@ -25,9 +25,9 @@ BatchGrid::BatchGrid() {
 
 void BatchGrid::setMVP(const Core::Camera& camera, const glm::mat4& proj) {
     m_program.bind();
-    glm::mat4 viewGrid = camera.getViewMatrix();
-    glm::mat4 mvpGrid = proj * viewGrid;
-    m_program.setUniformMat4f("u_mvp", mvpGrid);
+    glm::mat4 view = camera.getViewMatrix();
+    glm::mat4 mvp = proj * view;
+    m_program.setUniformMat4f("u_mvp", mvp);
     m_program.unbind();
 }
 

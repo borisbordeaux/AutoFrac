@@ -51,13 +51,14 @@ This software also offers the possibility the see 3D colorful fractals, as demon
 #### Automatic conception interface
 
 This software allows to conceive fractal faces by describing the fractal behavior of their edges.
-See [[3](#3)] or [[4](#4)] for more theoretical information on how it is done.  
-Press the `tab` key to switch between edit and render mode.  
-Note that when returning to the render mode, if something has changed in edit mode, a new fractal is automatically constructed with the settings currently in the edit mode.
+See [[3](#3)] or [[4](#4)] for more theoretical information on how it is done.
 
 <img src="images/edit_interface.png" alt="Interface edition of fractal" width="800px"/>
 
-Note that this interface is still a work in progress and may change in the future.
+Press the `tab` key to switch between edit and render mode.
+Note that when returning to the render mode, if something has changed in edit mode, a new fractal is automatically constructed with the current settings in edit mode.
+
+<img src="images/after_edit_interface.png" alt="After the edition of fractal" width="800px"/>
 
 ### Available Lua functions
 

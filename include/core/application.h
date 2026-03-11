@@ -22,18 +22,22 @@ public:
     void run();
     void stop();
     void raiseEvent(Event& event);
+
     template <typename TLayer, typename... Args>
     void pushLayer(Args... args) {
         m_layerStack.push_back(std::make_unique<TLayer>(std::forward<Args>(args)...));
     }
+
     template <typename TLayer, typename... Args>
     void pushCacheLayer(Args... args) {
         m_cacheLayerStack.push_back(std::make_unique<TLayer>(std::forward<Args>(args)...));
     }
+
     void swapWithCacheLayer(std::size_t indexLayer, std::size_t indexCacheLayer);
     Layer* getLayer(std::size_t index) const;
     Layer* getCacheLayer(std::size_t index) const;
     glm::vec2 framebufferSize() const;
+    glm::vec2 inverseFramebufferSize() const;
     std::shared_ptr<Window> window() const { return m_window; }
     static Application& get();
     static float time();
