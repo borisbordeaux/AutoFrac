@@ -8,6 +8,7 @@
 #include "app/bcifs/bcifs.h"
 #include "app/bcifs/bcifsbuilder.h"
 #include "app/bcifs/formalmatrix.h"
+#include "app/exporter/stlexporter.h"
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
 #include "app/fractal/structureprinter.h"
@@ -736,6 +737,22 @@ void LayerBcifs::onImGuiRender() {
     ImGui::Text("Indices: %zu", m_batchFace.nbIndices());
     ImGui::Text("Floats: %zu", m_batchFace.nbFloats());
     ImGui::Text("RAM used: %zu o, %zu ko, %zu Mo, %zu Go", m_batchFace.nbData(), m_batchFace.nbData() / 1000, m_batchFace.nbData() / 1000000, m_batchFace.nbData() / 1000000000);
+
+    if (ImGui::Button("Save STL File...", ImVec2(-FLT_MIN, 0))) {
+        IGFD::FileDialogConfig config;
+        config.path = ".";
+        config.fileName = "out.stl";
+        config.flags |= ImGuiFileDialogFlags_Modal;
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseSTLFileDlgKey", "Choose a STL script file", ".stl", config);
+    }
+    if (ImGuiFileDialog::Instance()->Display("ChooseSTLFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(700, 350))) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            // action if OK
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            STLExporter::exportBinary(filePathName, m_bcifs, m_iterationLevel);
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
 
     ImGui::End();
 }
