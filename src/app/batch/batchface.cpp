@@ -58,10 +58,10 @@ void BatchFace::setBcifs(BCIFS::Bcifs& bcifs, int iterationLevel) {
     std::size_t nbVertices = 0;
     std::size_t nbIndices = 0;
     for (const std::vector<BCIFS::BcifsVertex>& face : faces) {
-        m_nbTriangles += face.size();
-        nbVertices += face.size() + 1;
-        nbIndices += face.size() * 3;
-
+        std::size_t nbTriangles = face.size() > 3 ? face.size() : 1;
+        m_nbTriangles += nbTriangles;
+        nbVertices += nbTriangles > 3 ? face.size() + 1 : 3;
+        nbIndices += nbTriangles * 3;
     }
     m_dataIndices.resize(nbIndices);
     m_data.resize(nbVertices * m_floatsPerVertex);
@@ -82,27 +82,36 @@ void BatchFace::render() const {
 }
 
 void BatchFace::addFace(const std::vector<BCIFS::BcifsVertex>& vertices) {
-    glm::vec3 barycenter{ 0, 0, 0 };
-    for (const BCIFS::BcifsVertex& vertex : vertices) {
-        barycenter += vertex.pos();
-    }
-    barycenter /= static_cast<float>(vertices.size());
-
-    // fill indices
-    unsigned int indexCenter = static_cast<unsigned int>(this->nbVertices());
-    unsigned int* p = m_dataIndices.data() + m_countIndices;
-
-    for (std::size_t i = 0; i < vertices.size(); i++) {
-        *p++ = indexCenter;
-        *p++ = indexCenter + i + 1;
-        *p++ = indexCenter + 1 + (i + 1) % vertices.size();
+    if (vertices.size() == 3) {
+        // fill indices
+        unsigned int indexV0 = static_cast<unsigned int>(this->nbVertices());
+        unsigned int* p = m_dataIndices.data() + m_countIndices;
+        *p++ = indexV0;
+        *p++ = indexV0 + 1;
+        *p = indexV0 + 2;
         m_countIndices += 3;
-    }
+    } else {
+        glm::vec3 barycenter{ 0, 0, 0 };
+        for (const BCIFS::BcifsVertex& vertex : vertices) {
+            barycenter += vertex.pos();
+        }
+        barycenter /= static_cast<float>(vertices.size());
 
+        // fill indices
+        unsigned int indexCenter = static_cast<unsigned int>(this->nbVertices());
+        unsigned int* p = m_dataIndices.data() + m_countIndices;
+
+        for (std::size_t i = 0; i < vertices.size(); i++) {
+            *p++ = indexCenter;
+            *p++ = indexCenter + i + 1;
+            *p++ = indexCenter + 1 + (i + 1) % vertices.size();
+            m_countIndices += 3;
+        }
+
+        // fill vertices data with barycenter
+        this->addVertexFace(barycenter, vertices[0].frontColor(), vertices[0].backColor());
+    }
     // fill vertices data
-    // barycenter
-    this->addVertexFace(barycenter, vertices[0].frontColor(), vertices[0].backColor());
-    // other points of the face
     for (std::size_t i = 0; i < vertices.size(); i++) {
         this->addVertexFace(vertices[i].pos(), vertices[i].frontColor(), vertices[i].backColor());
     }
