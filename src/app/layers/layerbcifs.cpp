@@ -743,7 +743,7 @@ void LayerBcifs::onImGuiRender() {
         config.path = ".";
         config.fileName = "out.stl";
         config.flags |= ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::Instance()->OpenDialog("ChooseSTLFileDlgKey", "Choose a STL script file", ".stl", config);
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseSTLFileDlgKey", "Choose a STL file", ".stl", config);
     }
     if (ImGuiFileDialog::Instance()->Display("ChooseSTLFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(700, 350))) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
