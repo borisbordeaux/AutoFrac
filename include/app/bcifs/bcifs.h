@@ -63,6 +63,7 @@ public:
     float* defaultBackColor() { return &m_defaultBackColor[0]; }
     CoefPool* pool() { return &m_pool; }
     bool* cacheTransforms() { return &m_cacheTransforms; }
+    bool* removeInternalFaces() { return &m_removeInternalFaces; }
 
 private:
     using Constraint = std::pair<Path, Path>;
@@ -103,6 +104,10 @@ private:
     void initPrimitives();
     const glm::vec3& getFrontColor(const Path& path) const;
     const glm::vec3& getBackColor(const Path& path) const;
+    bool needToHideFace(std::size_t index, const Path& path) const;
+    bool needToHideBoundary(TransitionID subdivisionId, TransitionID boundaryId) const;
+    std::optional<TransitionID> findFirstTransitionOfPrimitivePath(std::size_t indexFace, StateID id) const;
+    std::optional<Constraint> findIncidenceConstraintOf(TransitionID subdivisionId, TransitionID boundaryId) const;
 
 private:
     Automaton m_automaton;
@@ -137,6 +142,7 @@ private:
     std::size_t m_colorDepth = 0;
     CoefPool m_pool;
     bool m_cacheTransforms = true;
+    bool m_removeInternalFaces = true;
 };
 
 } // BCIFS

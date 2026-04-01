@@ -238,32 +238,41 @@ std::vector<std::vector<BcifsVertex>> Bcifs::faces(int iterationLevel) {
             glm::vec3 frontColor = this->getFrontColor(keyval.first);
             glm::vec3 backColor = this->getBackColor(keyval.first);
             // each primitive mat is a face
+            std::size_t indexFace = 0;
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<BcifsVertex> vertices;
-                arma::mat mat = this->getOperatorMat(keyval.first[0]) * keyval.second * primitive;
-                vertices.reserve(mat.n_cols);
-                for (std::size_t i = 0; i < mat.n_cols; i++) {
-                    glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
-                    vertices.emplace_back(pos, frontColor, backColor);
+                // test if face is on a boundary with an adjacency constraint
+                if (!this->needToHideFace(indexFace, keyval.first)) {
+                    std::vector<BcifsVertex> vertices;
+                    arma::mat mat = this->getOperatorMat(keyval.first[0]) * keyval.second * primitive;
+                    vertices.reserve(mat.n_cols);
+                    for (std::size_t i = 0; i < mat.n_cols; i++) {
+                        glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                        vertices.emplace_back(pos, frontColor, backColor);
+                    }
+                    res.push_back(vertices);
                 }
-                res.push_back(vertices);
+                indexFace++;
             }
         } else {
-            TransitionID lastTransitionId = keyval.first[keyval.first.size() - 1];
+            TransitionID lastTransitionId = keyval.first[0];
             const Transition& lastTransition = m_automaton.findTransitionByID(lastTransitionId);
             const std::vector<arma::mat>& primitiveMatrices = this->getPrimitiveMat(lastTransition.to());
             glm::vec3 frontColor = this->getFrontColor(keyval.first);
             glm::vec3 backColor = this->getBackColor(keyval.first);
             // each primitive mat is a face
+            std::size_t indexFace = 0;
             for (const arma::mat& primitive : primitiveMatrices) {
-                std::vector<BcifsVertex> vertices;
-                arma::mat mat = keyval.second * primitive;
-                vertices.reserve(mat.n_cols);
-                for (std::size_t i = 0; i < mat.n_cols; i++) {
-                    glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
-                    vertices.emplace_back(pos, frontColor, backColor);
+                if (!this->needToHideFace(indexFace, keyval.first)) {
+                    std::vector<BcifsVertex> vertices;
+                    arma::mat mat = keyval.second * primitive;
+                    vertices.reserve(mat.n_cols);
+                    for (std::size_t i = 0; i < mat.n_cols; i++) {
+                        glm::vec3 pos(mat.at(0, i), mat.at(1, i), mat.at(2, i));
+                        vertices.emplace_back(pos, frontColor, backColor);
+                    }
+                    res.push_back(vertices);
                 }
-                res.push_back(vertices);
+                indexFace++;
             }
         }
     }
@@ -944,8 +953,8 @@ void Bcifs::initPrimitives() {
         if (it != m_mapPrimitives.end()) {
             m_mapPrimitivesMat[state.id()] = {};
             for (const Figure& figure : it->second) {
-                // each figure is a face, each face is a path, that has a matrix associated,
-                // each column is a point of the primitive
+                // each figure is a face, each face is a set of path,
+                // each path has a matrix associated, each column is a vertex of the face
                 // for now we assume each path gives a one-column matrix
                 arma::mat primitive(m_mapDimensions[state.id()], figure.size());
                 std::size_t currentCol = 0;
@@ -987,6 +996,128 @@ const glm::vec3& Bcifs::getBackColor(const Path& path) const {
         return m_defaultBackColor;
     }
     return m_defaultBackColor;
+}
+
+bool Bcifs::needToHideFace(std::size_t index, const Path& path) const {
+    if (!m_removeInternalFaces) { return false; }
+    bool res = false;
+    const Transition& lastSubdivision = m_automaton.findTransitionByID(path.back());
+    std::optional<TransitionID> firstTransitionOfPrimitivePath = this->findFirstTransitionOfPrimitivePath(index, lastSubdivision.to());
+    if (firstTransitionOfPrimitivePath.has_value()) {
+        TransitionID currentBoundary = firstTransitionOfPrimitivePath.value();
+        std::size_t currentSubdivisionIndex = 1;
+        res = this->needToHideBoundary(lastSubdivision.id(), currentBoundary);
+        bool noIncidence = false;
+        while (currentSubdivisionIndex < path.size() && !res && !noIncidence) {
+            const Transition& currentSubdivision = m_automaton.findTransitionByID(path[path.size() - currentSubdivisionIndex]);
+            std::optional<Constraint> constraint = this->findIncidenceConstraintOf(currentSubdivision.id(), currentBoundary);
+            if (constraint.has_value()) {
+                // the constraint is in form Subdivision (currentSubdivision.id()), Boundary (currentBoundary), ... = Boundary (Y), Subdivision, ...
+                // we hide the face if Boundary Y must be hidden for subdivision beforeCurrentTransition.id()
+                const Transition& beforeCurrentTransition = m_automaton.findTransitionByID(path[path.size() - 1 - currentSubdivisionIndex]);
+                currentBoundary = constraint->second[0];
+                res = this->needToHideBoundary(beforeCurrentTransition.id(), currentBoundary);
+            } else {
+                noIncidence = true;
+            }
+            currentSubdivisionIndex++;
+        }
+    }
+    return res;
+}
+
+bool Bcifs::needToHideBoundary(TransitionID subdivisionId, TransitionID boundaryId) const {
+    // we need to see if there is an adjacency constraint having one of the following forms
+    // { subdivisionId, boundaryId, ... = Subdivision, Boundary, ... }
+    // or
+    // { Subdivision, Boundary, ... = subdivisionId, boundaryId, ... }
+    // dots can be any constraints, usually permutation constraints
+    bool res = false;
+    for (const Constraint& constraint : m_constraints) {
+        if (constraint.first.size() > 1 && constraint.second.size() > 1) {
+            // try for first case
+            bool firstTransitionLeftCond = subdivisionId == constraint.first[0];
+            bool secondTransitionLeftCond = boundaryId == constraint.first[1];
+            // try for second case
+            bool firstTransitionRightCond = subdivisionId == constraint.second[0];
+            bool secondTransitionRightCond = boundaryId == constraint.second[1];
+
+            if (firstTransitionLeftCond && secondTransitionLeftCond) {
+                bool firstTransitionRightCondFirstCase = m_automaton.findTransitionByID(constraint.second[0]).type() == TransitionType::SUBDIVISION;
+                bool secondTransitionRightCondFirstCase = m_automaton.findTransitionByID(constraint.second[1]).type() == TransitionType::BOUNDARY;
+                auto it = m_mapPrimitives.find(m_automaton.findTransitionByID(constraint.second[0]).to());
+                bool hasPrimitive = (it == m_mapPrimitives.end()) || (it != m_mapPrimitives.end() && it->second.size() > 0);
+                if (firstTransitionRightCondFirstCase && secondTransitionRightCondFirstCase && hasPrimitive) {
+                    // the current face is created from a boundary implicated in an adjacency constraint
+                    // so we don't display it
+                    res = true;
+                }
+            } else if (firstTransitionRightCond && secondTransitionRightCond) {
+                bool firstTransitionLeftCondSecondCase = m_automaton.findTransitionByID(constraint.first[0]).type() == TransitionType::SUBDIVISION;
+                bool secondTransitionLeftCondSecondCase = m_automaton.findTransitionByID(constraint.first[1]).type() == TransitionType::BOUNDARY;
+                auto it = m_mapPrimitives.find(m_automaton.findTransitionByID(constraint.first[0]).to());
+                bool hasPrimitive = (it == m_mapPrimitives.end()) || (it != m_mapPrimitives.end() && it->second.size() > 0);
+                if (firstTransitionLeftCondSecondCase && secondTransitionLeftCondSecondCase && hasPrimitive) {
+                    // the current face is created from a boundary implicated in an adjacency constraint
+                    // so we don't display it
+                    res = true;
+                }
+            }
+        }
+    }
+    return res;
+}
+
+std::optional<TransitionID> Bcifs::findFirstTransitionOfPrimitivePath(std::size_t indexFace, StateID id) const {
+    auto it = m_mapPrimitives.find(id);
+    if (it == m_mapPrimitives.end()) { return {}; }
+    const std::vector<Figure>& figures = it->second;
+    const Figure& face = figures[indexFace];
+    TransitionID firstTransitionOfPrimitivePath = face[0][0];
+    bool samePath = true;
+    for (const Path& facePath : face) {
+        if (firstTransitionOfPrimitivePath != facePath[0]) {
+            samePath = false;
+        }
+    }
+    if (samePath) {
+        return firstTransitionOfPrimitivePath;
+    }
+    return {};
+}
+
+std::optional<Bcifs::Constraint> Bcifs::findIncidenceConstraintOf(TransitionID subdivisionId, TransitionID boundaryId) const {
+    // we need to see if there is an adjacency constraint having one of the following forms
+    // { subdivisionId, boundaryId, ... = Subdivision, Boundary, ... }
+    // or
+    // { Subdivision, Boundary, ... = subdivisionId, boundaryId, ... }
+    // dots can be any constraints, usually permutation constraints
+    std::optional<Constraint> res = std::nullopt;
+    for (const Constraint& constraint : m_constraints) {
+        if (constraint.first.size() > 1 && constraint.second.size() > 1) {
+            // try for first case
+            bool firstTransitionLeftCond = subdivisionId == constraint.first[0];
+            bool secondTransitionLeftCond = boundaryId == constraint.first[1];
+            // try for second case
+            bool firstTransitionRightCond = subdivisionId == constraint.second[0];
+            bool secondTransitionRightCond = boundaryId == constraint.second[1];
+
+            if (firstTransitionLeftCond && secondTransitionLeftCond) {
+                bool firstTransitionRightCondFirstCase = m_automaton.findTransitionByID(constraint.second[0]).type() == TransitionType::BOUNDARY;
+                bool secondTransitionRightCondFirstCase = m_automaton.findTransitionByID(constraint.second[1]).type() == TransitionType::SUBDIVISION;
+                if (firstTransitionRightCondFirstCase && secondTransitionRightCondFirstCase) {
+                    res = constraint;
+                }
+            } else if (firstTransitionRightCond && secondTransitionRightCond) {
+                bool firstTransitionLeftCondSecondCase = m_automaton.findTransitionByID(constraint.first[0]).type() == TransitionType::BOUNDARY;
+                bool secondTransitionLeftCondSecondCase = m_automaton.findTransitionByID(constraint.first[1]).type() == TransitionType::SUBDIVISION;
+                if (firstTransitionLeftCondSecondCase && secondTransitionLeftCondSecondCase) {
+                    res = Constraint(constraint.second, constraint.first);
+                }
+            }
+        }
+    }
+    return res;
 }
 
 } // BCIFS

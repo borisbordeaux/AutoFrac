@@ -723,6 +723,9 @@ void LayerBcifs::onImGuiRender() {
             Core::GLCall(glDisable(GL_CULL_FACE));
         }
     }
+    if (ImGui::Checkbox("Remove internal faces", m_bcifs.removeInternalFaces())) {
+        m_bcifsChanged = true;
+    }
     ImGui::SeparatorText("Debug / Info");
     if (ImGui::Button("Print BC-IFS")) {
         m_bcifs.print();
