@@ -336,7 +336,7 @@ primitive("v", {
 local d=0.7
 local e = 1-d
 
-initMat("f", "f_0", {
+initMat("f", { "f_0" }, {
     { 1 ,  d ,  d ,  d ,  d ,  d },
     { 0 ,  e ,  0 ,  0 ,  0 ,  0 },
     { 0 ,  0 ,  e ,  0 ,  0 ,  0 },
@@ -565,7 +565,7 @@ local Ptx = concatTables(PtRx, PtVx, PtBx, PtJx)
 local Pty = concatTables(PtRy, PtVy, PtBy, PtJy)
 local Ptz = concatTables(PtRz, PtVz, PtBz, PtJz)
 
-initMat("init", "init_0", {
+initMat("init", { "init_0" }, {
     Ptx,
     Pty,
     Ptz

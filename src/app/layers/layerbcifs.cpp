@@ -104,7 +104,7 @@ void LayerBcifs::testSubdQuad() {
     m_bcifs.addConstraint({ b3face, b1edge }, { b0face, b0edge });
 
     // init control points
-    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0init }, BCIFS::FormalMatrix({
         { -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, -1.0f, -1.0f },
         { -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f }
@@ -173,13 +173,13 @@ void LayerBcifs::testSierpinski() {
     m_bcifs.addConstraint({ s0init, b0face }, { s1init, b0face });
 
     // init control points
-    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0init }, BCIFS::FormalMatrix({
         { -1.0f, 1.0f, 0.0f },
         { 0.0f, 0.0f, 1.7f },
         { 1.0f, 0.0f, 0.0f }
     }, BCIFS::CoefKind::VAR, m_bcifs.pool()));
 
-    m_bcifs.setInitMat(s1init, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s1init }, BCIFS::FormalMatrix({
         { 1.0f, -1.0f, 0.0f },
         { 0.0f, 0.0f, -1.0f },
         { 0.0f, 1.0f, 2.0f }
@@ -314,22 +314,22 @@ void LayerBcifs::testG2(int rows, int cols) {
     m_bcifs.addConstraint({ b5face, b1bezier }, { b0face, b0cantor });
 
     // init matrices for edges
-    m_bcifs.setInitMat(s0cantor, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0cantor }, BCIFS::FormalMatrix({
         { 1.0f, 2.0f / 3.0f },
         { 0.0f, 1.0f / 3.0f }
     }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
-    m_bcifs.setInitMat(s1cantor, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s1cantor }, BCIFS::FormalMatrix({
         { 1.0f / 3.0f, 0.0f },
         { 2.0f / 3.0f, 1.0f }
     }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
-    m_bcifs.setInitMat(s0bezier, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0bezier }, BCIFS::FormalMatrix({
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
     }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
-    m_bcifs.setInitMat(s1bezier, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s1bezier }, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
@@ -338,7 +338,7 @@ void LayerBcifs::testG2(int rows, int cols) {
     // init control points
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
-            m_bcifs.setInitMat(initSubs[row * cols + col], BCIFS::FormalMatrix({
+            m_bcifs.setInitMat({ initSubs[row * cols + col] }, BCIFS::FormalMatrix({
                 {
                     7.0f * col + 3.0f * std::cos(0.0f * M_PIf * 2.0f / 6.0f),
                     7.0f * col + 3.0f * std::cos(1.0f * M_PIf * 2.0f / 6.0f),
@@ -464,20 +464,20 @@ void LayerBcifs::testSquareSierpinski() {
     m_bcifs.addConstraint({ b1triangle, b1edge }, { b2triangle, b0edge });
     m_bcifs.addConstraint({ b2triangle, b1edge }, { b0triangle, b0edge });
 
-    m_bcifs.setInitMat(s0edge, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0edge }, BCIFS::FormalMatrix({
         { 1.0f, 0.5f, 0.25f },
         { 0.0f, 0.5f, 0.50f },
         { 0.0f, 0.0f, 0.25f }
     }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
-    m_bcifs.setInitMat(s1edge, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s1edge }, BCIFS::FormalMatrix({
         { 0.25f, 0.0f, 0.0f },
         { 0.50f, 0.5f, 0.0f },
         { 0.25f, 0.5f, 1.0f }
     }, BCIFS::CoefKind::CONST, m_bcifs.pool()));
 
     // // init control points
-    m_bcifs.setInitMat(s0init, BCIFS::FormalMatrix({
+    m_bcifs.setInitMat({ s0init }, BCIFS::FormalMatrix({
         { -1.0f, 0.0f, 1.0f, 0.6f, 1.0f, 0.0f, -1.0f, -1.6f },
         { -1.0f, -0.6f, -1.0f, 0.0f, 1.0f, 1.6f, 1.0f, 0.0f },
         { 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f }

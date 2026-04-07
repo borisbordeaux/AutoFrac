@@ -149,11 +149,11 @@ constraint(stateName, firstPath, secondPath)
 ```
 
 #### Initial matrices
-Define an initial matrix for a subdivision transition of a state with the values and a type.
+Define an initial matrix for a path containing only one subdivision transition of a state with the values and a type.
 The matrix is defined with an array of array of numbers, in row-major order.  
 Note that the type must be either 'VAR' or 'CONST'
 ```Lua
-initMat(stateName, subdivisionName, matrix, type)
+initMat(stateName, path, matrix, type)
 ```
 
 ### References

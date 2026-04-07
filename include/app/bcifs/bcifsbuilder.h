@@ -45,7 +45,7 @@ public:
     void space(const std::string& state, const std::vector<std::string>& boundaries);
     void primitive(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures);
     void constraint(const std::string& state, const std::vector<std::string>& firstPath, const std::vector<std::string>& secondPath);
-    void initMat(const std::string& state, const std::string& transition, const std::vector<std::vector<float>>& matrix, const std::string& constness);
+    void initMat(const std::string& state, const std::vector<std::string>& path, const std::vector<std::vector<float>>& matrix, const std::string& constness);
 
 private:
     void initializeLua();

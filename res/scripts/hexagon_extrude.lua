@@ -429,24 +429,15 @@ constraint("Vol", { "b7", "b3", "p0" }, { "b2", "b1" })
 
 -- init matrices for edges
 -- for cantor
-initMat("C", "s0", {
-    { 1.0, 2.0 / 3.0 },
-    { 0.0, 1.0 / 3.0 }
-}, "CONST")
-initMat("C", "s1", {
-    { 1.0 / 3.0, 0.0 },
-    { 2.0 / 3.0, 1.0 }
+initMat("C", { "s0", "b1" }, {
+    { 2.0 / 3.0 },
+    { 1.0 / 3.0 }
 }, "CONST")
 -- for bezier
-initMat("B", "s0", {
+initMat("B", { "s0" }, {
     { 1.0, 0.5, 0.25 },
     { 0.0, 0.5, 0.50 },
     { 0.0, 0.0, 0.25 }
-}, "CONST")
-initMat("B", "s1", {
-    { 0.25, 0.0, 0.0 },
-    { 0.50, 0.5, 0.0 },
-    { 0.25, 0.5, 1.0 }
 }, "CONST")
 
 -- to have a more consistent boundary
@@ -466,7 +457,7 @@ initMat("B", "s1", {
 -- }, "CONST")
 
 -- init control points
-initMat("init", "s0", {
+initMat("init", { "s0" }, {
     {
         3.0 * math.cos(0.0 * math.pi * 2.0 / 6.0),
         3.0 * math.cos(1.0 * math.pi * 2.0 / 6.0),

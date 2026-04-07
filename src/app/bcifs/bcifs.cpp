@@ -85,8 +85,8 @@ void Bcifs::addConstraint(const Path& lhs, const Path& rhs) {
     }
 }
 
-void Bcifs::setInitMat(TransitionID id, const FormalMatrix& matrix) {
-    m_mapInitMat.emplace(id, matrix);
+void Bcifs::setInitMat(const Path& path, const FormalMatrix& matrix) {
+    m_initMatrices.emplace_back(path, matrix);
 }
 
 std::string Bcifs::toString() const {
@@ -154,9 +154,10 @@ void Bcifs::finalize() {
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
-    this->buildGridsFromBoundary();
-    this->buildMassSpringSystems();   // initialize all mass spring systems for each state with a user defined grid
-    this->buildMSSForControlPoints(); // initialize all mass spring systems for the control points
+    this->initMatCoefficients();         // init all coefficients when specified by the user
+    this->buildGridsFromBoundary();      // build grids from boundary when specified by the user
+    this->buildMassSpringSystems();      // initialize all mass spring systems for each state with a user defined grid
+    this->buildMSSForControlPoints();    // initialize all mass spring systems for the control points
 }
 
 void Bcifs::reset() {
@@ -172,7 +173,7 @@ void Bcifs::reset() {
     m_createGridFromBoundary.clear();
     m_mapMSS.clear();
     m_MSSControlPoints.clear();
-    m_mapInitMat.clear();
+    m_initMatrices.clear();
     m_invalidatedMatrices = true;
     m_invalidatedMatricesControlPoints = false;
     m_facesPaths.clear();
@@ -757,23 +758,22 @@ void Bcifs::printConstraintMatrices(const Constraint& constraint) {
 void Bcifs::completeSubdivisionMatrices() {
     for (const Transition& transition : m_automaton.transitions()) {
         if (transition.type() == TransitionType::SUBDIVISION) {
-            if (m_mapInitMat.find(transition.id()) == m_mapInitMat.end()) {
-                m_mapOperators.at(transition.id()).setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
-            } else {
-                FormalMatrix& operatorMat = m_mapOperators.at(transition.id());
-                FormalMatrix& initMat = m_mapInitMat.at(transition.id());
-                if (operatorMat.rows() == initMat.rows() && operatorMat.cols() == initMat.cols()) {
-                    for (std::size_t row = 0; row < operatorMat.rows(); row++) {
-                        for (std::size_t col = 0; col < operatorMat.cols(); col++) {
-                            if (operatorMat.isVar(row, col)) {
-                                m_pool.setValue(operatorMat.get(row, col).index(), initMat.value(row, col));
-                                m_pool.setKind(operatorMat.get(row, col).index(), m_pool.getKind(initMat.get(row, col).index()));
-                                m_pool.setInitialized(operatorMat.get(row, col).index());
-                            }
-                        }
+            m_mapOperators.at(transition.id()).setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
+        }
+    }
+}
+
+void Bcifs::initMatCoefficients() {
+    for (const std::pair<Path, FormalMatrix>& pair : m_initMatrices) {
+        FormalMatrix mat = getOperatorOfPathNoSubdivision(pair.first);
+        if (mat.cols() == pair.second.cols() && mat.rows() == pair.second.rows()) {
+            for (std::size_t row = 0; row < mat.rows(); row++) {
+                for (std::size_t col = 0; col < mat.cols(); col++) {
+                    if (mat.isVar(row, col)) {
+                        m_pool.setValue(mat.get(row, col).index(), pair.second.value(row, col));
+                        m_pool.setKind(mat.get(row, col).index(), m_pool.getKind(pair.second.get(row, col).index()));
+                        m_pool.setInitialized(mat.get(row, col).index());
                     }
-                } else {
-                    m_mapOperators.at(transition.id()).setRandomValuesOnFreeCoefs(transition.from() != m_initStateID.value());
                 }
             }
         }

@@ -197,14 +197,14 @@ void StructurePrinter::printDelayCantorImpl(unsigned int n, unsigned int delay_c
 
     //matrices for intern points
     if (m_structure.cantorType() == CantorType::Cubic_Cantor) {
-        m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "_" + std::to_string(delay_count) + "', 's0', {");
+        m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "_" + std::to_string(delay_count) + "', { 's0' }, {");
         m_filePrinter.appendNewLine("    { 1, 0, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 1, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 1, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 0, 1 }");
         m_filePrinter.appendNewLine("}, 'CONST')");
     } else if (m_structure.cantorType() == CantorType::Quadratic_Cantor) {
-        m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "_" + std::to_string(delay_count) + "', 's0', {");
+        m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "_" + std::to_string(delay_count) + "', { 's0' }, {");
         m_filePrinter.appendNewLine("    { 1, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 1, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 1 },");
@@ -257,7 +257,7 @@ void StructurePrinter::printCantorImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getCantorLinearTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[2]) + ", " + frac::utils::toString(t[3]) + " },");
             m_filePrinter.appendNewLine("}, 'CONST')");
@@ -266,7 +266,7 @@ void StructurePrinter::printCantorImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getCantorQuadraticTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + ", " + frac::utils::toString(t[2]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[3]) + ", " + frac::utils::toString(t[4]) + ", " + frac::utils::toString(t[5]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[6]) + ", " + frac::utils::toString(t[7]) + ", " + frac::utils::toString(t[8]) + " },");
@@ -277,7 +277,7 @@ void StructurePrinter::printCantorImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getCantorCubicTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('C" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + ", " + frac::utils::toString(t[2]) + ", " + frac::utils::toString(t[3]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[4]) + ", " + frac::utils::toString(t[5]) + ", " + frac::utils::toString(t[6]) + ", " + frac::utils::toString(t[7]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[8]) + ", " + frac::utils::toString(t[9]) + ", " + frac::utils::toString(t[10]) + ", " + frac::utils::toString(t[11]) + " },");
@@ -323,14 +323,14 @@ void StructurePrinter::printDelayBezierImpl(unsigned int n, unsigned int delay_c
 
     //matrices for intern points
     if (m_structure.bezierType() == BezierType::Cubic_Bezier) {
-        m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "_" + std::to_string(delay_count) + "', 's0', {");
+        m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "_" + std::to_string(delay_count) + "', { 's0' }, {");
         m_filePrinter.appendNewLine("    { 1, 0, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 1, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 1, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 0, 1 }");
         m_filePrinter.appendNewLine("}, 'CONST')");
     } else if (m_structure.bezierType() == BezierType::Quadratic_Bezier) {
-        m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "_" + std::to_string(delay_count) + "', 's0', {");
+        m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "_" + std::to_string(delay_count) + "', { 's0' }, {");
         m_filePrinter.appendNewLine("    { 1, 0, 0 },");
         m_filePrinter.appendNewLine("    { 0, 1, 0 },");
         m_filePrinter.appendNewLine("    { 0, 0, 1 },");
@@ -383,7 +383,7 @@ void StructurePrinter::printBezierImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getBezierLinearTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[2]) + ", " + frac::utils::toString(t[3]) + " },");
             m_filePrinter.appendNewLine("}, 'CONST')");
@@ -392,7 +392,7 @@ void StructurePrinter::printBezierImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getBezierQuadraticTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + ", " + frac::utils::toString(t[2]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[3]) + ", " + frac::utils::toString(t[4]) + ", " + frac::utils::toString(t[5]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[6]) + ", " + frac::utils::toString(t[7]) + ", " + frac::utils::toString(t[8]) + " },");
@@ -403,7 +403,7 @@ void StructurePrinter::printBezierImpl(unsigned int n) {
         for (unsigned int i = 0; i < n; ++i) {
             // for each subdivision T0, T1, ... Tn-1
             std::vector<float> t = frac::utils::getBezierCubicTransformation(i, n);
-            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', 's" + std::to_string(i) + "', {");
+            m_filePrinter.appendNewLine("initMat('B" + std::to_string(n) + "', { 's" + std::to_string(i) + "' }, {");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[0]) + ", " + frac::utils::toString(t[1]) + ", " + frac::utils::toString(t[2]) + ", " + frac::utils::toString(t[3]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[4]) + ", " + frac::utils::toString(t[5]) + ", " + frac::utils::toString(t[6]) + ", " + frac::utils::toString(t[7]) + " },");
             m_filePrinter.appendNewLine("    { " + frac::utils::toString(t[8]) + ", " + frac::utils::toString(t[9]) + ", " + frac::utils::toString(t[10]) + ", " + frac::utils::toString(t[11]) + " },");
@@ -516,7 +516,7 @@ void StructurePrinter::printEdgeAdjacenciesOfCell(Face const& cell) {
 void StructurePrinter::printControlPoints() {
     for (std::size_t indexFace = 0; indexFace < m_structure.controlPoints().size(); indexFace++) {
         std::size_t nb_pts = m_structure.controlPoints()[indexFace].size();
-        m_filePrinter.appendNewLine("initMat('init', 's" + std::to_string(indexFace) + "', {");
+        m_filePrinter.appendNewLine("initMat('init', { 's" + std::to_string(indexFace) + "' }, {");
         //x
         m_filePrinter.append("    { ");
         for (std::size_t i = 0; i < nb_pts - 1; ++i) {

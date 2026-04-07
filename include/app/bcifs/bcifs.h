@@ -36,7 +36,7 @@ public:
     TransitionID addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor, glm::vec3 backColor);
     TransitionID addPermutation(std::string name, StateID from, StateID to);
     void addConstraint(const Path& lhs, const Path& rhs);
-    void setInitMat(TransitionID id, const FormalMatrix& matrix);
+    void setInitMat(const Path& path, const FormalMatrix& matrix);
     std::string toString() const;
     void print() const;
     void check() const;
@@ -92,6 +92,7 @@ private:
     const arma::mat& getOperatorMat(TransitionID id) const;
     void printConstraintMatrices(const Constraint& constraint);
     void completeSubdivisionMatrices();
+    void initMatCoefficients();
     void buildGridsFromBoundary();
     void buildMassSpringSystems();
     void buildMSSForControlPoints();
@@ -128,7 +129,7 @@ private:
     float m_dampingControlPoints = 0.3f;
     float m_kControlPoints = 0.02f;
     float m_lengthControlPoints = 1.0f;
-    std::unordered_map<TransitionID, FormalMatrix> m_mapInitMat;
+    std::vector<std::pair<Path, FormalMatrix>> m_initMatrices;
     bool m_invalidatedMatrices = true;
     bool m_invalidatedMatricesControlPoints = false;
     std::vector<std::pair<Path, arma::mat>> m_facesPaths;

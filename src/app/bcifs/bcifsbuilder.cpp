@@ -152,16 +152,26 @@ void BcifsBuilder::constraint(const std::string& state, const std::vector<std::s
     m_bcifs.addConstraint(first, second);
 }
 
-void BcifsBuilder::initMat(const std::string& state, const std::string& transition, const std::vector<std::vector<float>>& matrix, const std::string& constness) {
-    StateID stateId = this->getStateID(state);
-    TransitionID transitionId = this->getTransitionID(stateId, transition);
+void BcifsBuilder::initMat(const std::string& state, const std::vector<std::string>& path, const std::vector<std::vector<float>>& matrix, const std::string& constness) {
+    if (path.empty()) {
+        throw sol::error("Path must contain at least one transition");
+    }
     CoefKind coefType = CoefKind::CONST;
     if (constness == "VAR") {
         coefType = CoefKind::VAR;
     } else if (constness != "CONST") {
         throw sol::error("Constness must be \"VAR\" or \"CONST\"");
     }
-    m_bcifs.setInitMat(transitionId, FormalMatrix(matrix, coefType, m_bcifs.pool()));
+    StateID stateId = this->getStateID(state);
+    Path actualPath;
+    StateID currentStateId = stateId;
+    for (const std::string& transitionName : path) {
+        TransitionID transitionId = this->getTransitionID(currentStateId, transitionName);
+        const Transition& transition = m_bcifs.automaton().findTransitionByID(transitionId);
+        currentStateId = transition.to();
+        actualPath.push_back(transitionId);
+    }
+    m_bcifs.setInitMat(actualPath, FormalMatrix(matrix, coefType, m_bcifs.pool()));
 }
 
 void BcifsBuilder::initializeLua() {
@@ -222,8 +232,8 @@ void BcifsBuilder::initializeLua() {
     m_lua.set_function("constraint", [&](const std::string& state, sol::as_table_t<std::vector<std::string>> firstPath, sol::as_table_t<std::vector<std::string>> secondPath) {
         this->constraint(state, firstPath.value(), secondPath.value());
     });
-    m_lua.set_function("initMat", [&](const std::string& state, const std::string& transition, sol::as_table_t<std::vector<std::vector<float>>> matrix, const std::string& constness) {
-        this->initMat(state, transition, matrix.value(), constness);
+    m_lua.set_function("initMat", [&](const std::string& state, sol::as_table_t<std::vector<std::string>> path, sol::as_table_t<std::vector<std::vector<float>>> matrix, const std::string& constness) {
+        this->initMat(state, path.value(), matrix.value(), constness);
     });
 }
 
