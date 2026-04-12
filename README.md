@@ -70,7 +70,7 @@ state(stateName, internalDimension)
 
 #### Internal transitions
 Internal transitions are automatically created when creating a state.
-Each internal dimension is accessible through an internal operator defined automatically.
+Each internal dimension is accessible through an internal operator automatically defined.
 ```Lua
 -- creating this state
 state("example", 3)
@@ -117,7 +117,7 @@ The grid is then used to build a mass spring system to automatically displace su
 grid(stateName, figuresArray)
 ```
 
-It's also possible to create a grid automatically from the boundary with the following function.
+It's also possible to automatically create a grid from the boundary with the following function.
 ```Lua
 gridFromBoundary(stateName)
 ```
@@ -135,10 +135,23 @@ Define a primitive for a state with an array of figures. A figure is an array of
 Note that a path used for a primitive should always lead to a 1-dimension element (usually a vertex, while it could also be a specific internal point of any state).  
 Note that it is possible to use any operator in a path (as long as the path exists).
 Each figure is considered as a face where:
-- each path corresponds to a vertex of the face
-- the vertices are interpreted in CCW order
+- each path corresponds to a vertex of the face.
+- the vertices are interpreted in CCW order.
 ```Lua
 primitive(stateName, figuresArray)
+```
+
+#### Primitive matrices
+Define a primitive for a state with an array of matrices.
+Each matrix is defined with an array of array of numbers, in row-major order.
+Each matrix is considered as a face where:
+- each column corresponds to a vertex of the face.
+- the vertices are interpreted in CCW order.
+
+Note that all matrices must have at least 3 columns and a number of rows corresponding to the dimension associated with the given state (i.e. primitives are defined in a barycentric space).
+See the `res/script/square_diff_prim.lua` file for an example.
+```Lua
+primitiveMat(stateName, matrixArray)
 ```
 
 #### Constraint

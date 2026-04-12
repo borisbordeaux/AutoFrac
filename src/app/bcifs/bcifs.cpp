@@ -47,6 +47,12 @@ void Bcifs::setPrimitive(StateID id, std::vector<Figure> primitive) {
     m_mapPrimitives[id] = std::move(primitive);
 }
 
+void Bcifs::setPrimitiveMat(StateID id, const std::vector<FormalMatrix>& primitive) {
+    for (const FormalMatrix& matrix : primitive) {
+        m_mapPrimitivesMat[id].emplace_back(matrix.toMat());
+    }
+}
+
 TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to) {
     return this->addTransition(std::move(name), from, to, TransitionType::SUBDIVISION);
 }
@@ -150,7 +156,8 @@ void Bcifs::check() const {
 }
 
 void Bcifs::finalize() {
-    this->initializeMatrices();          // initialize all boundary and internal operators
+    this->initializeMatrices();          // initialize all boundary and internal operators, and dimension of states
+    this->checkPrimitives();             // make sure user defined primitive matrices have a correct size
     this->resolveConstraints();          // resolve all constraints to finish the matrices initialization
     this->initSubdivisionOperators();    // initialize all subdivision operators not implied in a constraint
     this->completeSubdivisionMatrices(); // make sure matrices are barycentric transformations
@@ -513,6 +520,29 @@ void Bcifs::initializeMatrices() {
     for (const State& state : m_automaton.states()) {
         this->initializeMatrices(state.id());
     }
+}
+
+void Bcifs::checkPrimitives() const {
+    for (const std::pair<const StateID, std::vector<arma::mat>>& keyVal : m_mapPrimitivesMat) {
+        std::size_t n = 0;
+        for (const arma::mat& matrix : keyVal.second) {
+            if (matrix.n_rows != m_mapDimensions.at(keyVal.first)) {
+                const std::string& stateName = m_automaton.findStateByID(keyVal.first).name();
+                std::string nbRows = std::to_string(matrix.n_rows);
+                std::string stateDimension = std::to_string(m_mapDimensions.at(keyVal.first));
+                std::string index = std::to_string(n);
+                throw std::runtime_error("The number of rows (" + nbRows + ") of the primitive matrix " + index + " of state " + stateName + " does not match its state dimension (" + stateDimension + ")");
+            }
+            if (matrix.n_cols < 3) {
+                const std::string& stateName = m_automaton.findStateByID(keyVal.first).name();
+                std::string nbCols = std::to_string(matrix.n_cols);
+                std::string index = std::to_string(n);
+                throw std::runtime_error("The number of columns (" + nbCols + ") of the primitive matrix " + index + " of state " + stateName + " must be at least 3.");
+            }
+            n++;
+        }
+    }
+    Core::LOG_DEBUG("Primitives checked");
 }
 
 void Bcifs::initializeMatrices(StateID id) {
@@ -951,7 +981,6 @@ void Bcifs::initPrimitives() {
     for (const State& state : m_automaton.states()) {
         auto it = m_mapPrimitives.find(state.id());
         if (it != m_mapPrimitives.end()) {
-            m_mapPrimitivesMat[state.id()] = {};
             for (const Figure& figure : it->second) {
                 // each figure is a face, each face is a set of path,
                 // each path has a matrix associated, each column is a vertex of the face
@@ -968,8 +997,9 @@ void Bcifs::initPrimitives() {
                 }
                 m_mapPrimitivesMat[state.id()].push_back(std::move(primitive));
             }
-        } else {
-            // init a default primitive, the identity matrix
+        } else if (m_mapPrimitivesMat.find(state.id()) == m_mapPrimitivesMat.end()) {
+            // if there is no user defined matrices for the primitive
+            // then init a default primitive, one identity matrix
             arma::mat identity(m_mapDimensions[state.id()], m_mapDimensions[state.id()], arma::fill::eye);
             m_mapPrimitivesMat[state.id()] = { identity };
         }

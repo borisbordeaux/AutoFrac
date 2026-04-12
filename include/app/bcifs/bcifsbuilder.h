@@ -44,6 +44,7 @@ public:
     void permutation(const std::string& name, const std::string& from, const std::string& to);
     void space(const std::string& state, const std::vector<std::string>& boundaries);
     void primitive(const std::string& state, const std::vector<std::vector<std::vector<std::string>>>& figures);
+    void primitiveMat(const std::string& state, const std::vector<std::vector<std::vector<float>>>& matrices);
     void constraint(const std::string& state, const std::vector<std::string>& firstPath, const std::vector<std::string>& secondPath);
     void initMat(const std::string& state, const std::vector<std::string>& path, const std::vector<std::vector<float>>& matrix, const std::string& constness);
 

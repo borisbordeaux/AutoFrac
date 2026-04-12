@@ -31,6 +31,7 @@ public:
     void addGridFromBoundary(StateID id);
     void setSpace(StateID id, std::vector<TransitionID> transitions);
     void setPrimitive(StateID id, std::vector<Figure> primitive);
+    void setPrimitiveMat(StateID id, const std::vector<FormalMatrix>& primitive);
     TransitionID addSubdivision(std::string name, StateID from, StateID to);
     TransitionID addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor);
     TransitionID addSubdivision(std::string name, StateID from, StateID to, glm::vec3 frontColor, glm::vec3 backColor);
@@ -83,6 +84,7 @@ private:
     void checkSpaces() const;
     void checkConstraints() const;
     void initializeMatrices();
+    void checkPrimitives() const;
     void initializeMatrices(StateID id);
     void resolvePermutationConstraints(StateID id);
     void resolveConstraints();

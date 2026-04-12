@@ -131,6 +131,15 @@ void BcifsBuilder::primitive(const std::string& state, const std::vector<std::ve
     m_bcifs.setPrimitive(stateId, trueFigures);
 }
 
+void BcifsBuilder::primitiveMat(const std::string& state, const std::vector<std::vector<std::vector<float>>>& matrices) {
+    StateID stateId = this->getStateID(state);
+    std::vector<FormalMatrix> realMatrices;
+    for (const std::vector<std::vector<float>>& matrix : matrices) {
+        realMatrices.emplace_back(matrix, CoefKind::VAR, m_bcifs.pool());
+    }
+    m_bcifs.setPrimitiveMat(stateId, realMatrices);
+}
+
 void BcifsBuilder::constraint(const std::string& state, const std::vector<std::string>& firstPath, const std::vector<std::string>& secondPath) {
     StateID stateId = this->getStateID(state);
     std::vector<TransitionID> first;
@@ -228,6 +237,9 @@ void BcifsBuilder::initializeLua() {
     });
     m_lua.set_function("primitive", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<std::string>>>> figures) {
         this->primitive(state, figures.value());
+    });
+    m_lua.set_function("primitiveMat", [&](const std::string& state, sol::as_table_t<std::vector<std::vector<std::vector<float>>>> matrices) {
+        this->primitiveMat(state, matrices.value());
     });
     m_lua.set_function("constraint", [&](const std::string& state, sol::as_table_t<std::vector<std::string>> firstPath, sol::as_table_t<std::vector<std::string>> secondPath) {
         this->constraint(state, firstPath.value(), secondPath.value());
