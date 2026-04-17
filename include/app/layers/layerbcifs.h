@@ -4,8 +4,10 @@
 #include "app/batch/batchcontrolpoint.h"
 #include "app/batch/batchface.h"
 #include "app/batch/batchgrid.h"
+#include "app/batch/batchprimitivepoint.h"
 #include "app/batch/batchsubdivisionpoint.h"
 #include "app/bcifs/bcifs.h"
+#include "app/bcifs/primitivepoint.h"
 #include "app/bcifs/subdivisionpoint.h"
 #include "core/camera.h"
 #include "core/layer.h"
@@ -48,6 +50,7 @@ private:
     void handleSelection();
     void handleMoveControlPoint();
     void handleMoveSubdivisionPoint();
+    void handleMovePrimitivePoint();
     static bool intersectRayPlane(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& planePoint, const glm::vec3& planeNormal, float& t);
     void loadLuaFile(const std::string& filename);
     void loadLuaScript(const std::string& luaScript);
@@ -63,11 +66,15 @@ private:
     bool m_gridChanged = false;
     bool m_displayGrid = false;
     bool m_displayHidden = true;
+    bool m_displaySubdivisionPoints = true;
+    bool m_displayControlPoints = true;
+    bool m_displayPrimitivePoints = true;
     int m_gridLevel = 0;
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;
     BatchControlPoint m_batchControlPoint;
     BatchSubdivisionPoint m_batchSubdivisionPoint;
+    BatchPrimitivePoint m_batchPrimitivePoint;
     bool m_leftMousePressed = false;
     bool m_rightMousePressed = false;
     bool m_uniformsDirty = true;
@@ -76,6 +83,7 @@ private:
     glm::mat4 m_proj;
     std::optional<BCIFS::FormalMatrix> m_currentControlPoint;
     std::optional<BCIFS::SubdivisionPoint> m_currentSubdivisionPoint;
+    std::optional<BCIFS::PrimitivePoint> m_currentPrimitivePoint;
     glm::vec3 m_initialControlPointPosition;
     bool m_xKeyPressed = false;
     bool m_yKeyPressed = false;

@@ -519,6 +519,7 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         m_batchControlPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         m_batchSubdivisionPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+        m_batchPrimitivePoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         m_gridChanged = false;
     }
     if (m_clearColorChanged) {
@@ -534,7 +535,7 @@ void LayerBcifs::onRender() {
         m_batchGrid.setMVP(m_camera, m_proj);
         m_batchControlPoint.setMVP(m_camera, m_proj);
         m_batchSubdivisionPoint.setMVP(m_camera, m_proj);
-
+        m_batchPrimitivePoint.setMVP(m_camera, m_proj);
         m_uniformsDirty = false;
     }
     m_batchFace.render();
@@ -543,13 +544,27 @@ void LayerBcifs::onRender() {
         if (m_displayHidden) {
             Core::GLCall(glDisable(GL_DEPTH_TEST));
             m_batchGrid.render();
-            m_batchSubdivisionPoint.render();
-            m_batchControlPoint.render();
+            if (m_displayPrimitivePoints) {
+                m_batchPrimitivePoint.render();
+            }
+            if (m_displaySubdivisionPoints) {
+                m_batchSubdivisionPoint.render();
+            }
+            if (m_displayControlPoints) {
+                m_batchControlPoint.render();
+            }
             Core::GLCall(glEnable(GL_DEPTH_TEST));
         } else {
             m_batchGrid.render();
-            m_batchControlPoint.render();
-            m_batchSubdivisionPoint.render();
+            if (m_displayControlPoints) {
+                m_batchControlPoint.render();
+            }
+            if (m_displaySubdivisionPoints) {
+                m_batchSubdivisionPoint.render();
+            }
+            if (m_displayPrimitivePoints) {
+                m_batchPrimitivePoint.render();
+            }
         }
     }
 }
@@ -622,8 +637,13 @@ void LayerBcifs::onImGuiRender() {
     if (ImGui::Checkbox("Display Grid", &m_displayGrid)) {
         m_gridChanged = true;
     }
-    ImGui::SameLine();
-    ImGui::Checkbox("Display hidden", &m_displayHidden);
+    if (m_displayGrid) {
+        ImGui::SameLine();
+        ImGui::Checkbox("Display hidden", &m_displayHidden);
+        ImGui::Checkbox("Display control points", &m_displayControlPoints);
+        ImGui::Checkbox("Display subdivision points", &m_displaySubdivisionPoints);
+        ImGui::Checkbox("Display primitive points", &m_displayPrimitivePoints);
+    }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::InputInt("Grid level", &m_gridLevel);
     if (m_gridLevel < 0) {
@@ -804,6 +824,8 @@ bool LayerBcifs::onMouseMovedEvent(const Core::MouseMovedEvent& event) {
             this->handleMoveControlPoint();
         } else if (m_currentSubdivisionPoint.has_value()) {
             this->handleMoveSubdivisionPoint();
+        } else if (m_currentPrimitivePoint.has_value()) {
+            this->handleMovePrimitivePoint();
         } else {
             // move the camera
             glm::vec2 size = Core::Application::get().framebufferSize();
@@ -826,6 +848,7 @@ bool LayerBcifs::onMouseReleasedEvent(const Core::MouseButtonReleasedEvent& even
         m_leftMousePressed = false;
         m_currentControlPoint = std::nullopt;
         m_currentSubdivisionPoint = std::nullopt;
+        m_currentPrimitivePoint = std::nullopt;
         return true;
     }
     if (event.getMouseButton() == GLFW_MOUSE_BUTTON_2) {
@@ -926,20 +949,62 @@ void LayerBcifs::handleSelection() {
     float pixelRadius = 8.0f;
 
     // test control points
-    for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints(m_gridLevel)) {
-        for (std::size_t col = 0; col < points.cols(); col++) {
-            // be sure it is a selectable control points
-            bool selectable = false;
-            for (std::size_t row = 0; row < points.rows(); row++) {
-                if (points.isVar(row, col)) {
-                    selectable = true;
+    if (m_displayControlPoints) {
+        for (const BCIFS::FormalMatrix& points : m_bcifs.controlPoints(m_gridLevel)) {
+            for (std::size_t col = 0; col < points.cols(); col++) {
+                // be sure it is a selectable control points
+                bool selectable = false;
+                for (std::size_t row = 0; row < points.rows(); row++) {
+                    if (points.isVar(row, col)) {
+                        selectable = true;
+                    }
+                }
+                if (!selectable) {
+                    continue;
+                }
+                BCIFS::FormalMatrix point = points.getCol(col);
+                glm::vec3 pointPos(point.value(0, 0), point.value(1, 0), point.value(2, 0));
+                glm::vec3 toV = pointPos - rayOrigin;
+                float t = glm::dot(toV, rayDirection);
+                if (t <= 0.0f) {
+                    continue;
+                }
+
+                glm::vec3 closest = rayOrigin + t * rayDirection;
+                float dist2 = glm::dot(pointPos - closest, pointPos - closest);
+
+                float worldPerPixel = (2.0f * t * tanHalfFovy) / size.y;
+                float radius = pixelRadius * worldPerPixel;
+                float radius2 = radius * radius;
+
+                if (dist2 > radius2) {
+                    continue;
+                }
+
+                if (!m_displayHidden) {
+                    glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+                    clip /= clip.w;
+                    float pointDepth = clip.z * 0.5f + 0.5f;
+                    if (pointDepth > depth + 1e-4f) {
+                        continue;
+                    }
+                }
+
+                if (t < bestT) {
+                    bestT = t;
+                    m_currentControlPoint = point;
+                    m_initialControlPointPosition.x = m_currentControlPoint->value(0, 0);
+                    m_initialControlPointPosition.y = m_currentControlPoint->value(1, 0);
+                    m_initialControlPointPosition.z = m_currentControlPoint->value(2, 0);
                 }
             }
-            if (!selectable) {
-                continue;
-            }
-            BCIFS::FormalMatrix point = points.getCol(col);
-            glm::vec3 pointPos(point.value(0, 0), point.value(1, 0), point.value(2, 0));
+        }
+    }
+
+    // also test subdivision points
+    if (m_displaySubdivisionPoints) {
+        for (const BCIFS::SubdivisionPoint& point : m_bcifs.subdivisionPoints(m_gridLevel).first) {
+            glm::vec3 pointPos = point.posR3();
             glm::vec3 toV = pointPos - rayOrigin;
             float t = glm::dot(toV, rayDirection);
             if (t <= 0.0f) {
@@ -961,53 +1026,54 @@ void LayerBcifs::handleSelection() {
                 glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
                 clip /= clip.w;
                 float pointDepth = clip.z * 0.5f + 0.5f;
-                if (pointDepth > depth + 1e-4f) {
+                if (pointDepth > depth) {
                     continue;
                 }
             }
 
             if (t < bestT) {
                 bestT = t;
-                m_currentControlPoint = point;
-                m_initialControlPointPosition.x = m_currentControlPoint->value(0, 0);
-                m_initialControlPointPosition.y = m_currentControlPoint->value(1, 0);
-                m_initialControlPointPosition.z = m_currentControlPoint->value(2, 0);
+                m_currentSubdivisionPoint = point;
             }
         }
     }
 
-    // also test subdivision points
-    for (const BCIFS::SubdivisionPoint& point : m_bcifs.subdivisionPoints(m_gridLevel).first) {
-        glm::vec3 pointPos = point.posR3();
-        glm::vec3 toV = pointPos - rayOrigin;
-        float t = glm::dot(toV, rayDirection);
-        if (t <= 0.0f) {
-            continue;
-        }
+    // finally test primitive points
+    if (m_displayPrimitivePoints) {
+        for (const std::vector<BCIFS::PrimitivePoint>& face : m_bcifs.primitivePoints(m_gridLevel)) {
+            for (const BCIFS::PrimitivePoint& point : face) {
+                glm::vec3 pointPos = point.posR3();
+                glm::vec3 toV = pointPos - rayOrigin;
+                float t = glm::dot(toV, rayDirection);
+                if (t <= 0.0f) {
+                    continue;
+                }
 
-        glm::vec3 closest = rayOrigin + t * rayDirection;
-        float dist2 = glm::dot(pointPos - closest, pointPos - closest);
+                glm::vec3 closest = rayOrigin + t * rayDirection;
+                float dist2 = glm::dot(pointPos - closest, pointPos - closest);
 
-        float worldPerPixel = (2.0f * t * tanHalfFovy) / size.y;
-        float radius = pixelRadius * worldPerPixel;
-        float radius2 = radius * radius;
+                float worldPerPixel = (2.0f * t * tanHalfFovy) / size.y;
+                float radius = pixelRadius * worldPerPixel;
+                float radius2 = radius * radius;
 
-        if (dist2 > radius2) {
-            continue;
-        }
+                if (dist2 > radius2) {
+                    continue;
+                }
 
-        if (!m_displayHidden) {
-            glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
-            clip /= clip.w;
-            float pointDepth = clip.z * 0.5f + 0.5f;
-            if (pointDepth > depth) {
-                continue;
+                if (!m_displayHidden) {
+                    glm::vec4 clip = m_proj * m_camera.getViewMatrix() * glm::vec4(pointPos, 1.0f);
+                    clip /= clip.w;
+                    float pointDepth = clip.z * 0.5f + 0.5f;
+                    if (pointDepth > depth) {
+                        continue;
+                    }
+                }
+
+                if (t < bestT) {
+                    bestT = t;
+                    m_currentPrimitivePoint = point;
+                }
             }
-        }
-
-        if (t < bestT) {
-            bestT = t;
-            m_currentSubdivisionPoint = point;
         }
     }
 }
@@ -1085,8 +1151,8 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
         newPosHomogeneous.at(2, 0) = newPos.z;
         newPosHomogeneous.at(3, 0) = 1.0f;
         arma::mat variableTransformHomogenous = transformHomogeneous * variableBoundaryOperatorMat;
-        arma::mat invVariableTransformHomogenous = arma::pinv(variableTransformHomogenous, 0.01);
-        arma::mat newPosBaryVariableHomogeneous = invVariableTransformHomogenous * newPosHomogeneous;
+        arma::mat invVariableTransformHomogeneous = arma::pinv(variableTransformHomogenous, 0.01);
+        arma::mat newPosBaryVariableHomogeneous = invVariableTransformHomogeneous * newPosHomogeneous;
         // update values with homogeneous values
         for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
             variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0));
@@ -1101,6 +1167,57 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
     }
 
     m_bcifs.invalidate();
+    m_bcifsChanged = true;
+}
+
+void LayerBcifs::handleMovePrimitivePoint() {
+    glm::vec3 planePoint = m_currentPrimitivePoint->posR3();
+    glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
+
+    glm::vec2 size = Core::Application::get().framebufferSize();
+    float x = static_cast<float>(2.0 * m_mousePos.x / size.x - 1.0);
+    float y = static_cast<float>(1.0 - (2.0 * m_mousePos.y) / size.y);
+    glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+
+    glm::vec4 rayEye = glm::inverse(m_proj) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+
+    glm::vec3 rayDirection = glm::normalize(glm::vec3(glm::inverse(m_camera.getViewMatrix()) * rayEye));
+
+    glm::vec3 rayOrigin = m_camera.getEye();
+
+    float t;
+    if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
+        glm::vec3 newPos = rayOrigin + t * rayDirection;
+        const arma::mat& transform = m_currentPrimitivePoint->T();
+        arma::mat transformHomogeneous(transform.n_rows + 1, transform.n_cols);
+        transformHomogeneous.ones();
+        for (std::size_t row = 0; row < transform.n_rows; row++) {
+            for (std::size_t col = 0; col < transform.n_cols; col++) {
+                transformHomogeneous.at(row, col) = transform.at(row, col);
+            }
+        }
+        arma::mat newPosHomogeneous(4, 1);
+        newPosHomogeneous.at(0, 0) = newPos.x;
+        newPosHomogeneous.at(1, 0) = newPos.y;
+        newPosHomogeneous.at(2, 0) = newPos.z;
+        newPosHomogeneous.at(3, 0) = 1.0f;
+        arma::mat invTransformHomogenous = arma::pinv(transformHomogeneous, 0.01);
+        arma::mat newPosBaryHomogeneous = invTransformHomogenous * newPosHomogeneous;
+        // update values with homogeneous values
+        for (std::size_t row = 0; row < m_currentPrimitivePoint->posBary().n_rows; row++) {
+            m_currentPrimitivePoint->posBary().at(row, 0) = newPosBaryHomogeneous.at(row, 0);
+        }
+        // get homogeneous coords to compute ratio
+        arma::mat coordHomogeneous = transformHomogeneous * m_currentPrimitivePoint->posBary();
+        float r = 1.0f / coordHomogeneous.at(3, 0);
+        // update coords with the computed ratio (homogeneous to barycentric coords)
+        for (std::size_t row = 0; row < m_currentPrimitivePoint->posBary().n_rows; row++) {
+            m_currentPrimitivePoint->posBary().at(row, 0) = newPosBaryHomogeneous.at(row, 0) * r;
+        }
+        m_bcifs.updatePrimitivePoint(m_currentPrimitivePoint.value());
+    }
+    // m_bcifs.invalidate();
     m_bcifsChanged = true;
 }
 

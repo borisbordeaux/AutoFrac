@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include "app/bcifs/primitivepoint.h"
+
 namespace BCIFS {
 
 std::pair<StateID, std::vector<TransitionID>> Bcifs::addState(std::string name, std::size_t internalDimensions) {
@@ -51,6 +53,7 @@ void Bcifs::setPrimitiveMat(StateID id, const std::vector<FormalMatrix>& primiti
     for (const FormalMatrix& matrix : primitive) {
         m_mapPrimitivesMat[id].emplace_back(matrix.toMat());
     }
+    m_userDefinedPrimitive.push_back(id);
 }
 
 TransitionID Bcifs::addSubdivision(std::string name, StateID from, StateID to) {
@@ -186,6 +189,7 @@ void Bcifs::reset() {
     m_facesPaths.clear();
     m_mapPrimitives.clear();
     m_mapPrimitivesMat.clear();
+    m_userDefinedPrimitive.clear();
     m_needUpdatePrimitivesWhenChangingMatrices = true;
     m_frontColors.clear();
     m_backColors.clear();
@@ -341,6 +345,41 @@ std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> Bcifs::s
     return { resVar, resConst };
 }
 
+std::vector<std::vector<PrimitivePoint>> Bcifs::primitivePoints(std::size_t gridLevel) const {
+    if (!m_initStateID.has_value()) { return {}; }
+
+    std::vector<std::vector<PrimitivePoint>> res;
+    std::unordered_map<StateID, Path> paths = m_automaton.shortestPaths(m_initStateID.value());
+    // for each state, look at its primitive
+    for (const State& state : m_automaton.states()) {
+        //bool hasUserDefinedPrimitive = std::find(m_userDefinedPrimitive.begin(), m_userDefinedPrimitive.end(), state.id()) != m_userDefinedPrimitive.end();
+        bool hasUserDefinedPrimitive = m_mapPrimitives.find(state.id()) == m_mapPrimitives.end() || true;
+        if (hasUserDefinedPrimitive && state.id() != m_initStateID.value()) {
+            auto it = paths.find(state.id());
+            if (it != paths.end() && (gridLevel == 0 || gridLevel == it->second.size())) {
+                std::vector<arma::mat> primitiveMatrices = m_mapPrimitivesMat.at(state.id());
+                arma::mat op = this->getOperatorOfPathForMSS(paths.at(state.id()));
+                std::size_t matrixId = 0;
+                for (const arma::mat& matrix : primitiveMatrices) {
+                    std::vector<PrimitivePoint>& resVec = res.emplace_back();
+                    for (std::size_t i = 0; i < matrix.n_cols; i++) {
+                        arma::mat posBarycentricSpace = matrix.col(i);
+                        resVec.emplace_back(op, posBarycentricSpace, state.id(), matrixId, i);
+                    }
+                    matrixId++;
+                }
+            }
+        }
+    }
+    return res;
+}
+
+void Bcifs::updatePrimitivePoint(const PrimitivePoint& primitivePoint) {
+    for (std::size_t i = 0; i < primitivePoint.posBary().n_rows; i++) {
+        m_mapPrimitivesMat.at(primitivePoint.stateId())[primitivePoint.matrixId()].at(i, primitivePoint.columnId()) = primitivePoint.posBary().at(i, 0);
+    }
+}
+
 std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::springs(std::size_t gridLevel) const {
     if (!m_initStateID.has_value() || gridLevel == 1) { return {}; }
 
@@ -380,6 +419,17 @@ std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::controlPointsSprings(std::si
             glm::vec3(pos23D.value(0, 0), pos23D.value(1, 0), pos23D.value(2, 0)));
     }
 
+    return res;
+}
+
+std::vector<std::pair<glm::vec3, glm::vec3>> Bcifs::primitiveEdges(std::size_t gridLevel) const {
+    std::vector<std::vector<PrimitivePoint>> primitivePoints = this->primitivePoints(gridLevel);
+    std::vector<std::pair<glm::vec3, glm::vec3>> res;
+    for (const std::vector<PrimitivePoint>& face : primitivePoints) {
+        for (std::size_t i = 0; i < face.size(); i++) {
+            res.emplace_back(face[i].posR3(), face[(i + 1) % face.size()].posR3());
+        }
+    }
     return res;
 }
 
@@ -972,7 +1022,7 @@ FormalMatrix Bcifs::globalMatrixOf(StateID id) const {
 }
 
 const std::vector<arma::mat>& Bcifs::getPrimitiveMat(StateID id) const {
-    return m_mapPrimitivesMat.find(id)->second;
+    return m_mapPrimitivesMat.at(id);
 }
 
 void Bcifs::initPrimitives() {
@@ -981,6 +1031,7 @@ void Bcifs::initPrimitives() {
     for (const State& state : m_automaton.states()) {
         auto it = m_mapPrimitives.find(state.id());
         if (it != m_mapPrimitives.end()) {
+            m_mapPrimitivesMat[state.id()].clear();
             for (const Figure& figure : it->second) {
                 // each figure is a face, each face is a set of path,
                 // each path has a matrix associated, each column is a vertex of the face
@@ -1007,23 +1058,19 @@ void Bcifs::initPrimitives() {
 }
 
 const glm::vec3& Bcifs::getFrontColor(const Path& path) const {
-    if (m_colorDepth < path.size()) {
-        auto it = m_frontColors.find(path[m_colorDepth]);
-        if (it != m_frontColors.end()) {
-            return it->second;
-        }
-        return m_defaultFrontColor;
+    std::size_t actualColorDepth = m_colorDepth > path.size() - 1 ? path.size() - 1 : m_colorDepth;
+    auto it = m_frontColors.find(path[actualColorDepth]);
+    if (it != m_frontColors.end()) {
+        return it->second;
     }
     return m_defaultFrontColor;
 }
 
 const glm::vec3& Bcifs::getBackColor(const Path& path) const {
-    if (m_colorDepth < path.size()) {
-        auto it = m_backColors.find(path[m_colorDepth]);
-        if (it != m_backColors.end()) {
-            return it->second;
-        }
-        return m_defaultBackColor;
+    std::size_t actualColorDepth = m_colorDepth > path.size() - 1 ? path.size() - 1 : m_colorDepth;
+    auto it = m_backColors.find(path[actualColorDepth]);
+    if (it != m_backColors.end()) {
+        return it->second;
     }
     return m_defaultBackColor;
 }

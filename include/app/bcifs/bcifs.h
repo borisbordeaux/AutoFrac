@@ -12,8 +12,9 @@
 #include "massspringsystem.h"
 
 namespace BCIFS {
-class SubdivisionPoint;
 class BcifsVertex;
+class PrimitivePoint;
+class SubdivisionPoint;
 
 class Bcifs {
 public:
@@ -50,8 +51,11 @@ public:
      * @return a pair of vectors, the first one contains variable subdivision points and the second one contains constant subdivision points.
      */
     std::pair<std::vector<SubdivisionPoint>, std::vector<SubdivisionPoint>> subdivisionPoints(std::size_t gridLevel) const;
+    std::vector<std::vector<PrimitivePoint>> primitivePoints(std::size_t gridLevel) const;
+    void updatePrimitivePoint(const PrimitivePoint& primitivePoint);
     std::vector<std::pair<glm::vec3, glm::vec3>> springs(std::size_t gridLevel) const;
     std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings(std::size_t gridLevel) const;
+    std::vector<std::pair<glm::vec3, glm::vec3>> primitiveEdges(std::size_t gridLevel) const;
     void updateMSS();
     void updateMSSControlPoints();
     void printMSS() const;
@@ -137,6 +141,7 @@ private:
     std::vector<std::pair<Path, arma::mat>> m_facesPaths;
     std::unordered_map<StateID, std::vector<Figure>> m_mapPrimitives;
     std::unordered_map<StateID, std::vector<arma::mat>> m_mapPrimitivesMat;
+    std::vector<StateID> m_userDefinedPrimitive;
     bool m_needUpdatePrimitivesWhenChangingMatrices = true;
     glm::vec3 m_defaultFrontColor = glm::vec3(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f);
     glm::vec3 m_defaultBackColor = glm::vec3(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f);

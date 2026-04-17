@@ -36,8 +36,9 @@ void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel) {
     m_data.clear();
     std::vector<std::pair<glm::vec3, glm::vec3>> springs = bcifs.springs(gridLevel);
     std::vector<std::pair<glm::vec3, glm::vec3>> controlPointsSprings = bcifs.controlPointsSprings(gridLevel);
+    std::vector<std::pair<glm::vec3, glm::vec3>> primitiveEdges = bcifs.primitiveEdges(gridLevel);
 
-    std::size_t nbLines = springs.size() + controlPointsSprings.size();
+    std::size_t nbLines = springs.size() + controlPointsSprings.size() + primitiveEdges.size();
     std::size_t nbAddsLine = 2 * nbLines;
     m_data.resize(nbAddsLine * m_floatsPerVertex);
 
@@ -46,6 +47,9 @@ void BatchGrid::setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel) {
     }
     for (const std::pair<glm::vec3, glm::vec3>& line: springs) {
         this->addLine(line, glm::vec3{0.0, 0.0, 1.0});
+    }
+    for (const std::pair<glm::vec3, glm::vec3>& line: primitiveEdges) {
+        this->addLine(line, glm::vec3{0.0, 0.8, 0.0});
     }
 
     m_vbo.bind();
