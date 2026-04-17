@@ -1,6 +1,7 @@
 #include "app/batch/batchgrid.h"
 
 #include "app/bcifs/bcifs.h"
+#include "core/application.h"
 #include "core/camera.h"
 #include "core/renderer.h"
 
@@ -14,6 +15,7 @@ BatchGrid::BatchGrid() {
     m_vao.addBuffer(m_vbo, m_layout);
 
     m_program.addShaderFromFile(Core::ShaderType::Vertex, "../res/shaders/grid/vertexShader.glsl");
+    m_program.addShaderFromFile(Core::ShaderType::Geometry, "../res/shaders/grid/geometryShader.glsl");
     m_program.addShaderFromFile(Core::ShaderType::Fragment, "../res/shaders/grid/fragmentShader.glsl");
     m_program.link();
 
@@ -28,6 +30,7 @@ void BatchGrid::setMVP(const Core::Camera& camera, const glm::mat4& proj) {
     glm::mat4 view = camera.getViewMatrix();
     glm::mat4 mvp = proj * view;
     m_program.setUniformMat4f("u_mvp", mvp);
+    m_program.setUniform2f("u_invViewport", Core::Application::get().inverseFramebufferSize());
     m_program.unbind();
 }
 

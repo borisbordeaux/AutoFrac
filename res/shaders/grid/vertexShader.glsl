@@ -5,10 +5,9 @@ layout (location = 1) in vec3 vColor;
 
 uniform mat4 u_mvp;
 
-out vec3 color;
+out vec3 vertexColor;
 
-void main()
-{
+void main() {
+    vertexColor = vColor;
     gl_Position = u_mvp * vPos;
-    color = vColor;
 }
