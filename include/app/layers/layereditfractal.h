@@ -77,8 +77,8 @@ private:
     int m_lastCantorType = 0;
     int m_lastBezierType = 1;
     // colors
-    bool m_useColors = true;
-    bool m_lastUseColors = true;
+    int m_colorType = 1;
+    int m_lastColorType = 1;
     // fractal stucture
     frac::Structure m_structure;
     // rendering

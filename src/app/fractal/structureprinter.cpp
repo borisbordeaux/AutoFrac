@@ -2,6 +2,7 @@
 
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
+#include "app/utils/colors.h"
 #include "app/utils/utils.h"
 
 namespace frac {
@@ -27,15 +28,15 @@ std::string StructurePrinter::exportStruct() {
 
     m_filePrinter.appendNewLine("------------------------------");
     m_filePrinter.appendNewLine("-- all cells states");
-    auto cells = m_structure.allFaces();
-    for (auto const& c : cells.data()) {
+    Set<Face> cells = m_structure.allFaces();
+    for (Face const& c : cells.data()) {
         m_filePrinter.appendNewLine("-- " + c.toString());
         m_filePrinter.appendNewLine("state('" + c.name() + "', 0)");
     }
 
     m_filePrinter.appendNewLine("------------------------------");
     m_filePrinter.appendNewLine("-- subd of init");
-    this->printInitSubds();
+    this->printInitSubds(cells);
 
     m_filePrinter.appendNewLine("------------------------------");
     m_filePrinter.appendNewLine("-- edges of all states");
@@ -46,7 +47,7 @@ std::string StructurePrinter::exportStruct() {
     m_filePrinter.appendNewLine("------------------------------");
     m_filePrinter.appendNewLine("-- subdivisions of all states");
     for (auto const& c : cells.data()) {
-        this->printSubdOfCell(c);
+        this->printSubdOfCell(c, cells);
     }
 
     m_filePrinter.appendNewLine("------------------------------");
@@ -413,11 +414,22 @@ void StructurePrinter::printBezierImpl(unsigned int n) {
     }
 }
 
-void StructurePrinter::printInitSubds() {
+void StructurePrinter::printInitSubds(Set<Face> const& allCells) {
     auto const& subds = m_structure.faces();
     int i = 0;
     for (auto const& s : subds) {
-        m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', 'init', '" + s.name() + "')");
+        switch (m_structure.colorType()) {
+            case ColorType::UNCOLORED:
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', 'init', '" + s.name() + "')");
+                break;
+            case ColorType::COLORED:
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', 'init', '" + s.name() + "', " + frac::COLORS[i % 30] + ")");
+                break;
+            case ColorType::COLORED_BY_STATE:
+                std::size_t index = allCells.indexOf(s);
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', 'init', '" + s.name() + "', " + frac::COLORS[index % 30] + ")");
+                break;
+        }
         i += 1;
     }
 }
@@ -430,46 +442,21 @@ void StructurePrinter::printEdgesOfCell(Face const& cell) {
     }
 }
 
-void StructurePrinter::printSubdOfCell(Face const& cell) {
+void StructurePrinter::printSubdOfCell(Face const& cell, Set<Face> const& allCells) {
     std::vector<Face> subds = cell.subdivisions();
-    int i = 0;
+    std::size_t i = 0;
     for (Face const& f : subds) {
-        if (m_structure.useColors()) {
-            const std::string COLORS[30] = {
-                "{ 252/255, 127/255,   0/255 }",
-                "{   0/255,  71/255, 232/255 }",
-                "{ 205/255, 207/255,   0/255 }",
-                "{ 206/255,   0/255,   0/255 }",
-                "{   0/255, 183/255,   0/255 }",
-                "{ 129/255,  50/255, 255/255 }",
-                "{   0/255, 200/255, 200/255 }",
-                "{ 255/255, 105/255, 180/255 }",
-                "{ 148/255,   0/255, 211/255 }",
-                "{ 255/255, 165/255,   0/255 }",
-                "{   0/255, 128/255, 128/255 }",
-                "{ 255/255,  20/255, 147/255 }",
-                "{ 138/255,  43/255, 226/255 }",
-                "{ 255/255, 215/255,   0/255 }",
-                "{  46/255, 139/255,  87/255 }",
-                "{ 220/255,  20/255,  60/255 }",
-                "{  30/255, 144/255, 255/255 }",
-                "{ 255/255, 140/255,   0/255 }",
-                "{  75/255,   0/255, 130/255 }",
-                "{ 154/255, 205/255,  50/255 }",
-                "{ 255/255,  69/255,   0/255 }",
-                "{   0/255, 191/255, 255/255 }",
-                "{ 218/255, 112/255, 214/255 }",
-                "{ 189/255, 183/255, 107/255 }",
-                "{ 255/255,  99/255,  71/255 }",
-                "{  60/255, 179/255, 113/255 }",
-                "{ 123/255, 104/255, 238/255 }",
-                "{ 210/255, 105/255,  30/255 }",
-                "{  70/255, 130/255, 180/255 }",
-                "{ 199/255,  21/255, 133/255 }"
-            };
-            m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "', " + COLORS[i % 30] + ")");
-        } else {
-            m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "')");
+        switch (m_structure.colorType()) {
+            case ColorType::UNCOLORED:
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "')");
+                break;
+            case ColorType::COLORED:
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "', " + frac::COLORS[i % 30] + ")");
+                break;
+            case ColorType::COLORED_BY_STATE:
+                std::size_t index = allCells.indexOf(f);
+                m_filePrinter.appendNewLine("subdivision('s" + std::to_string(i) + "', '" + cell.name() + "', '" + f.name() + "', " + frac::COLORS[index % 30] + ")");
+                break;
         }
         i += 1;
     }

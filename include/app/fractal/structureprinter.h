@@ -4,6 +4,7 @@
 #include <string>
 
 #include "app/utils/fileprinter.h"
+#include "app/utils/set.h"
 
 namespace frac {
 
@@ -28,9 +29,9 @@ private:
     void printCantorImpl(unsigned int n);
     void printDelayBezierImpl(unsigned int n, unsigned int delay_count);
     void printBezierImpl(unsigned int n);
-    void printInitSubds();
+    void printInitSubds(Set<Face> const& allCells);
     void printEdgesOfCell(Face const& cell);
-    void printSubdOfCell(Face const& cell);
+    void printSubdOfCell(Face const& cell, Set<Face> const& allCells);
     void printSpaceOfCell(Face const& cell);
     void printPrimOfCell(Face const& cell);
     void printEdgeAdjacenciesOfCell(Face const& cell);

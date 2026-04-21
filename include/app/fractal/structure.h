@@ -26,9 +26,13 @@ struct Adjacency {
     static Adjacency fromStr(std::string const& strConstraint);
 };
 
+enum class ColorType {
+    UNCOLORED, COLORED, COLORED_BY_STATE
+};
+
 class Structure {
 public:
-    explicit Structure(std::vector<Face> const& faces = {}, BezierType bezierType = BezierType::Quadratic_Bezier, CantorType cantorType = CantorType::Linear_Cantor, bool useColors = true);
+    explicit Structure(std::vector<Face> const& faces = {}, BezierType bezierType = BezierType::Quadratic_Bezier, CantorType cantorType = CantorType::Linear_Cantor, ColorType colorType = ColorType::COLORED);
     void addAdjacency(Adjacency const& adj);
     std::string strAdjacencies() const;
     std::vector<Adjacency> const& adjacencies() const;
@@ -48,7 +52,7 @@ public:
     void setControlPoints(std::vector<std::vector<glm::vec2>> controlPoints);
     const std::vector<std::vector<glm::vec2>>& controlPoints() const;
     std::vector<std::vector<glm::vec2>>& controlPoints();
-    bool useColors() const;
+    ColorType colorType() const;
 
 private:
     std::vector<Face> m_faces;
@@ -56,7 +60,7 @@ private:
     std::vector<Adjacency> m_adjacencies;
     BezierType m_bezierType;
     CantorType m_cantorType;
-    bool m_useColors;
+    ColorType m_colorType;
 
     std::vector<std::vector<glm::vec2>> m_controlPoints;
 };

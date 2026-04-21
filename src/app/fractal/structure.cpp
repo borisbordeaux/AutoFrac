@@ -25,7 +25,8 @@ Adjacency Adjacency::fromStr(std::string const& strConstraint) {
     return { face1, edge1, face2, edge2 };
 }
 
-Structure::Structure(std::vector<Face> const& faces, BezierType bezierType, CantorType cantorType, bool useColor) : m_faces(faces), m_bezierType(bezierType), m_cantorType(cantorType), m_useColors(useColor) {}
+Structure::Structure(std::vector<Face> const& faces, BezierType bezierType, CantorType cantorType, ColorType colorType) :
+    m_faces(faces), m_bezierType(bezierType), m_cantorType(cantorType), m_colorType(colorType) {}
 
 void Structure::addAdjacency(Adjacency const& adj) {
     if (m_faces[adj.Face1][adj.Edge1] == m_faces[adj.Face2][adj.Edge2]) {
@@ -221,8 +222,8 @@ std::vector<std::vector<glm::vec2>>& Structure::controlPoints() {
     return m_controlPoints;
 }
 
-bool Structure::useColors() const {
-    return m_useColors;
+ColorType Structure::colorType() const {
+    return m_colorType;
 }
 
 } // frac

@@ -176,7 +176,8 @@ void LayerEditFractal::onImGuiRender() {
         this->updateStructure();
     }
     ImGui::SeparatorText("Colors");
-    if (ImGui::Checkbox("Use colors", &m_useColors)) {
+    const char* colorTypeNames[3] = { "Uncolored", "Colored by subdivision", "Colored by states" };
+    if (ImGui::SliderInt("Color type", &m_colorType, 0, 2, colorTypeNames[m_colorType], ImGuiSliderFlags_NoInput)) {
         this->updateStructure(false);
     }
     ImGui::End();
@@ -385,7 +386,7 @@ void LayerEditFractal::updateEdited() {
     }
     bool editedBezierType = m_lastBezierType != m_bezierType;
     bool editedCantorType = m_lastCantorType != m_cantorType;
-    bool editedColors = m_lastUseColors != m_useColors;
+    bool editedColors = m_lastColorType != m_colorType;
     m_edited = editedFaces || editedBezierType || editedCantorType || m_movedControlPoints || editedColors;
 }
 
@@ -396,7 +397,7 @@ bool LayerEditFractal::onLayerSwappedEvent(const Core::LayerSwappedEvent& event)
         m_lastCantorType = m_cantorType;
         m_lastBezierType = m_bezierType;
         m_movedControlPoints = false;
-        m_lastUseColors = m_useColors;
+        m_lastColorType = m_colorType;
         m_proj = glm::perspective(glm::pi<float>() / 4.0f, Core::Application::get().framebufferSize().x / Core::Application::get().framebufferSize().y, 0.005f, 250.0f);
         m_uniformsDirty = true;
         return true;
@@ -457,10 +458,11 @@ void LayerEditFractal::updateStructure(bool changeControlPoints) {
 
     frac::BezierType bezierType = static_cast<frac::BezierType>(m_bezierType);
     frac::CantorType cantorType = static_cast<frac::CantorType>(m_cantorType);
+    frac::ColorType colorType = static_cast<frac::ColorType>(m_colorType);
 
     std::vector<std::vector<glm::vec2>> ctrlPts = m_structure.controlPoints();
 
-    m_structure = frac::Structure{ faces, bezierType, cantorType, m_useColors };
+    m_structure = frac::Structure{ faces, bezierType, cantorType, colorType };
 
     if (changeControlPoints) {
         m_structure.fillControlPoints();
