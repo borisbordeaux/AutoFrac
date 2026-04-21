@@ -152,7 +152,7 @@ void Structure::fillControlPoints() {
 
     for (std::size_t indexFace = 0; indexFace < m_faces.size(); indexFace++) {
         //barycenter coordinates
-        float x = static_cast<float>(indexFace) * 3.0f;
+        float x = static_cast<float>(indexFace) * 2.2f;
 
         //number of control points that are not intern (equivalent to the number of corners)
         float nbCtrlPtsF = 0.0f;
