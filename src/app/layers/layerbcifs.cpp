@@ -516,7 +516,7 @@ void LayerBcifs::onUpdate(float /*deltaTime*/) {
         m_bcifsChanged = false;
     }
     if (m_gridChanged) {
-        m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
+        m_batchGrid.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel), m_displaySubdivisionPoints, m_displayControlPoints, m_displayPrimitivePoints);
         m_batchControlPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         m_batchSubdivisionPoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
         m_batchPrimitivePoint.setBcifs(m_bcifs, static_cast<std::size_t>(m_gridLevel));
@@ -640,17 +640,24 @@ void LayerBcifs::onImGuiRender() {
     if (m_displayGrid) {
         ImGui::SameLine();
         ImGui::Checkbox("Display hidden", &m_displayHidden);
-        ImGui::Checkbox("Display control points", &m_displayControlPoints);
-        ImGui::Checkbox("Display subdivision points", &m_displaySubdivisionPoints);
-        ImGui::Checkbox("Display primitive points", &m_displayPrimitivePoints);
-    }
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
-    ImGui::InputInt("Grid level", &m_gridLevel);
-    if (m_gridLevel < 0) {
-        m_gridLevel = 0;
-    }
-    if (ImGui::IsItemDeactivatedAfterEdit()) {
-        m_gridChanged = true;
+        if (ImGui::Checkbox("Display control points", &m_displayControlPoints)) {
+            m_gridChanged = true;
+        }
+        if (ImGui::Checkbox("Display subdivision points", &m_displaySubdivisionPoints)) {
+            m_gridChanged = true;
+        }
+        if (ImGui::Checkbox("Display primitive points", &m_displayPrimitivePoints)) {
+            m_gridChanged = true;
+        }
+
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
+        ImGui::InputInt("Grid level", &m_gridLevel);
+        if (m_gridLevel < 0) {
+            m_gridLevel = 0;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            m_gridChanged = true;
+        }
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * width);
     ImGui::DragFloat("K", m_bcifs.k(), 0.001f);

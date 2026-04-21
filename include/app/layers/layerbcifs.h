@@ -68,7 +68,7 @@ private:
     bool m_displayHidden = true;
     bool m_displaySubdivisionPoints = true;
     bool m_displayControlPoints = true;
-    bool m_displayPrimitivePoints = true;
+    bool m_displayPrimitivePoints = false;
     int m_gridLevel = 0;
     BatchFace m_batchFace;
     BatchGrid m_batchGrid;

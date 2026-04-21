@@ -18,7 +18,7 @@ class BatchGrid {
 public:
     BatchGrid();
     void setMVP(const Core::Camera& camera, const glm::mat4& proj);
-    void setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel);
+    void setBcifs(const BCIFS::Bcifs& bcifs, std::size_t gridLevel, bool displaySubdivisionPoints, bool displayControlPoints, bool displayPrimitivePoints);
     void render() const;
 
 private:
