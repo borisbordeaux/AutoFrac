@@ -190,11 +190,10 @@ const Edge& Face::operator[](std::size_t index) const {
 }
 
 bool Face::operator==(Face const& other) const {
+    if (m_delay != other.m_delay || this->len() != other.len() || m_adjEdge != other.m_adjEdge || m_gapEdge != other.m_gapEdge || m_reqEdge != other.m_reqEdge || m_algo != other.m_algo) {
+        return false;
+    }
 #if 0 // faces are considered only by their current boundary for comparison
-    // if (m_delay != other.m_delay || this->len() != other.len() || m_adjEdge != other.m_adjEdge || m_gapEdge != other.m_gapEdge || m_reqEdge != other.m_reqEdge || m_algo != other.m_algo) {
-    //     return false;
-    // }
-    //
     // return m_data == other.m_data;
 #else // faces are considered as bracelets for comparison
     std::vector<Edge> shifted{ other.m_data };

@@ -151,7 +151,7 @@ void LayerEditFractal::onImGuiRender() {
     this->displayEdgeSettings("El edge:", El, &m_ElType);
 
     frac::Edge& Ec = m_structure.faces()[m_selectedFace].reqEdge();
-    m_ElType = static_cast<int>(Ec.edgeType());
+    m_EcType = static_cast<int>(Ec.edgeType());
     this->displayEdgeSettings("Ec edge:", Ec, &m_EcType);
 
     ImGui::SeparatorText("Delay and process");
