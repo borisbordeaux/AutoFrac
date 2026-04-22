@@ -48,6 +48,7 @@ private:
     bool onKeyReleasedEvent(const Core::KeyReleasedEvent& event);
     bool onLayerSwappedEvent(const Core::LayerSwappedEvent& event);
     void handleSelection();
+    static arma::vec computeBarycentricCoordinates(const arma::mat& transform, const glm::vec3& newPosR3, const arma::vec& oldBarycentricPos, double lambda, bool normalize = true);
     void handleMoveControlPoint();
     void handleMoveSubdivisionPoint();
     void handleMovePrimitivePoint();

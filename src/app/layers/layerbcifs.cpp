@@ -1085,6 +1085,42 @@ void LayerBcifs::handleSelection() {
     }
 }
 
+arma::vec LayerBcifs::computeBarycentricCoordinates(const arma::mat& transform, const glm::vec3& newPosR3, const arma::vec& oldBarycentricPos, double lambda, bool normalize) {
+    arma::mat homogeneousTransform(transform.n_rows + 1, transform.n_cols);
+    homogeneousTransform.ones();
+    for (std::size_t row = 0; row < transform.n_rows; row++) {
+        for (std::size_t col = 0; col < transform.n_cols; col++) {
+            homogeneousTransform.at(row, col) = transform.at(row, col);
+        }
+    }
+    arma::mat homogeneousTargetPos(4, 1);
+    homogeneousTargetPos.at(0, 0) = newPosR3.x;
+    homogeneousTargetPos.at(1, 0) = newPosR3.y;
+    homogeneousTargetPos.at(2, 0) = newPosR3.z;
+    homogeneousTargetPos.at(3, 0) = 1.0f;
+
+    // Tikhonov regularization for least squares computation
+    // https://en.wikipedia.org/wiki/Ridge_regression#Tikhonov_regularization_for_linear_equations
+    // A = T^T T + λ I
+    arma::mat A = homogeneousTransform.t() * homogeneousTransform;
+    A += lambda * arma::eye<arma::mat>(A.n_rows, A.n_cols);
+
+    // b = T^T p + λ w_old
+    arma::vec b = homogeneousTransform.t() * homogeneousTargetPos + lambda * oldBarycentricPos;
+
+    // solve A w = b
+    arma::vec w = arma::solve(A, b);
+
+    if (normalize) {
+        // normalize to be in barycentric space
+        double sum = arma::accu(w);
+        if (std::abs(sum) > 0.00000001) {
+            w /= sum;
+        }
+    }
+    return w;
+}
+
 void LayerBcifs::handleMoveControlPoint() {
     glm::vec3 planePoint(m_currentControlPoint->value(0, 0), m_currentControlPoint->value(1, 0), m_currentControlPoint->value(2, 0));
     glm::vec3 planeNormal = m_camera.center() - m_camera.getEye();
@@ -1140,36 +1176,56 @@ void LayerBcifs::handleMoveSubdivisionPoint() {
 
     float t;
     if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
-        glm::vec3 newPos = rayOrigin + t * rayDirection;
-        arma::mat posBary = m_currentSubdivisionPoint->posBary().toMat();
-        arma::mat variableBoundaryOperatorMat = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix().toMat();
-        const arma::mat& transform = m_currentSubdivisionPoint->T();
-        arma::mat transformHomogeneous(transform.n_rows + 1, transform.n_cols);
-        transformHomogeneous.ones();
-        for (std::size_t row = 0; row < transform.n_rows; row++) {
-            for (std::size_t col = 0; col < transform.n_cols; col++) {
-                transformHomogeneous.at(row, col) = transform.at(row, col);
+        if (m_currentSubdivisionPoint->posBary().containsSeveralSameVar()) {
+            // this method works better when there are several same variables in the barycentric coordinates
+            glm::vec3 newPos = rayOrigin + t * rayDirection;
+            arma::mat posBary = m_currentSubdivisionPoint->posBary().toMat();
+            arma::mat variableBoundaryOperatorMat = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix().toMat();
+            const arma::mat& transform = m_currentSubdivisionPoint->T();
+            arma::mat transformHomogeneous(transform.n_rows + 1, transform.n_cols);
+            transformHomogeneous.ones();
+            for (std::size_t row = 0; row < transform.n_rows; row++) {
+                for (std::size_t col = 0; col < transform.n_cols; col++) {
+                    transformHomogeneous.at(row, col) = transform.at(row, col);
+                }
             }
-        }
-        BCIFS::FormalMatrix variableMatrix = m_currentSubdivisionPoint->posBary().variableMatrix();
-        arma::mat newPosHomogeneous(4, 1);
-        newPosHomogeneous.at(0, 0) = newPos.x;
-        newPosHomogeneous.at(1, 0) = newPos.y;
-        newPosHomogeneous.at(2, 0) = newPos.z;
-        newPosHomogeneous.at(3, 0) = 1.0f;
-        arma::mat variableTransformHomogenous = transformHomogeneous * variableBoundaryOperatorMat;
-        arma::mat invVariableTransformHomogeneous = arma::pinv(variableTransformHomogenous, 0.01);
-        arma::mat newPosBaryVariableHomogeneous = invVariableTransformHomogeneous * newPosHomogeneous;
-        // update values with homogeneous values
-        for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
-            variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0));
-        }
-        // get homogeneous coords to compute ratio
-        arma::mat coordHomogeneous = transformHomogeneous * m_currentSubdivisionPoint->posBary().toMat();
-        float r = 1.0f / coordHomogeneous.at(3, 0);
-        // update coords with the computed ratio (homogeneous to barycentric coords)
-        for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
-            variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0) * r);
+            BCIFS::FormalMatrix variableMatrix = m_currentSubdivisionPoint->posBary().variableMatrix();
+            arma::mat newPosHomogeneous(4, 1);
+            newPosHomogeneous.at(0, 0) = newPos.x;
+            newPosHomogeneous.at(1, 0) = newPos.y;
+            newPosHomogeneous.at(2, 0) = newPos.z;
+            newPosHomogeneous.at(3, 0) = 1.0f;
+            arma::mat variableTransformHomogenous = transformHomogeneous * variableBoundaryOperatorMat;
+            arma::mat invVariableTransformHomogeneous = arma::pinv(variableTransformHomogenous, 0.01);
+            arma::mat newPosBaryVariableHomogeneous = invVariableTransformHomogeneous * newPosHomogeneous;
+            // update values with homogeneous values
+            for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
+                variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0));
+            }
+            // get homogeneous coords to compute ratio
+            arma::mat coordHomogeneous = transformHomogeneous * m_currentSubdivisionPoint->posBary().toMat();
+            float r = 1.0f / coordHomogeneous.at(3, 0);
+            // update coords with the computed ratio (homogeneous to barycentric coords)
+            for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
+                variableMatrix.setValue(row, 0, newPosBaryVariableHomogeneous.at(row, 0) * r);
+            }
+        } else {
+            // this method works better when each component of the barycentric coordinates are unrelated to each other
+            glm::vec3 newPos = rayOrigin + t * rayDirection;
+            const arma::mat& transform = m_currentSubdivisionPoint->T();
+            BCIFS::FormalMatrix variableMatrix = m_currentSubdivisionPoint->posBary().variableMatrix();
+            arma::mat variableBoundaryOperatorMat = m_currentSubdivisionPoint->posBary().variableEmbeddingMatrix().toMat();
+            arma::mat realTransform = transform * variableBoundaryOperatorMat;
+
+            arma::vec oldBarycentricPos = variableMatrix.toMat();
+            double lambda = 0.01;
+            arma::vec newPosBary = LayerBcifs::computeBarycentricCoordinates(realTransform, newPos, oldBarycentricPos, lambda, false);
+
+            for (std::size_t row = 0; row < variableMatrix.rows(); row++) {
+                variableMatrix.setValue(row, 0, newPosBary.at(row, 0));
+            }
+
+            m_currentSubdivisionPoint->posBary().setSumToOne();
         }
     }
 
@@ -1197,34 +1253,13 @@ void LayerBcifs::handleMovePrimitivePoint() {
     if (intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, t)) {
         glm::vec3 newPos = rayOrigin + t * rayDirection;
         const arma::mat& transform = m_currentPrimitivePoint->T();
-        arma::mat transformHomogeneous(transform.n_rows + 1, transform.n_cols);
-        transformHomogeneous.ones();
-        for (std::size_t row = 0; row < transform.n_rows; row++) {
-            for (std::size_t col = 0; col < transform.n_cols; col++) {
-                transformHomogeneous.at(row, col) = transform.at(row, col);
-            }
-        }
-        arma::mat newPosHomogeneous(4, 1);
-        newPosHomogeneous.at(0, 0) = newPos.x;
-        newPosHomogeneous.at(1, 0) = newPos.y;
-        newPosHomogeneous.at(2, 0) = newPos.z;
-        newPosHomogeneous.at(3, 0) = 1.0f;
-        arma::mat invTransformHomogenous = arma::pinv(transformHomogeneous, 0.01);
-        arma::mat newPosBaryHomogeneous = invTransformHomogenous * newPosHomogeneous;
-        // update values with homogeneous values
-        for (std::size_t row = 0; row < m_currentPrimitivePoint->posBary().n_rows; row++) {
-            m_currentPrimitivePoint->posBary().at(row, 0) = newPosBaryHomogeneous.at(row, 0);
-        }
-        // get homogeneous coords to compute ratio
-        arma::mat coordHomogeneous = transformHomogeneous * m_currentPrimitivePoint->posBary();
-        float r = 1.0f / coordHomogeneous.at(3, 0);
-        // update coords with the computed ratio (homogeneous to barycentric coords)
-        for (std::size_t row = 0; row < m_currentPrimitivePoint->posBary().n_rows; row++) {
-            m_currentPrimitivePoint->posBary().at(row, 0) = newPosBaryHomogeneous.at(row, 0) * r;
-        }
+
+        arma::vec oldBarycentricPos = m_currentPrimitivePoint->posBary();
+        double lambda = 0.01;
+        m_currentPrimitivePoint->posBary() = LayerBcifs::computeBarycentricCoordinates(transform, newPos, oldBarycentricPos, lambda);
+
         m_bcifs.updatePrimitivePoint(m_currentPrimitivePoint.value());
     }
-    // m_bcifs.invalidate();
     m_bcifsChanged = true;
 }
 

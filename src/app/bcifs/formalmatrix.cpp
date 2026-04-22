@@ -289,4 +289,20 @@ void FormalMatrix::setValue(std::size_t row, std::size_t col, float value) {
     m_pool->setValue(this->get(row, col).index(), value);
 }
 
+bool FormalMatrix::containsSeveralSameVar() const {
+    std::vector<std::size_t> valueReferences;
+
+    for (std::size_t row = 0; row < m_rows; row++) {
+        if (m_pool->getKind(this->get(row, 0).index()) == CoefKind::VAR) {
+            if (std::find(valueReferences.begin(), valueReferences.end(), m_pool->root(this->get(row, 0).index())) == valueReferences.end()) {
+                valueReferences.push_back(m_pool->root(this->get(row, 0).index()));
+            } else {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 } // BCIFS

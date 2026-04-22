@@ -41,6 +41,7 @@ public:
     float value(std::size_t row, std::size_t col) const;
     float* valueRef(std::size_t row, std::size_t col) const;
     void setValue(std::size_t row, std::size_t col, float value);
+    bool containsSeveralSameVar() const;
 
 private:
     std::size_t m_rows;
