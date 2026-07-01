@@ -9,6 +9,7 @@
 #include "app/bcifs/bcifsbuilder.h"
 #include "app/bcifs/formalmatrix.h"
 #include "app/exporter/stlexporter.h"
+#include "app/exporter/jsonexporter.h"
 #include "app/fractal/face.h"
 #include "app/fractal/structure.h"
 #include "app/fractal/structureprinter.h"
@@ -780,6 +781,21 @@ void LayerBcifs::onImGuiRender() {
             // action if OK
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             STLExporter::exportBinary(filePathName, m_bcifs, m_iterationLevel);
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    if (ImGui::Button("Export to JSON...", ImVec2(-FLT_MIN, 0))) {
+        IGFD::FileDialogConfig config;
+        config.path = ".";
+        config.fileName = "out.json";
+        config.flags |= ImGuiFileDialogFlags_Modal;
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseJSONFileDlgKey", "Choose a JSON file", ".json", config);
+    }
+    if (ImGuiFileDialog::Instance()->Display("ChooseJSONFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(700, 350))) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            JSONExporter::exportJson(filePathName, m_bcifs);
         }
         ImGuiFileDialog::Instance()->Close();
     }
