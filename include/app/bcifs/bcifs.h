@@ -11,12 +11,15 @@
 #include "grid.h"
 #include "massspringsystem.h"
 
+class JSONExporter;
+
 namespace BCIFS {
 class BcifsVertex;
 class PrimitivePoint;
 class SubdivisionPoint;
 
 class Bcifs {
+    friend class ::JSONExporter;
 public:
     Bcifs() = default;
     /**
